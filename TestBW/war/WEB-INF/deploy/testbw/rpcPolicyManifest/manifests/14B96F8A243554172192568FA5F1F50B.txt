@@ -1,0 +1,2 @@
+serviceClass: testbw.client.SetupStaticDBService
+path: 12B24D45B3068F10F2EBC1700CA613B1.gwt.rpc

@@ -1,0 +1,2 @@
+serviceClass: testbw.client.GreetingService
+path: F7CEF30A8A76A231F74E0836CFD8EB36.gwt.rpc

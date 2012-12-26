@@ -1,0 +1,2 @@
+serviceClass: testbw.client.AnalysisService
+path: CA34E36C1FF2EA57DE45229AD5567A26.gwt.rpc
