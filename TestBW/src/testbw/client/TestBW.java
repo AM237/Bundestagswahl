@@ -14,10 +14,12 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.ui.FileUpload;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PasswordTextBox;
@@ -49,6 +51,7 @@ public class TestBW implements EntryPoint {
   private DialogBox dialogBox = new DialogBox();
   private Button closeButton = new Button("Close");
   private VerticalPanel dialogVPanel = new VerticalPanel();
+  //private FileUpload fileUpload = new FileUpload();
   private PieChart piechart;
    
   // Services
@@ -64,23 +67,25 @@ public class TestBW implements EntryPoint {
 	  /////////////////////////////////////////////////////////////////////////
 	  // Build GUI
 	  /////////////////////////////////////////////////////////////////////////
-	  //setupPanel.add(inputBox);
 	  vpanel.add(projectName);
 	  vpanel.add(dbInputBox);
 	  vpanel.add(passwordBox);
+	  //vpanel.add(fileUpload);
 	  setupPanel.add(setupDBButton);
 	  setupPanel.add(analysisButton);
 	  vpanel.add(setupPanel);
 	  vpanel.add(resultLabel);
 	  RootPanel.get("setupDB").add(vpanel);
 	  projectName.setFocus(true);
-	  projectName.setText("Enter project name ... ");
-	  dbInputBox.setText("Enter DB name ...");
-	  passwordBox.setText("Enter password ...");
+	  projectName.setTitle("Enter project name ... ");
+	  dbInputBox.setTitle("Enter DB name ...");
+	  passwordBox.setTitle("Enter password ...");
+	  //fileUpload.setTitle("Directory for CSV input files");
 	  setupPanel.addStyleName("setupPanel");
 	  projectName.addStyleName("textBox");
 	  dbInputBox.addStyleName("textBox");
 	  passwordBox.addStyleName("textBox");
+	  //fileUpload.addStyleName("fileUpload");
 	  
 	  	  
 	  // Create the pop-up dialog box
@@ -102,7 +107,7 @@ public class TestBW implements EntryPoint {
 			public void onClick(ClickEvent event) {
 				dialogBox.hide();
 			}
-		});
+	  });
 	  
 	  
 	  // listen for mouse events on the SetupDB button.
@@ -200,7 +205,13 @@ public class TestBW implements EntryPoint {
 	 input[0] = projectName.getText();
 	 input[1] = dbInputBox.getText();
 	 input[2] = passwordBox.getText();
-	 ((SetupStaticDBServiceAsync) setupSvc).setupStaticDB(input, callback);
+	 //input[3] = FileUpload.Utils.basename(fileUpload.getFilename());
+	 
+	 for (int i = 0; i < input.length; i++)
+		 if (input[i].equals(""))
+		 	Window.alert("Some or all inputs are empty!");
+		 else
+			((SetupStaticDBServiceAsync) setupSvc).setupStaticDB(input, callback);
 	  
   }
   
