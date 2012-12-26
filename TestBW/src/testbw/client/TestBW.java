@@ -228,6 +228,7 @@ public class TestBW implements EntryPoint {
 	    	  resultLabel.setText("Analysis complete.");
 	          resultLabel.setVisible(true);
 	          
+	          dialogVPanel.clear();
 	          dialogBox.center();
 	    	  dialogBox.setText("Analysis Results: Last update: " +  DateTimeFormat.getMediumDateFormat().format(new Date()));
 
