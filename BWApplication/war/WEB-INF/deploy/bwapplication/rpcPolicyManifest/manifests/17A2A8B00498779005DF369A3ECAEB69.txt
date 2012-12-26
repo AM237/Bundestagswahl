@@ -1,0 +1,2 @@
+serviceClass: bundestagswahl.application.client.GreetingService
+path: CAF58BA9576A94A574D97D34D9B007C5.gwt.rpc
