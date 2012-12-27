@@ -354,7 +354,8 @@ public class BWGenerator {
 				System.out.println("\n Aggregate Stimmen");
 
 				try {
-					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) FROM zweitstimme GROUP BY wahlkreis, partei,jahr;");
+					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr;");
+					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr;");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -363,10 +364,23 @@ public class BWGenerator {
 				
 				
 				// Q4: Wahlkreissieger
-//				System.out.println("\n Q4: Wahlkreissieger");
-//
+				System.out.println("\n Q4: Wahlkreissieger");
+
+				try {
+					st.executeUpdate("SELECT * FROM zweitstimmen ORDER BY anzahl");
+					st.executeUpdate("SELECT * FROM erststimmen ORDER BY anzahl LIMIT 1");
+
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				System.out.println("\nFinished");
+				
+				// Q6: Knappster Sieger
+				System.out.println("\n Q6: Knappster Sieger");
+
 //				try {
-//					st.executeUpdate("SELECT jahr, partei, count(*) FROM zweitstimme GROUP BY wahlkreis,partei,jahr;");
+//					st.executeUpdate("SELECT * FROM zweitstimmen ORDER BY anzahl");
+//					st.executeUpdate("SELECT * FROM erststimmen ORDER BY anzahl LIMIT 1");
 //
 //				} catch (SQLException e) {
 //					e.printStackTrace();
