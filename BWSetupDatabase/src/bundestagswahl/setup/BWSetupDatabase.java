@@ -154,9 +154,9 @@ public class BWSetupDatabase {
 					st.executeUpdate("CREATE TABLE direktkandidat(jahr integer,kandidatennummer integer UNIQUE, politiker integer, partei int, wahlkreis integer, PRIMARY KEY (jahr,kandidatennummer)) WITH ( OIDS=FALSE );");
 					st.executeUpdate("CREATE TABLE listenkandidat(jahr integer, partei integer, bundesland int, listenplatz integer, politiker integer, PRIMARY KEY (jahr,partei,bundesland,listenplatz)) WITH ( OIDS=FALSE );");
 					st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer UNIQUE, kandidatennummer integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer UNIQUE, partei integer, bundesland integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,kandidatennummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer, partei integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,partei))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer UNIQUE, partei integer, wahlkreis integer UNIQUE, bundesland integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis integer UNIQUE,kandidatennummer integer UNIQUE, wahlkreis integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,kandidatennummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer,wahlkreis integer UNIQUE, partei integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,partei))WITH (OIDS=FALSE);");
 
 					// Tabellen füllen-----------------------------------------
 

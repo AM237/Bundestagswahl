@@ -185,6 +185,7 @@ public class BWGenerator {
 													jahrName,
 													Integer.toString(zweitstimmzettelnummer),
 													Integer.toString(aktuelleParteinummer),
+													Integer.toString(wahlkreisnummer),
 													Integer.toString(aktelleBundeslandnummer) };
 
 											writerZweitstimmen[jahr]
@@ -210,7 +211,8 @@ public class BWGenerator {
 											String[] writeLine = {
 													jahrName,
 													Integer.toString(erststimmzettelnummer),
-													Integer.toString(aktuelleKandidatennummer) };
+													Integer.toString(aktuelleKandidatennummer),
+													Integer.toString(wahlkreisnummer)};
 
 											writerErststimmen[jahr]
 													.writeNext(writeLine);
@@ -352,12 +354,31 @@ public class BWGenerator {
 				System.out.println("\n Aggregate Stimmen");
 
 				try {
-					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, partei, count(*) FROM zweitstimme GROUP BY partei,jahr;");
+					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) FROM zweitstimme GROUP BY wahlkreis, partei,jahr;");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
 				System.out.println("\nFinished");
+				
+				
+				// Q4: Wahlkreissieger
+//				System.out.println("\n Q4: Wahlkreissieger");
+//
+//				try {
+//					st.executeUpdate("SELECT jahr, partei, count(*) FROM zweitstimme GROUP BY wahlkreis,partei,jahr;");
+//
+//				} catch (SQLException e) {
+//					e.printStackTrace();
+//				}
+				System.out.println("\nFinished");
+				
+				
+				
+				
+				
+				
+				
 
 				st.close();
 				conn.close();
