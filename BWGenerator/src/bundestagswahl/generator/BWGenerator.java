@@ -212,7 +212,7 @@ public class BWGenerator {
 													jahrName,
 													Integer.toString(erststimmzettelnummer),
 													Integer.toString(aktuelleKandidatennummer),
-													Integer.toString(wahlkreisnummer)};
+													Integer.toString(wahlkreisnummer) };
 
 											writerErststimmen[jahr]
 													.writeNext(writeLine);
@@ -361,8 +361,7 @@ public class BWGenerator {
 					e.printStackTrace();
 				}
 				System.out.println("\nFinished");
-				
-				
+
 				// Q4: Wahlkreissieger
 				System.out.println("\n Q4: Wahlkreissieger");
 
@@ -374,28 +373,32 @@ public class BWGenerator {
 					e.printStackTrace();
 				}
 				System.out.println("\nFinished");
-				
+
+				// Q5: Überhangmandate
+				System.out.println("\n Q6: Knappster Sieger");
+
+				System.out.println("\nFinished");
+				st.close();
+
 				// Q6: Knappster Sieger
 				System.out.println("\n Q6: Knappster Sieger");
 
-//				try {
-//					
-//					
-//					
-//					
-//					
-//
-//				} catch (SQLException e) {
-//					e.printStackTrace();
-//				}
+				try {
+					st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinner AS "
+							+ "SELECT s1.wahlkreis, s1.kandidatennummer, d.partei , "
+							+ "( SELECT min(s1.anzahl - s2.anzahl) FROM erststimmen s2 WHERE s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer) AS differenz"
+							+ " FROM erststimmen s1 , direktkandidat d WHERE s1.kandidatennummer = d.kandidatennumer");
+
+					st.executeUpdate("CREATE OR REPLACE VIEW knappsteergebnisse AS "
+							+ "SELECT * FROM knappstegewinner UNION "
+							+ "SELECT s1.wahlkreis, s1.kandidatennummer, d.partei , "
+							+ " ( SELECT min( differenz ) from ( SELECT (s2.anzahl - s.anzahl) as differenz FROM erststimmen s2 WHERE s2.wahlkreis = s1.wahlkreis and ( s2.anzahl - s1.anzahl ) > 0 ) )"
+							+ " FROM erststimmen s1 , direktkandidat d WHERE s1.kandidatennummer = d.kandidatennumer AND d.partei NOT IN ( SELECT k.partei from knappstegewinner k");
+
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 				System.out.println("\nFinished");
-				
-				
-				
-				
-				
-				
-				
 
 				st.close();
 				conn.close();
