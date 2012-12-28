@@ -354,8 +354,8 @@ public class BWGenerator {
 				System.out.println("\n Aggregate Stimmen");
 
 				try {
-					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr;");
-					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr;");
+					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -367,8 +367,8 @@ public class BWGenerator {
 				System.out.println("\n Q4: Wahlkreissieger");
 
 				try {
-					st.executeUpdate("SELECT * FROM zweitstimmen ORDER BY anzahl");
-					st.executeUpdate("SELECT * FROM erststimmen ORDER BY anzahl LIMIT 1");
+					st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT s1.wahlkreis, s1.kandidatennummer, s1.anzahl FROM erststimmen s1 , wahlkreis w WHERE s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM erststimmen s2 where s2.wahlkreis = w.wahlkreisnummer)");
+					st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT s1.wahlkreis, s1.partei, s1.anzahl FROM zweitstimmen s1 , wahlkreis w WHERE s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM zweitstimmen s2 where s2.wahlkreis = w.wahlkreisnummer)");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -379,8 +379,11 @@ public class BWGenerator {
 				System.out.println("\n Q6: Knappster Sieger");
 
 //				try {
-//					st.executeUpdate("SELECT * FROM zweitstimmen ORDER BY anzahl");
-//					st.executeUpdate("SELECT * FROM erststimmen ORDER BY anzahl LIMIT 1");
+//					
+//					
+//					
+//					
+//					
 //
 //				} catch (SQLException e) {
 //					e.printStackTrace();
