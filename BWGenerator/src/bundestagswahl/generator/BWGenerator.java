@@ -169,7 +169,7 @@ public class BWGenerator {
 										+ jahrName
 										+ ","
 										+ wahlkreisnummer
-										+ ",'" + wahlberechtigte + ");");
+										+ "," + wahlberechtigte + ");");
 
 								for (int i = 19; i < 132; i = i + 4) {
 
@@ -288,6 +288,8 @@ public class BWGenerator {
 								break;
 							}
 
+							System.out.println(talbeDestination + "   "
+									+ actPfad);
 							InputStream in = new BufferedInputStream(
 									CopyProgressMonitor.getCopyProgressMonitor(
 											actPfad, progressString));

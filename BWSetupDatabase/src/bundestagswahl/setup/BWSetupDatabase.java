@@ -95,55 +95,25 @@ public class BWSetupDatabase {
 
 					// Tabellen löschen, Reihenfolge relevant---------
 					try {
-						st.executeUpdate("DROP TABLE erststimme CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS erststimmen CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS zweitstimmen CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS erststimme CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS zweitstimme CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS listenkandidat CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS direktkandidat CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS wahlberechtigte CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS wahlkreis CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS politiker CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS partei CASCADE;");
+						st.executeUpdate("DROP TABLE IF EXISTS bundesland CASCADE;");
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
-					try {
-						st.executeUpdate("DROP TABLE zweitstimme CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE listenkandidat CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE direktkandidat CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE wahlberechtigte CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE wahlkreis CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE politiker CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE partei CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE bundesland CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE stimmenpropartei CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
+					// try {
+					// st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
+					// } catch (SQLException e) {
+					// e.printStackTrace();
+					// }
 					// Tabellen anlegen, Reihenfolge relevant-------------
 
 					st.executeUpdate("CREATE TABLE bundesland(bundeslandnummer integer , name text NOT NULL, abkuerzung text,  PRIMARY KEY (bundeslandnummer))WITH (OIDS=FALSE);");
@@ -153,10 +123,10 @@ public class BWSetupDatabase {
 					st.executeUpdate("CREATE TABLE wahlberechtigte(jahr integer, wahlkreis integer UNIQUE,wahlberechtigte integer , PRIMARY KEY (jahr,wahlkreis))WITH (OIDS=FALSE);");
 					st.executeUpdate("CREATE TABLE direktkandidat(jahr integer,kandidatennummer integer UNIQUE, politiker integer, partei int, wahlkreis integer, PRIMARY KEY (jahr,kandidatennummer)) WITH ( OIDS=FALSE );");
 					st.executeUpdate("CREATE TABLE listenkandidat(jahr integer, partei integer, bundesland int, listenplatz integer, politiker integer, PRIMARY KEY (jahr,partei,bundesland,listenplatz)) WITH ( OIDS=FALSE );");
-					st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer UNIQUE, kandidatennummer integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer UNIQUE, partei integer, wahlkreis integer UNIQUE, bundesland integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis integer UNIQUE,kandidatennummer integer UNIQUE, wahlkreis integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,kandidatennummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer,wahlkreis integer UNIQUE, partei integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,partei))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer UNIQUE, kandidatennummer integer, wahlkreis integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer UNIQUE, partei integer, wahlkreis integer, bundesland integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis integer UNIQUE,kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,kandidatennummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer,wahlkreis integer UNIQUE, partei integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,partei))WITH (OIDS=FALSE);");
 
 					// Tabellen füllen-----------------------------------------
 
