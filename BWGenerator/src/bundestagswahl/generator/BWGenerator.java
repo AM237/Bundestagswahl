@@ -40,10 +40,10 @@ public class BWGenerator {
 	public static String zweitstimmen05Pfad = "csv\\zweitstimmen2005.csv";
 	public static String zweitstimmen09Pfad = "csv\\zweitstimmen2009.csv";
 
-	public static boolean setupDatabase = false;// Datenbank neu aufsetzen
+	public static boolean setupDatabase = true;// Datenbank neu aufsetzen
 	public static boolean generateStimmen = true;// Stimmen CSV neu generieren
-	public static boolean loadStimmen = false;// Stimmen neu in Datenbank laden
-	public static boolean addConstraints = false;// Constraints hinzufÃ¼gen
+	public static boolean loadStimmen = true;// Stimmen neu in Datenbank laden
+	public static boolean addConstraints = true;// Constraints hinzufÃ¼gen
 
 	/**
 	 * @param args
@@ -375,6 +375,10 @@ public class BWGenerator {
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+
+				printQueryResult(st, rs, "zweitstimmen");
+				printQueryResult(st, rs, "erststimmen");
+
 				System.out.println("\nFinished");
 
 				// Parameter für Queries, über UI auszuwählen:
@@ -427,7 +431,13 @@ public class BWGenerator {
 					e.printStackTrace();
 				}
 
-				printQueryResult(st, rs, "wahlbeteiligung");
+				printQueryResult(st, rs, "wahlbeteiligungabsolut");
+				printQueryResult(st, rs, "wahlbeteiligungrelativ");
+				printQueryResult(st, rs, "erststimmengewinnerkandidat");
+				printQueryResult(st, rs, "parteinenanteilabsolut");
+				printQueryResult(st, rs, "parteinenanteilrelativ");
+				printQueryResult(st, rs, "parteinenanteilabsolutvorjahr");
+				printQueryResult(st, rs, "parteinenanteilveraenderung");
 
 				System.out.println("\nFinished");
 				st.close();
@@ -448,6 +458,10 @@ public class BWGenerator {
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+
+				printQueryResult(st, rs, "erststimmengewinner");
+				printQueryResult(st, rs, "zweitstimmengewinner");
+
 				System.out.println("\nFinished");
 
 				// Q5: Überhangmandate
@@ -482,6 +496,10 @@ public class BWGenerator {
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+
+				printQueryResult(st, rs, "knappstegewinner");
+				printQueryResult(st, rs, "knappsteergebnisse");
+
 				System.out.println("\nFinished");
 
 				st.close();
