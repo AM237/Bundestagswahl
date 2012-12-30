@@ -13,6 +13,7 @@ import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
@@ -371,8 +372,10 @@ public class BWGenerator {
 				System.out.println("\n Aggregate Stimmen");
 
 				try {
+					st.executeUpdate("DELETE FROM erststimmen;");
+					st.executeUpdate("DELETE FROM zweitstimmen;");
+					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
 					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
-					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -537,25 +540,28 @@ public class BWGenerator {
 		return returnString;
 	}
 
-	public static String printQueryResult(Statement st, ResultSet rs,
-			String table) throws SQLException {
+	public static void printQueryResult(Statement st, ResultSet rs, String table)
+			throws SQLException {
 		String returnString = "";
 		rs = st.executeQuery("SELECT * FROM " + table + " ;");
 		System.out.println(" ");
 		System.out.println("------------------------------");
 		System.out.println(table + " :");
+		ResultSetMetaData meta = rs.getMetaData();
+		int anzFields = meta.getColumnCount();
 		while (rs.next()) {
 			try {
-				returnString = rs.getString(1);
-				System.out.println(returnString);
+				for (int i = 0; i < anzFields; i++) {
+					System.out.print(rs.getString(i + 1) + "  |  ");
+
+				}
+				System.out.print("\n");
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			}
 		}
 		System.out.println("------------------------------");
 		System.out.println(" ");
-
-		return returnString;
 	}
 
 }
