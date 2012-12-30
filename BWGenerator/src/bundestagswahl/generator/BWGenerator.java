@@ -41,10 +41,10 @@ public class BWGenerator {
 	public static String zweitstimmen05Pfad = "csv\\zweitstimmen2005.csv";
 	public static String zweitstimmen09Pfad = "csv\\zweitstimmen2009.csv";
 
-	public static boolean setupDatabase = false;// Datenbank neu aufsetzen
-	public static boolean generateStimmen = false;// Stimmen CSV neu generieren
-	public static boolean loadStimmen = false;// Stimmen neu in Datenbank laden
-	public static boolean addConstraints = false;// Constraints hinzufügen
+	public static boolean setupDatabase = true;// Datenbank neu aufsetzen
+	public static boolean generateStimmen = true;// Stimmen CSV neu generieren
+	public static boolean loadStimmen = true;// Stimmen neu in Datenbank laden
+	public static boolean addConstraints = true;// Constraints hinzufügen
 
 	/**
 	 * @param args
