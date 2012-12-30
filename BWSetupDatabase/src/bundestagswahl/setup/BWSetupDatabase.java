@@ -123,10 +123,10 @@ public class BWSetupDatabase {
 					st.executeUpdate("CREATE TABLE wahlberechtigte(jahr integer, wahlkreis integer UNIQUE,wahlberechtigte integer , PRIMARY KEY (jahr,wahlkreis))WITH (OIDS=FALSE);");
 					st.executeUpdate("CREATE TABLE direktkandidat(jahr integer,kandidatennummer integer UNIQUE, politiker integer, partei int, wahlkreis integer, PRIMARY KEY (jahr,kandidatennummer)) WITH ( OIDS=FALSE );");
 					st.executeUpdate("CREATE TABLE listenkandidat(jahr integer, partei integer, bundesland int, listenplatz integer, politiker integer, PRIMARY KEY (jahr,partei,bundesland,listenplatz)) WITH ( OIDS=FALSE );");
-					st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer UNIQUE, kandidatennummer integer, wahlkreis integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer UNIQUE, partei integer, wahlkreis integer, bundesland integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis integer UNIQUE,kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,kandidatennummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer,wahlkreis integer UNIQUE, partei integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,partei))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer, kandidatennummer integer, wahlkreis integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer, partei integer, wahlkreis integer, bundesland integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis, kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,kandidatennummer))WITH (OIDS=FALSE);");
+					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer, wahlkreis, partei integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,partei))WITH (OIDS=FALSE);");
 
 					// Tabellen füllen-----------------------------------------
 

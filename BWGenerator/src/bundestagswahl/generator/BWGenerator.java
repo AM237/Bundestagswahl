@@ -40,10 +40,10 @@ public class BWGenerator {
 	public static String zweitstimmen05Pfad = "csv\\zweitstimmen2005.csv";
 	public static String zweitstimmen09Pfad = "csv\\zweitstimmen2009.csv";
 
-	public static boolean setupDatabase = true;// Datenbank neu aufsetzen
-	public static boolean generateStimmen = true;// Stimmen CSV neu generieren
-	public static boolean loadStimmen = true;// Stimmen neu in Datenbank laden
-	public static boolean addConstraints = true;// Constraints hinzufÃ¼gen
+	public static boolean setupDatabase = false;// Datenbank neu aufsetzen
+	public static boolean generateStimmen = false;// Stimmen CSV neu generieren
+	public static boolean loadStimmen = false;// Stimmen neu in Datenbank laden
+	public static boolean addConstraints = false;// Constraints hinzufÃ¼gen
 
 	/**
 	 * @param args
@@ -371,8 +371,8 @@ public class BWGenerator {
 				System.out.println("\n Aggregate Stimmen");
 
 				try {
-					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
-					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*)  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -387,18 +387,41 @@ public class BWGenerator {
 				String jahrName = "2005";
 				int wahlkreis = 1;
 
+				// Q4: Wahlkreissieger (Q3 benötigt View aus Q4)
+				System.out.println("\n Q4: Wahlkreissieger");
+
+				try {
+					st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  s1.wahlkreis, s1.kandidatennummer, s1.anzahl FROM erststimmen s1 , wahlkreis w WHERE s1.jahr = "
+							+ jahrName
+							+ " AND w.jahr = "
+							+ jahrName
+							+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM erststimmen s2 WHERE s2.jahr = "
+							+ jahrName
+							+ " AND s2.wahlkreis = w.wahlkreisnummer)");
+					st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmengewinner AS SELECT s1.wahlkreis, s1.partei, s1.anzahl FROM zweitstimmen s1 , wahlkreis w WHERE s1.jahr = "
+							+ jahrName
+							+ " AND w.jahr = "
+							+ jahrName
+							+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM zweitstimmen s2 WHERE s2.jahr = "
+							+ jahrName
+							+ " AND s2.wahlkreis = w.wahlkreisnummer)");
+
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+				printQueryResult(st, rs, "erststimmengewinner");
+				printQueryResult(st, rs, "zweitstimmengewinner");
+
+				System.out.println("\nFinished");
+
 				// Q3: Wahlkreisübersicht
 				System.out.println("\n Q3: Wahlkreisübersicht");
 
 				try {
-
 					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS "
-							+ "SELECT sum(anzahl) WHERE jahr = "
-							+ jahrName
-							+ " AND wahlkreis = "
-							+ wahlkreis
-							+ " )::float FROM erststimmen WHERE jahr = "
-							+ jahrName + " AND wahlkreis = " + wahlkreis + ";");
+							+ "SELECT sum(anzahl) FROM erststimmen WHERE jahr = "
+							+ jahrName + " AND wahlkreis = " + wahlkreis);
 
 					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS "
 							+ "SELECT (SELECT * FROM wahlbeteiligungabsolut) / (  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = "
@@ -408,26 +431,23 @@ public class BWGenerator {
 							+ " )::float ;");
 
 					st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS "
-							+ "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politikernummer AND d.kandidatennummer = (SELECT e.kandidatennummer FROM erststimmengewinner e ORDER BY RAND() LIMIT 1;");
+							+ "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politiker AND d.kandidatennummer = (SELECT e.kandidatennummer FROM erststimmengewinner e ORDER BY RANDOM() LIMIT 1)");
 
 					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS "
 							+ "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
 							+ jahrName
-							+ " AND zs.partei =  p.parteinummer) as anzahl,   FROM partei p WHERE  zs.jahr = "
-							+ jahrName + " ;");
+							+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
 
 					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS "
-							+ "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsolut) as anteil FROM parteinenanteilabsolut pa  ;");
+							+ "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsolut) as anteil FROM parteinenanteilabsolut pa ");
 
 					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS "
 							+ "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
 							+ Integer.toString(Integer.parseInt(jahrName) - 4)
-							+ " AND zs.partei =  p.parteinummer) as anzahl,   FROM partei p WHERE  zs.jahr = "
-							+ Integer.toString(Integer.parseInt(jahrName) - 4)
-							+ " ;");
+							+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
 
 					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS "
-							+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer;");
+							+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -442,35 +462,11 @@ public class BWGenerator {
 				printQueryResult(st, rs, "parteinenanteilveraenderung");
 
 				System.out.println("\nFinished");
-				st.close();
-
-				// Q4: Wahlkreissieger
-				System.out.println("\n Q4: Wahlkreissieger");
-
-				try {
-					st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  s1.wahlkreis, s1.kandidatennummer, s1.anzahl FROM erststimmen s1 , wahlkreis w WHERE jahr = "
-							+ jahrName
-							+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM erststimmen s2 WHERE jahr = "
-							+ jahrName
-							+ " AND s2.wahlkreis = w.wahlkreisnummer)");
-					st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmengewinner AS SELECT s1.wahlkreis, s1.partei, s1.anzahl FROM zweitstimmen s1 , wahlkreis w WHERE jahr = "
-							+ jahrName
-							+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM zweitstimmen s2 WHERE s2.wahlkreis = w.wahlkreisnummer)");
-
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-
-				printQueryResult(st, rs, "erststimmengewinner");
-				printQueryResult(st, rs, "zweitstimmengewinner");
-
-				System.out.println("\nFinished");
 
 				// Q5: Überhangmandate
 				System.out.println("\n Q5: Überhangmandate");
 
 				System.out.println("\nFinished");
-				st.close();
 
 				// Q6: Knappster Sieger
 				System.out.println("\n Q6: Knappster Sieger");
@@ -481,19 +477,23 @@ public class BWGenerator {
 							+ "( SELECT min(s1.anzahl - s2.anzahl) FROM erststimmen s2 WHERE jahr = "
 							+ jahrName
 							+ " AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer) AS differenz"
-							+ " FROM erststimmen s1 , direktkandidat d WHERE jahr = "
+							+ " FROM erststimmen s1 , direktkandidat d WHERE s1.jahr = "
 							+ jahrName
-							+ " AND s1.kandidatennummer = d.kandidatennumer");
+							+ " AND d.jahr = "
+							+ jahrName
+							+ " AND s1.kandidatennummer = d.kandidatennummer");
 
 					st.executeUpdate("CREATE OR REPLACE VIEW knappsteergebnisse AS "
-							+ "SELECT * FROM knappstegewinner UNION "
-							+ "SELECT s1.wahlkreis, s1.kandidatennummer, d.partei , "
-							+ " ( SELECT min( differenz ) from ( SELECT (s2.anzahl - s.anzahl) as differenz FROM erststimmen s2 WHERE jahr = "
+							+ "(SELECT * FROM knappstegewinner ) UNION "
+							+ "(SELECT s1.wahlkreis, s1.kandidatennummer, d.partei , "
+							+ " ( SELECT min( differenz ) FROM ( SELECT (s2.anzahl - s1.anzahl) As differenz FROM erststimmen s2 WHERE jahr = "
 							+ jahrName
-							+ " AND s2.wahlkreis = s1.wahlkreis and ( s2.anzahl - s1.anzahl ) > 0 ) )"
-							+ " FROM erststimmen s1 , direktkandidat d WHERE jahr = "
+							+ " AND s2.wahlkreis = s1.wahlkreis AND ( s2.anzahl - s1.anzahl ) > 0 ) AS ergebnissedifferenzen )"
+							+ " FROM erststimmen s1 , direktkandidat d WHERE s1.jahr = "
 							+ jahrName
-							+ " AND s1.kandidatennummer = d.kandidatennumer AND d.partei NOT IN ( SELECT k.partei from knappstegewinner k");
+							+ " AND d.jahr = "
+							+ jahrName
+							+ " AND s1.kandidatennummer = d.kandidatennummer AND d.partei NOT IN ( SELECT k.partei from knappstegewinner k) )");
 
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -541,6 +541,8 @@ public class BWGenerator {
 			String table) throws SQLException {
 		String returnString = "";
 		rs = st.executeQuery("SELECT * FROM " + table + " ;");
+		System.out.println(" ");
+		System.out.println("------------------------------");
 		System.out.println(table + " :");
 		while (rs.next()) {
 			try {
@@ -550,6 +552,7 @@ public class BWGenerator {
 				e.printStackTrace();
 			}
 		}
+		System.out.println("------------------------------");
 		System.out.println(" ");
 
 		return returnString;
