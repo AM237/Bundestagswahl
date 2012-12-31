@@ -41,10 +41,10 @@ public class BWGenerator {
 	public static String zweitstimmen05Pfad = "csv\\zweitstimmen2005.csv";
 	public static String zweitstimmen09Pfad = "csv\\zweitstimmen2009.csv";
 
-	public static boolean setupDatabase = true;// Datenbank neu aufsetzen
-	public static boolean generateStimmen = true;// Stimmen CSV neu generieren
-	public static boolean loadStimmen = true;// Stimmen neu in Datenbank laden
-	public static boolean addConstraints = true;// Constraints hinzufÃ¼gen
+	public static boolean setupDatabase = false;// Datenbank neu aufsetzen
+	public static boolean generateStimmen = false;// Stimmen CSV neu generieren
+	public static boolean loadStimmen = false;// Stimmen neu in Datenbank laden
+	public static boolean addConstraints = false;// Constraints hinzufÃ¼gen
 
 	/**
 	 * @param args
@@ -165,7 +165,7 @@ public class BWGenerator {
 														+ " AND wahlkreisnummer = "
 														+ wahlkreisnummer + ";"));
 
-								// Wahlberechtigte einfügen
+								// Wahlberechtigte einfï¿½gen
 								st.executeUpdate("INSERT INTO wahlberechtigte VALUES ("
 										+ jahrName
 										+ ","
@@ -369,28 +369,29 @@ public class BWGenerator {
 				}
 
 				// Stimmen aggregieren
-				System.out.println("\n Aggregate Stimmen");
+				if (true) {
+					System.out.println("\n Aggregate Stimmen");
 
-				try {
-					st.executeUpdate("DELETE FROM erststimmen;");
-					st.executeUpdate("DELETE FROM zweitstimmen;");
-					st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
-					st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+					try {
+						st.executeUpdate("DELETE FROM erststimmen;");
+						st.executeUpdate("DELETE FROM zweitstimmen;");
+						st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
+						st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
 
-				} catch (SQLException e) {
-					e.printStackTrace();
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+
+					printQueryResult(st, rs, "zweitstimmen");
+					printQueryResult(st, rs, "erststimmen");
+
+					System.out.println("\nFinished");
 				}
-
-				printQueryResult(st, rs, "zweitstimmen");
-				printQueryResult(st, rs, "erststimmen");
-
-				System.out.println("\nFinished");
-
-				// Parameter für Queries, über UI auszuwählen:
+				// Parameter fï¿½r Queries, ï¿½ber UI auszuwï¿½hlen:
 				String jahrName = "2005";
 				int wahlkreis = 1;
 
-				// Q4: Wahlkreissieger (Q3 benötigt View aus Q4)
+				// Q4: Wahlkreissieger (Q3 benï¿½tigt View aus Q4)
 				System.out.println("\n Q4: Wahlkreissieger");
 
 				try {
@@ -418,8 +419,8 @@ public class BWGenerator {
 
 				System.out.println("\nFinished");
 
-				// Q3: Wahlkreisübersicht
-				System.out.println("\n Q3: Wahlkreisübersicht");
+				// Q3: Wahlkreisï¿½bersicht
+				System.out.println("\n Q3: Wahlkreisï¿½bersicht");
 
 				try {
 					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS "
@@ -466,8 +467,8 @@ public class BWGenerator {
 
 				System.out.println("\nFinished");
 
-				// Q5: Überhangmandate
-				System.out.println("\n Q5: Überhangmandate");
+				// Q5: ï¿½berhangmandate
+				System.out.println("\n Q5: ï¿½berhangmandate");
 
 				System.out.println("\nFinished");
 
@@ -479,7 +480,7 @@ public class BWGenerator {
 							+ "SELECT s1.wahlkreis, s1.kandidatennummer, d.partei , "
 							+ "( SELECT min(s1.anzahl - s2.anzahl) FROM erststimmen s2 WHERE jahr = "
 							+ jahrName
-							+ " AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer) AS differenz"
+							+ " AND s1.anzahl - s2.anzahl > 0 AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer) AS differenz"
 							+ " FROM erststimmen s1 , direktkandidat d WHERE s1.jahr = "
 							+ jahrName
 							+ " AND d.jahr = "
@@ -524,7 +525,7 @@ public class BWGenerator {
 	}
 
 	/**
-	 * Gibt das erste Ergebnistupel der Abfrage zurück
+	 * Gibt das erste Ergebnistupel der Abfrage zurï¿½ck
 	 */
 	public static String getQueryResult(Statement st, ResultSet rs, String query)
 			throws SQLException {
