@@ -22,8 +22,8 @@ public class BWSetupDatabase {
 
 	public static String wahlbewerber05Pfad = "csv\\wahlbewerber2005.csv";
 	public static String wahlbewerber09Pfad = "csv\\wahlbewerber2009.csv";
-	public static String ergebnis05Pfad = "csv\\StruktBtwkr2005.csv";
-	public static String ergebnis09Pfad = "csv\\StruktBtwkr2009.csv";
+	public static String daten05Pfad = "csv\\StruktBtwkr2005.csv";
+	public static String daten09Pfad = "csv\\StruktBtwkr2009.csv";
 
 	// Anpassungen in den CSV Dateien:
 	// Alle UTF-8 Format
@@ -64,10 +64,10 @@ public class BWSetupDatabase {
 
 			CSVReader readerErgebnis[] = new CSVReader[2];
 			readerErgebnis[0] = new CSVReader(new BufferedReader(
-					new InputStreamReader(new FileInputStream(ergebnis05Pfad),
+					new InputStreamReader(new FileInputStream(daten05Pfad),
 							"UTF-8")), ';');
 			readerErgebnis[1] = new CSVReader(new BufferedReader(
-					new InputStreamReader(new FileInputStream(ergebnis09Pfad),
+					new InputStreamReader(new FileInputStream(daten09Pfad),
 							"UTF-8")), ';');
 
 			String[] readLineErgebnis;
