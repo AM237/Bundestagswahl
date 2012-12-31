@@ -19,7 +19,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.FileUpload;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PasswordTextBox;
@@ -51,7 +50,6 @@ public class TestBW implements EntryPoint {
   private DialogBox dialogBox = new DialogBox();
   private Button closeButton = new Button("Close");
   private VerticalPanel dialogVPanel = new VerticalPanel();
-  //private FileUpload fileUpload = new FileUpload();
   private PieChart piechart;
    
   // Services
@@ -70,23 +68,19 @@ public class TestBW implements EntryPoint {
 	  vpanel.add(projectName);
 	  vpanel.add(dbInputBox);
 	  vpanel.add(passwordBox);
-	  //vpanel.add(fileUpload);
 	  setupPanel.add(setupDBButton);
 	  setupPanel.add(analysisButton);
 	  vpanel.add(setupPanel);
 	  vpanel.add(resultLabel);
 	  RootPanel.get("setupDB").add(vpanel);
 	  projectName.setFocus(true);
-	  projectName.setTitle("Enter project name ... ");
-	  dbInputBox.setTitle("Enter DB name ...");
+	  projectName.setTitle("Enter Server name ... ");
+	  dbInputBox.setTitle("Enter database name ...");
 	  passwordBox.setTitle("Enter password ...");
-	  //fileUpload.setTitle("Directory for CSV input files");
 	  setupPanel.addStyleName("setupPanel");
 	  projectName.addStyleName("textBox");
 	  dbInputBox.addStyleName("textBox");
 	  passwordBox.addStyleName("textBox");
-	  //fileUpload.addStyleName("fileUpload");
-	  
 	  	  
 	  // Create the pop-up dialog box
 	  dialogBox.addStyleName("dialogBox");
@@ -97,6 +91,7 @@ public class TestBW implements EntryPoint {
 	  dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
 	  dialogVPanel.addStyleName("dialogVPanel");
 	  dialogBox.add(dialogVPanel);
+	  
 	  
 	  /////////////////////////////////////////////////////////////////////////
 	  // Handles
@@ -140,7 +135,6 @@ public class TestBW implements EntryPoint {
 	  // Load the visualization api, passing the onLoadCallback to be called
 	  // when loading is done.
 	  VisualizationUtils.loadVisualizationApi(onLoadCallback, CoreChart.PACKAGE);
-
   }
   
 
@@ -195,6 +189,7 @@ public class TestBW implements EntryPoint {
 	      }
 
 	      public void onSuccess(String s) {
+	    	  //System.out.println(s);
 	    	  resultLabel.setText(s);
 	          resultLabel.setVisible(true);
 	      }
@@ -205,7 +200,6 @@ public class TestBW implements EntryPoint {
 	 input[0] = projectName.getText();
 	 input[1] = dbInputBox.getText();
 	 input[2] = passwordBox.getText();
-	 //input[3] = FileUpload.Utils.basename(fileUpload.getFilename());
 	 
 	 for (int i = 0; i < input.length; i++)
 		 if (input[i].equals(""))
@@ -234,7 +228,8 @@ public class TestBW implements EntryPoint {
 	          resultLabel.setVisible(true);
 	      }
 
-	      public void onSuccess(ArrayList<String> s) {
+	      @SuppressWarnings("deprecation")
+		  public void onSuccess(ArrayList<String> s) {
 	    	  
 	    	  resultLabel.setText("Analysis complete.");
 	          resultLabel.setVisible(true);
@@ -249,7 +244,6 @@ public class TestBW implements EntryPoint {
 	          
 	    	  dialogVPanel.add(closeButton);
 	    	  closeButton.setFocus(true);
-	          
 	      }
 	 };
 	 
