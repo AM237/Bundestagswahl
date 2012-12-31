@@ -1,41 +1,39 @@
 package testbw.setup;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import au.com.bytecode.opencsv.CSVReader;
 
 public class BWSetupDatabase {
 
-	public static String wahlbewerber05Pfad = "csv\\wahlbewerber2005.csv";
-	public static String wahlbewerber09Pfad = "csv\\wahlbewerber2009.csv";
-	public static String ergebnis05Pfad = "csv\\StruktBtwkr2005.csv";
-	public static String ergebnis09Pfad = "csv\\StruktBtwkr2009.csv";
-
+	// CSV Dateien
 	// Anpassungen in den CSV Dateien:
 	// Alle UTF-8 Format
 	// wahlergebniss2009.csv: VIOLETTEN zu DIE VIOLETTEN wie in kerg umbenannt
 	// Volksabst. zu Volksabstimmung wie in kerg umbenannt
 	// Tierschutzpartei -"-
+	private static String wahlbewerber05Pfad = "..\\csv\\wahlbewerber2005.csv";
+	private static String wahlbewerber09Pfad = "..\\csv\\wahlbewerber2009.csv";
+	private static String ergebnis05Pfad = "..\\csv\\StruktBtwkr2005.csv";
+	private static String ergebnis09Pfad = "..\\csv\\StruktBtwkr2009.csv";
+	
+	/**
+	 * Legt Tabellen, Trigger, und weitere statische Daten an.
+	 */
+	public String setupDatabase(String[] properties){
 
-	public static void main(String[] args) {
-		System.out.println("Setup Database started");
-
+		// Setup Bundeslaender
 		SortedMap<String, String> bundeslaenderAbkuerzung = new TreeMap<String, String>();
-		// Bundesländer Nummerierung
 		bundeslaenderAbkuerzung.put("Baden-Württemberg", "BW");
 		bundeslaenderAbkuerzung.put("Bayern", "BY");
 		bundeslaenderAbkuerzung.put("Berlin", "BE");
@@ -53,8 +51,11 @@ public class BWSetupDatabase {
 		bundeslaenderAbkuerzung.put("Schleswig-Holstein", "SH");
 		bundeslaenderAbkuerzung.put("Thüringen", "TH");
 
+		// Verbindung zu CSV Daten aufbauen
+		CSVReader readerWahlbewerber[] = new CSVReader[2];
+		CSVReader readerErgebnis[] = new CSVReader[2];
 		try {
-			CSVReader readerWahlbewerber[] = new CSVReader[2];
+
 			readerWahlbewerber[0] = new CSVReader(new BufferedReader(
 					new InputStreamReader(new FileInputStream(
 							wahlbewerber05Pfad), "UTF-8")), ';');
@@ -62,7 +63,6 @@ public class BWSetupDatabase {
 					new InputStreamReader(new FileInputStream(
 							wahlbewerber09Pfad), "UTF-8")), ';');
 
-			CSVReader readerErgebnis[] = new CSVReader[2];
 			readerErgebnis[0] = new CSVReader(new BufferedReader(
 					new InputStreamReader(new FileInputStream(ergebnis05Pfad),
 							"UTF-8")), ';');
@@ -70,351 +70,411 @@ public class BWSetupDatabase {
 					new InputStreamReader(new FileInputStream(ergebnis09Pfad),
 							"UTF-8")), ';');
 
-			String[] readLineErgebnis;
-			String[] readLineWahlbewerber;
-
-			try {
-				Class.forName("org.postgresql.Driver");
-
-				// Datenbankverbindung aufbauen
-				String url = "jdbc:postgresql://localhost/Bundestagswahl?user=user&password=1234";
-				Connection conn;
-				Statement st;
-				ResultSet rs = null;
-				try {
-					conn = DriverManager.getConnection(url);
-					st = conn.createStatement();
-
-					// // Database löschen
-					// try {
-					// st.executeUpdate("DROP DATABASE \"Bundestagswahl\";");
-					// } catch (SQLException e) {
-					// e.printStackTrace();
-					// }
-					// st.executeUpdate("CREATE DATABASE \"Bundestagswahl\" WITH OWNER = user ENCODING 'UNICODE' TABLESPACE = pg_default;");
-
-					// Tabellen löschen, Reihenfolge relevant---------
-					try {
-						st.executeUpdate("DROP TABLE erststimme CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE zweitstimme CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE listenkandidat CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE direktkandidat CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE wahlberechtigte CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE wahlkreis CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE politiker CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE partei CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE bundesland CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					try {
-						st.executeUpdate("DROP TABLE stimmenpropartei CASCADE;");
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					// Tabellen anlegen, Reihenfolge relevant-------------
-
-					st.executeUpdate("CREATE TABLE bundesland(bundeslandnummer integer , name text NOT NULL, abkuerzung text, PRIMARY KEY (bundeslandnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE partei( parteinummer integer, name text , PRIMARY KEY (parteinummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE politiker( politikernummer integer, name text , PRIMARY KEY (politikernummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE wahlkreis( jahr integer, wahlkreisnummer integer, name text, bundesland integer , PRIMARY KEY (jahr,wahlkreisnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE wahlberechtigte(jahr integer, wahlkreis integer UNIQUE,wahlberechtigte integer , PRIMARY KEY (jahr,wahlkreis))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE direktkandidat(jahr integer,kandidatennummer integer UNIQUE, politiker integer, partei int, wahlkreis integer, PRIMARY KEY (jahr,kandidatennummer)) WITH ( OIDS=FALSE );");
-					st.executeUpdate("CREATE TABLE listenkandidat(jahr integer, partei integer, bundesland int, listenplatz integer, politiker integer, PRIMARY KEY (jahr,partei,bundesland,listenplatz)) WITH ( OIDS=FALSE );");
-					st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer UNIQUE, kandidatennummer integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer UNIQUE, partei integer, bundesland integer, PRIMARY KEY (Jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE erststimmen( jahr integer, kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,kandidatennummer))WITH (OIDS=FALSE);");
-					st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer, partei integer UNIQUE, anzahl integer, PRIMARY KEY (Jahr,partei))WITH (OIDS=FALSE);");
-
-					// Tabellen füllen-----------------------------------------
-
-					int bundeslandnummer;
-
-					// Tabelle Bundesländer füllen----------------------------
-
-					bundeslandnummer = 1;
-					for (Map.Entry<String, String> entry : bundeslaenderAbkuerzung
-							.entrySet()) {
-						st.executeUpdate("INSERT INTO bundesland VALUES ("
-								+ bundeslandnummer + ",'"
-								+ (String) entry.getKey() + "','"
-								+ (String) entry.getValue() + "');");
-						bundeslandnummer++;
-					}
-
-					// Wahlkreise anlegen---------------------------------
-
-					// Anfangszeilen überspringen
-					// Statische Daten und Ergebnisse eintragen---
-
-					HashSet<Partei> parteien = new HashSet<Partei>();
-					HashSet<Politiker> politiker = new HashSet<Politiker>();
-					HashSet<Direktkandidat> direktkandidaten = new HashSet<Direktkandidat>();
-					HashSet<Listenkandidat> listenkandidaten = new HashSet<Listenkandidat>();
-
-					int kandidatennummer = 1;
-
-					for (int jahr = 0; jahr < 2; jahr++) {
-						String jahrName = Integer.toString(2005 + jahr * 4);
-
-						while ((readLineErgebnis = readerErgebnis[jahr]
-								.readNext()) != null) {
-							// In Datei stehen Wahlkreise vor Bundeslandnamen
-							// Deswegen zwischenspeichern der Wahlkreise
-							if (!readLineErgebnis[0].trim().equals("")
-									&& !readLineErgebnis[1].trim().equals("0")
-									&& !readLineErgebnis[1].trim().equals("")
-									&& !readLineErgebnis[2].trim().equals("")
-									&& !(Integer.parseInt(readLineErgebnis[1]) > 900)) {
-
-								String bundesland = readLineErgebnis[0];
-								bundeslandnummer = Integer
-										.parseInt(getQueryResult(st, rs,
-												"SELECT bundeslandnummer FROM bundesland WHERE name = '"
-														+ bundesland
-														+ "' OR abkuerzung = '"
-														+ bundesland + "' ;"));
-
-								// Neuen Wahlkreis hinzufügen
-								int wahlkreisnummer = Integer
-										.parseInt(readLineErgebnis[1]);
-								String wahlkreisname = readLineErgebnis[2];
-								st.executeUpdate("INSERT INTO wahlkreis VALUES ("
-										+ jahrName
-										+ ","
-										+ wahlkreisnummer
-										+ ",'"
-										+ wahlkreisname
-										+ "',"
-										+ bundeslandnummer + ");");
-
-							}
-
-						}
-						readerErgebnis[jahr].close();
-
-						// Anfangszeilen überspringen
-
-						int skipLinesWahlbewerber = 1; // Anzahl Zeilen
-						for (int j = 1; j <= skipLinesWahlbewerber; j++) {
-							readerWahlbewerber[jahr].readNext();
-						}
-
-						while ((readLineWahlbewerber = readerWahlbewerber[jahr]
-								.readNext()) != null) {
-							if (readLineWahlbewerber.length >= 1) {
-
-								int parteinummer = 0;
-								int politikernummer = 0;
-								String parteiname = "";
-								String wahlkreisnummer = "";
-								String bundesland = "";
-								String listenplatz = "";
-								String politikername = "";
-								String politikervorname = "";
-
-								switch (jahr) {
-								case 0:
-									parteiname = readLineWahlbewerber[7].trim();
-									wahlkreisnummer = readLineWahlbewerber[8]
-											.trim();
-									bundesland = readLineWahlbewerber[9].trim();
-									listenplatz = readLineWahlbewerber[10]
-											.trim();
-									politikername = readLineWahlbewerber[0];
-									String[] temp;
-									temp = politikername.split(",");
-									politikername = temp[0];
-									politikervorname = temp[1];
-									break;
-								case 1:
-									parteiname = readLineWahlbewerber[3].trim();
-									wahlkreisnummer = readLineWahlbewerber[4]
-											.trim();
-									bundesland = readLineWahlbewerber[5].trim();
-									listenplatz = readLineWahlbewerber[6]
-											.trim();
-									politikername = readLineWahlbewerber[0];
-									politikervorname = readLineWahlbewerber[1];
-									break;
-								}
-
-								// Politiker hinzufügen
-								if (!politikername.equals("")) {
-									boolean exists = false;
-									for (Politiker actPolitiker : politiker) {
-										if (actPolitiker.name
-												.equals(parteiname)) {
-											politikernummer = actPolitiker.politikernummer;
-											exists = true;
-											break;
-										}
-									}
-									if (!exists) {
-										politikernummer = politiker.size() + 1;
-										politiker.add(new Politiker(
-												politikernummer, politikername,
-												politikervorname));
-									}
-								}
-
-								// Parteien hinzufügen
-								if (!parteiname.equals("")) {
-									boolean exists = false;
-									for (Partei actPartei : parteien) {
-										if (actPartei.name.equals(parteiname)) {
-											parteinummer = actPartei.parteinummer;
-											exists = true;
-											break;
-										}
-									}
-									if (!exists) {
-										parteinummer = parteien.size() + 1;
-										Partei partei = new Partei(
-												parteinummer, parteiname);
-										parteien.add(partei);
-									}
-								}
-
-								// Direktkandidaten hinzufügen
-								if (!wahlkreisnummer.equals("")) {
-									direktkandidaten.add(new Direktkandidat(
-											2005 + jahr * 4, kandidatennummer,
-											parteinummer, politikernummer,
-											Integer.parseInt(wahlkreisnummer)));
-									kandidatennummer++;
-								}
-								// Listenkandidaten hinzufügen
-								if (!bundesland.equals("")) {
-									bundeslandnummer = Integer
-											.parseInt(getQueryResult(
-													st,
-													rs,
-													"SELECT bundeslandnummer FROM bundesland WHERE name = '"
-															+ bundesland
-															+ "' OR abkuerzung = '"
-															+ bundesland
-															+ "' ;"));
-
-									listenkandidaten.add(new Listenkandidat(
-											2005 + jahr * 4, parteinummer,
-											bundeslandnummer, Integer
-											.parseInt(listenplatz),
-											politikernummer));
-								}
-							}
-						}
-						// Ungültige und übrige Parteien auflösen
-					}
-
-					int parteinummer = parteien.size() + 1;
-					int politikernummer = politiker.size() + 1;
-					parteien.add(new Partei(0, "Ungültige"));
-					parteien.add(new Partei(parteinummer, "Übrige"));
-					politiker.add(new Politiker(politikernummer, "Politiker",
-							"Übriger "));
-
-					// Daten in Tabellen schreiben
-
-					Iterator<Politiker> itrPolitiker = politiker.iterator();
-					while (itrPolitiker.hasNext()) {
-						st.executeUpdate("INSERT INTO politiker VALUES ("
-								+ itrPolitiker.next() + ");");
-					}
-
-					Iterator<Partei> itrPartei = parteien.iterator();
-					while (itrPartei.hasNext()) {
-						st.executeUpdate("INSERT INTO partei VALUES ("
-								+ itrPartei.next() + ");");
-					}
-
-					Iterator<Direktkandidat> itrDirektkandidat = direktkandidaten
-							.iterator();
-					while (itrDirektkandidat.hasNext()) {
-						st.executeUpdate("INSERT INTO direktkandidat VALUES ("
-								+ itrDirektkandidat.next() + ");");
-					}
-
-					Iterator<Listenkandidat> itrListenkandidat = listenkandidaten
-							.iterator();
-					while (itrListenkandidat.hasNext()) {
-						st.executeUpdate("INSERT INTO listenkandidat VALUES ("
-								+ itrListenkandidat.next() + ");");
-					}
-
-					for (int jahr = 0; jahr < 2; jahr++) {
-						String jahrName = Integer.toString(2005 + jahr * 4);
-						// Direktkandidaten der Übrigen Parteien generieren
-						int anzahlWahlkreise = Integer.parseInt(getQueryResult(
-								st, rs,
-								"SELECT count(*) FROM wahlkreis WHERE jahr = "
-										+ jahrName + ";"));
-						for (int j = 0; j < anzahlWahlkreise; j++) {
-							st.executeUpdate("INSERT INTO direktkandidat VALUES ("
-									+ jahrName
-									+ ","
-									+ kandidatennummer
-									+ ","
-									+ politikernummer
-									+ ","
-									+ parteinummer
-									+ "," + (j + 1) + ");");
-							kandidatennummer++;
-						}
-					}
-
-					st.close();
-					conn.close();
-
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Setup unsuccessful, input files not found.";
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Setup unsuccessful, error opening input files.";
 		}
 
-		System.out.println("Setup Database finished");
+		String[] readLineErgebnis;
+		String[] readLineWahlbewerber;
+
+		// Datenbank Verbindungsdaten
+		String postgresqlurl = "jdbc:postgresql://localhost/" +
+				properties[0] + "?user="+properties[1]+"&password="+properties[2];
+		Connection conn;
+		Statement st;
+		ResultSet rs = null;
+
+		
+		try { // Datenbankverbindung aufbauen
+
+			Class.forName("org.postgresql.Driver");
+			conn = DriverManager.getConnection(postgresqlurl);
+			st = conn.createStatement();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return "Setup unsuccessful. Problem setting up connection to database.";
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
+		}
+
+		try { // Tabellen, Trigger + statische Daten anlegen
+
+			// Tabellen loeschen, Reihenfolge relevant-------------------------
+			st.executeUpdate("DROP TABLE IF EXISTS erststimmen CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS zweitstimmen CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS erststimme CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS zweitstimme CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS listenkandidat CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS direktkandidat CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS wahlberechtigte CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS wahlkreis CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS politiker CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS partei CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS bundesland CASCADE;");
+
+			// Tabellen anlegen, Reihenfolge relevant--------------------------
+			st.executeUpdate("CREATE TABLE bundesland(bundeslandnummer integer , name text NOT NULL, abkuerzung text,  PRIMARY KEY (bundeslandnummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE partei( parteinummer integer,  name text , PRIMARY KEY (parteinummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE politiker(  politikernummer integer, name text , PRIMARY KEY (politikernummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE wahlkreis( jahr integer, wahlkreisnummer integer, name text,  bundesland integer , PRIMARY KEY (jahr,wahlkreisnummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE wahlberechtigte(jahr integer, wahlkreis integer UNIQUE,wahlberechtigte integer , PRIMARY KEY (jahr,wahlkreis))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE direktkandidat(jahr integer,kandidatennummer integer UNIQUE, politiker integer, partei int, wahlkreis integer, PRIMARY KEY (jahr,kandidatennummer)) WITH ( OIDS=FALSE );");
+			st.executeUpdate("CREATE TABLE listenkandidat(jahr integer, partei integer, bundesland int, listenplatz integer, politiker integer, PRIMARY KEY (jahr,partei,bundesland,listenplatz)) WITH ( OIDS=FALSE );");
+			st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer, kandidatennummer integer, wahlkreis integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer, partei integer, wahlkreis integer, bundesland integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis integer, kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,kandidatennummer))WITH (OIDS=FALSE);");
+			st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer, wahlkreis integer, partei integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,partei))WITH (OIDS=FALSE);");
+
+			// Tabelle Bundeslaender fuellen-----------------------------------
+			int bundeslandnummer;
+			bundeslandnummer = 1;
+			for (Map.Entry<String, String> entry : bundeslaenderAbkuerzung
+					.entrySet()) {
+				st.executeUpdate("INSERT INTO bundesland VALUES ("
+						+ bundeslandnummer + ",'"
+						+ (String) entry.getKey() + "','"
+						+ (String) entry.getValue() + "');");
+				bundeslandnummer++;
+			}
+
+			// Wahlkreise anlegen----------------------------------------------
+			// Anfangszeilen Ueberspringen
+			// Statische Daten und Ergebnisse eintragen
+			HashSet<Partei> parteien = new HashSet<Partei>();
+			HashSet<Politiker> politiker = new HashSet<Politiker>();
+			HashSet<Direktkandidat> direktkandidaten = new HashSet<Direktkandidat>();
+			HashSet<Listenkandidat> listenkandidaten = new HashSet<Listenkandidat>();
+
+			int kandidatennummer = 1;
+
+			for (int jahr = 0; jahr < 2; jahr++) {
+				String jahrName = Integer.toString(2005 + jahr * 4);
+
+				// Read Ergebnis ----------------------------------------------
+				while ((readLineErgebnis = readerErgebnis[jahr]
+						.readNext()) != null) {
+					// In Datei stehen Wahlkreise vor Bundeslandnamen
+					// Deswegen zwischenspeichern der Wahlkreise
+					if (!readLineErgebnis[0].trim().equals("")
+							&& !readLineErgebnis[1].trim().equals("0")
+							&& !readLineErgebnis[1].trim().equals("")
+							&& !readLineErgebnis[2].trim().equals("")
+							&& !(Integer.parseInt(readLineErgebnis[1]) > 900)) {
+
+						String bundesland = readLineErgebnis[0];
+						bundeslandnummer = Integer.parseInt(getQueryResult(st, rs,
+								"SELECT bundeslandnummer FROM bundesland WHERE name = '"
+										+ bundesland
+										+ "' OR abkuerzung = '"
+										+ bundesland + "' ;"));
+
+						// Neuen Wahlkreis hinzufuegen
+						int wahlkreisnummer = Integer
+								.parseInt(readLineErgebnis[1]);
+						String wahlkreisname = readLineErgebnis[2];
+						st.executeUpdate("INSERT INTO wahlkreis VALUES ("
+								+ jahrName
+								+ ","
+								+ wahlkreisnummer
+								+ ",'"
+								+ wahlkreisname
+								+ "',"
+								+ bundeslandnummer + ");");
+					}
+				}
+				readerErgebnis[jahr].close();
+
+				// Anfangszeilen ueberspringen
+				int skipLinesWahlbewerber = 1; // Anzahl Zeilen
+				for (int j = 1; j <= skipLinesWahlbewerber; j++) {
+					readerWahlbewerber[jahr].readNext();
+				}
+
+				// Read Wahlbewerber-------------------------------------------
+				while ((readLineWahlbewerber = readerWahlbewerber[jahr]
+						.readNext()) != null) {
+					if (readLineWahlbewerber.length >= 1) {
+
+						int parteinummer = 0;
+						int politikernummer = 0;
+						String parteiname = "";
+						String wahlkreisnummer = "";
+						String bundesland = "";
+						String listenplatz = "";
+						String politikername = "";
+						String politikervorname = "";
+
+						switch (jahr) {
+						case 0:
+							parteiname = readLineWahlbewerber[7].trim();
+							wahlkreisnummer = readLineWahlbewerber[8].trim();
+							bundesland = readLineWahlbewerber[9].trim();
+							listenplatz = readLineWahlbewerber[10].trim();
+							politikername = readLineWahlbewerber[0];
+							String[] temp;
+							temp = politikername.split(",");
+							politikername = temp[0];
+							politikervorname = temp[1];
+							break;
+						case 1:
+							parteiname = readLineWahlbewerber[3].trim();
+							wahlkreisnummer = readLineWahlbewerber[4].trim();
+							bundesland = readLineWahlbewerber[5].trim();
+							listenplatz = readLineWahlbewerber[6].trim();
+							politikername = readLineWahlbewerber[0];
+							politikervorname = readLineWahlbewerber[1];
+							break;
+						}
+
+						// Politiker hinzufuegen
+						if (!politikername.equals("")) {
+							boolean exists = false;
+							for (Politiker actPolitiker : politiker) {
+								if (actPolitiker.name.equals(parteiname)) {
+									politikernummer = actPolitiker.politikernummer;
+									exists = true;
+									break;
+								}
+							}
+							if (!exists) {
+								politikernummer = politiker.size() + 1;
+								politiker.add(new Politiker(politikernummer, 
+										politikername, politikervorname));
+							}
+						}
+
+						// Parteien hinzufuegen
+						if (!parteiname.equals("")) {
+							boolean exists = false;
+							for (Partei actPartei : parteien) {
+								if (actPartei.name.equals(parteiname)) {
+									parteinummer = actPartei.parteinummer;
+									exists = true;
+									break;
+								}
+							}
+							if (!exists) {
+								parteinummer = parteien.size() + 1;
+								Partei partei = new Partei(
+										parteinummer, parteiname);
+								parteien.add(partei);
+							}
+						}
+
+						// Direktkandidaten hinzufuegen
+						if (!wahlkreisnummer.equals("")) {
+							direktkandidaten.add(new Direktkandidat(
+									2005 + jahr * 4, kandidatennummer,
+									parteinummer, politikernummer,
+									Integer.parseInt(wahlkreisnummer)));
+							kandidatennummer++;
+						}
+
+						// Listenkandidaten hinzufuegen
+						if (!bundesland.equals("")) {
+							bundeslandnummer = Integer.parseInt(getQueryResult(st, rs,
+									"SELECT bundeslandnummer FROM bundesland WHERE name = '"
+											+ bundesland
+											+ "' OR abkuerzung = '"
+											+ bundesland
+											+ "' ;"));
+
+							listenkandidaten.add(new Listenkandidat(
+									2005 + jahr * 4, parteinummer,
+									bundeslandnummer, Integer.parseInt(listenplatz),
+									politikernummer));
+						}
+					}
+				} // end read Wahlbewerber
+
+			} // end for each jahr
+
+			// Ungültige und übrige Parteien auflösen -------------------------
+			int parteinummer = parteien.size() + 1;
+			int politikernummer = politiker.size() + 1;
+			parteien.add(new Partei(0, "Ungültige"));
+			parteien.add(new Partei(parteinummer, "Übrige"));
+			politiker.add(new Politiker(politikernummer, "Politiker", "Übriger"));
+
+			// Daten in Tabellen schreiben ------------------------------------
+			Iterator<Politiker> itrPolitiker = politiker.iterator();
+			while (itrPolitiker.hasNext()) {
+				st.executeUpdate("INSERT INTO politiker VALUES ("
+						+ itrPolitiker.next() + ");");
+			}
+
+			Iterator<Partei> itrPartei = parteien.iterator();
+			while (itrPartei.hasNext()) {
+				st.executeUpdate("INSERT INTO partei VALUES ("
+						+ itrPartei.next() + ");");
+			}
+
+			Iterator<Direktkandidat> itrDirektkandidat = direktkandidaten
+					.iterator();
+			while (itrDirektkandidat.hasNext()) {
+				st.executeUpdate("INSERT INTO direktkandidat VALUES ("
+						+ itrDirektkandidat.next() + ");");
+			}
+
+			Iterator<Listenkandidat> itrListenkandidat = listenkandidaten
+					.iterator();
+			while (itrListenkandidat.hasNext()) {
+				st.executeUpdate("INSERT INTO listenkandidat VALUES ("
+						+ itrListenkandidat.next() + ");");
+			}
+
+			for (int jahr = 0; jahr < 2; jahr++) {
+				String jahrName = Integer.toString(2005 + jahr * 4);
+				// Direktkandidaten der Übrigen Parteien generieren
+				int anzahlWahlkreise = Integer.parseInt(getQueryResult(
+						st, rs,
+						"SELECT count(*) FROM wahlkreis WHERE jahr = "
+								+ jahrName + ";"));
+				for (int j = 0; j < anzahlWahlkreise; j++) {
+					st.executeUpdate("INSERT INTO direktkandidat VALUES ("
+							+ jahrName
+							+ ","
+							+ kandidatennummer
+							+ ","
+							+ politikernummer
+							+ ","
+							+ parteinummer
+							+ "," + (j + 1) + ");");
+					kandidatennummer++;
+				}
+			}
+
+
+			// --------------------------------------------------------------------
+			// --------------------------------------------------------------------
+
+
+			//-- SitzeProJahr
+			//-- Typ: vordefiniert
+			//-- Verweist auf: -
+			st.executeUpdate("DROP TABLE IF EXISTS sitzeprojahr CASCADE;");
+			st.executeUpdate("CREATE TABLE sitzeprojahr ( jahr INTEGER PRIMARY KEY, sitze INTEGER NOT NULL);");
+			st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2013', '700');");
+			st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2005', '598');");
+			st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2008', '598');");
+
+			//-- Divisoren
+			//-- Typ: vordefiniert
+			//-- Verweist auf: -
+			st.executeUpdate("DROP TABLE IF EXISTS divisoren CASCADE;");
+			st.executeUpdate("CREATE TABLE divisoren ( div INTEGER PRIMARY KEY);");
+
+
+			//-- ItrErgebnisse
+			//-- Typ: vordefiniert
+			//-- Verweist auf: -
+			st.executeUpdate("DROP TABLE IF EXISTS itrergebnisse CASCADE;");
+			st.executeUpdate("CREATE TABLE itrergebnisse ( partei CHARACTER VARYING NOT NULL, anzahl NUMERIC NOT NULL, PRIMARY KEY(partei, anzahl));");
+
+
+			//-- StimmenProPartei [Mock]
+			//-- Typ: wird berechnet (mehrmals) -> Initialisiere mit 0
+			//-- Verweist auf: -
+			st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
+			st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
+			st.executeUpdate("CREATE TABLE stimmenpropartei ( partei CHARACTER VARYING PRIMARY KEY, anzahl INTEGER);");
+			//st.executeUpdate("INSERT INTO stimmenpropartei VALUES ('X', '5200'), ('Y', '1700'), ('Z', '3100');");
+
+
+			//-- Trigger Divisoren -> ItrErgebnisse
+			//-- Typ: vordefiniert
+			//-- Verweist auf: stimmenpropartei
+			st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
+			st.executeUpdate("DROP FUNCTION IF EXISTS berechneitr() CASCADE;");
+			st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " +
+					"BEGIN " +
+					"  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " +
+					"  RETURN NEW; " +
+					"END; " + 
+					"$$ LANGUAGE plpgsql;");
+
+			st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse " +
+					"AFTER INSERT ON divisoren " +
+					"FOR EACH ROW " + 
+					"EXECUTE PROCEDURE berechneitr();");
+
+
+			//-- Load: Divisoren
+			//-- Typ: Vorberechnung
+			//-- Verweist auf: divisoren
+			st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
+
+			/*
+					//-- Erststimmen [Mock]
+					//-- Typ: wird berechnet (periodisch aus grosser 'Erststimme' Relation) -> Initialisiere mit 0
+					//-- Verweist auf: -
+					st.executeUpdate("DROP TABLE IF EXISTS erststimmen CASCADE;");
+					st.executeUpdate("CREATE TABLE erststimmen ( jahr INTEGER, kandnum INTEGER, wahlkreis INTEGER, " + 
+										"quantitaet INTEGER, CONSTRAINT erststimmen_pkey PRIMARY KEY (jahr, kandnum, wahlkreis));");
+
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '1', '11', '5');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '2', '11', '3');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '3', '11', '8');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '4', '12', '1');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '5', '12', '20');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '6', '12', '3');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '7', '13', '12');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '8', '13', '5');");
+					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '9', '13', '4');");
+
+
+					//-- Direktkandidaten [Mock]
+					//-- Typ: vordefiniert
+					//-- Verweist auf: -
+					st.executeUpdate("DROP TABLE IF EXISTS direktkandidaten CASCADE;");
+					st.executeUpdate("CREATE TABLE direktkandidaten( jahr INTEGER, kandnum INTEGER, polnr INTEGER, partei INTEGER, wahlkreis INTEGER, " + 
+									 "CONSTRAINT direktkandidaten_pkey PRIMARY KEY (jahr, kandnum));");
+
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '1', '1', '21', '11');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '2', '2', '22', '11');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '3', '3', '23', '11');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '4', '4', '21', '12');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '5', '5', '22', '12');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '6', '6', '23', '12');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '7', '7', '21', '13');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '8', '8', '22', '13');");
+					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '9', '9', '23', '13');");
+
+
+					//-- Parteien [Mock]
+					//-- Typ: vordefiniert
+					//-- Verweist auf: -
+					st.executeUpdate("DROP TABLE IF EXISTS parteien CASCADE;");
+					st.executeUpdate("CREATE TABLE parteien ( parteinum INTEGER PRIMARY KEY, name CHARACTER VARYING NOT NULL);");
+					st.executeUpdate("INSERT INTO parteien VALUES ('21', 'X'), ('22', 'Y'), ('23', 'Z');");
+			 */
+
+			st.close();
+			conn.close();
+
+			return "Setup successful.";
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			if (e.getMessage().contains("violates unique constraint \"pg_type_typname_nsp_index\""))
+				return "Index constraint violation encountered, please wait ...";
+			else return "Problem with SQL setup queries";
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Setup unsuccessful. Error reading input files.";
+		}
 	}
 
+
+	/**
+	 * Gibt den ResultSet fuer eine Query und einen Statement zurueck.
+	 */
 	public static String getQueryResult(Statement st, ResultSet rs, String query)
 			throws SQLException {
 		String returnString = "";
