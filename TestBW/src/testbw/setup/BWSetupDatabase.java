@@ -13,26 +13,23 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import au.com.bytecode.opencsv.CSVReader;
+import testbw.util.DBManager;
+import testbw.util.InputDirectory;
 
 public class BWSetupDatabase {
 
-	// CSV Dateien
-	// Anpassungen in den CSV Dateien:
-	// Alle UTF-8 Format
-	// wahlergebniss2009.csv: VIOLETTEN zu DIE VIOLETTEN wie in kerg umbenannt
-	// Volksabst. zu Volksabstimmung wie in kerg umbenannt
-	// Tierschutzpartei -"-
-	private static String wahlbewerber05Pfad = "..\\csv\\wahlbewerber2005.csv";
-	private static String wahlbewerber09Pfad = "..\\csv\\wahlbewerber2009.csv";
-	private static String ergebnis05Pfad = "..\\csv\\StruktBtwkr2005.csv";
-	private static String ergebnis09Pfad = "..\\csv\\StruktBtwkr2009.csv";
+	// Input CSV Dateien ------------------------------------------------------
+	private static String wahlbewerber05Pfad = InputDirectory.wahlbewerber05Pfad;
+	private static String wahlbewerber09Pfad = InputDirectory.wahlbewerber09Pfad;
+	private static String daten05Pfad = InputDirectory.daten05Pfad;
+	private static String daten09Pfad = InputDirectory.daten09Pfad;
 	
 	/**
 	 * Legt Tabellen, Trigger, und weitere statische Daten an.
 	 */
 	public String setupDatabase(String[] properties){
 
-		// Setup Bundeslaender
+		// Setup Bundeslaender ------------------------------------------------
 		SortedMap<String, String> bundeslaenderAbkuerzung = new TreeMap<String, String>();
 		bundeslaenderAbkuerzung.put("Baden-Württemberg", "BW");
 		bundeslaenderAbkuerzung.put("Bayern", "BY");
@@ -51,7 +48,7 @@ public class BWSetupDatabase {
 		bundeslaenderAbkuerzung.put("Schleswig-Holstein", "SH");
 		bundeslaenderAbkuerzung.put("Thüringen", "TH");
 
-		// Verbindung zu CSV Daten aufbauen
+		// Verbindung zu CSV Daten aufbauen -----------------------------------
 		CSVReader readerWahlbewerber[] = new CSVReader[2];
 		CSVReader readerErgebnis[] = new CSVReader[2];
 		try {
@@ -64,10 +61,10 @@ public class BWSetupDatabase {
 							wahlbewerber09Pfad), "UTF-8")), ';');
 
 			readerErgebnis[0] = new CSVReader(new BufferedReader(
-					new InputStreamReader(new FileInputStream(ergebnis05Pfad),
+					new InputStreamReader(new FileInputStream(daten05Pfad),
 							"UTF-8")), ';');
 			readerErgebnis[1] = new CSVReader(new BufferedReader(
-					new InputStreamReader(new FileInputStream(ergebnis09Pfad),
+					new InputStreamReader(new FileInputStream(daten09Pfad),
 							"UTF-8")), ';');
 
 		} catch (FileNotFoundException e) {
@@ -81,20 +78,10 @@ public class BWSetupDatabase {
 		String[] readLineErgebnis;
 		String[] readLineWahlbewerber;
 
-		// Datenbank Verbindungsdaten
-		String postgresqlurl = "jdbc:postgresql://localhost/" +
-				properties[0] + "?user="+properties[1]+"&password="+properties[2];
-		Connection conn;
-		Statement st;
-		ResultSet rs = null;
-
-		
-		try { // Datenbankverbindung aufbauen
-
-			Class.forName("org.postgresql.Driver");
-			conn = DriverManager.getConnection(postgresqlurl);
-			st = conn.createStatement();
-
+		// Datenbankverbindung ------------------------------------------------
+		DBManager connector = new DBManager(properties);
+		try {
+			connector.connect();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Setup unsuccessful. Problem setting up connection to database.";
@@ -102,6 +89,10 @@ public class BWSetupDatabase {
 			e.printStackTrace();
 			return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
 		}
+		Connection conn = connector.getConnection();
+		Statement st = connector.getStatement();
+		ResultSet rs = null;
+		
 
 		try { // Tabellen, Trigger + statische Daten anlegen
 

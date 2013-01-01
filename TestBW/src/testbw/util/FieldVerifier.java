@@ -1,4 +1,4 @@
-package testbw.shared;
+package testbw.util;
 
 /**
  * <p>
