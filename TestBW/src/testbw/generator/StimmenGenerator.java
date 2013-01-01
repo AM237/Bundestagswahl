@@ -70,9 +70,9 @@ public class StimmenGenerator {
 		}
 
 		// Datenbank Verbindungsdaten -----------------------------------------
-		DBManager connector = new DBManager(properties);
+		DBManager manager = new DBManager(properties);
 		try {
-			connector.connect();
+			manager.connect();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Setup unsuccessful. Problem setting up connection to database.";
@@ -80,8 +80,8 @@ public class StimmenGenerator {
 			e.printStackTrace();
 			return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
 		}
-		Connection conn = connector.getConnection();
-		Statement st = connector.getStatement();
+		Connection conn = manager.getConnection();
+		Statement st = manager.getStatement();
 		ResultSet rs = null;
 
 
@@ -134,7 +134,7 @@ public class StimmenGenerator {
 
 						System.out.println(wahlberechtigte);
 
-						int aktelleBundeslandnummer = Integer.parseInt(connector.getQueryResult(
+						int aktelleBundeslandnummer = Integer.parseInt(manager.getQueryResult(
 										//st,
 										rs,
 										"SELECT bundesland FROM wahlkreis WHERE jahr = "
@@ -164,7 +164,7 @@ public class StimmenGenerator {
 							if (!readLineErgebnis[i + 2].equals(""))
 								zweitstimmenAnzahl = Integer.parseInt(readLineErgebnis[i + 2]);
 
-							aktuelleParteinummer = Integer.parseInt(connector.getQueryResult(
+							aktuelleParteinummer = Integer.parseInt(manager.getQueryResult(
 											//st, 
 											rs,
 											"SELECT parteinummer FROM partei WHERE name = '"
@@ -186,7 +186,7 @@ public class StimmenGenerator {
 							}
 
 							if (erststimmenAnzahl > 0) {
-								aktuelleKandidatennummer = Integer.parseInt(connector.getQueryResult(
+								aktuelleKandidatennummer = Integer.parseInt(manager.getQueryResult(
 												//st,
 												rs,
 												"SELECT kandidatennummer FROM direktkandidat WHERE jahr = "
@@ -218,6 +218,10 @@ public class StimmenGenerator {
 
 				System.out.println("\nGenerating finished.");
 			}
+			
+		st.close();
+		conn.close();
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Data generation unsuccessful, problem with SQL queries.";

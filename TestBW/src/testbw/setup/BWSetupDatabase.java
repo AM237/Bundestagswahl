@@ -79,9 +79,9 @@ public class BWSetupDatabase {
 		String[] readLineWahlbewerber;
 
 		// Datenbankverbindung ------------------------------------------------
-		DBManager connector = new DBManager(properties);
+		DBManager manager = new DBManager(properties);
 		try {
-			connector.connect();
+			manager.connect();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Setup unsuccessful. Problem setting up connection to database.";
@@ -89,8 +89,8 @@ public class BWSetupDatabase {
 			e.printStackTrace();
 			return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
 		}
-		Connection conn = connector.getConnection();
-		Statement st = connector.getStatement();
+		Connection conn = manager.getConnection();
+		Statement st = manager.getStatement();
 		ResultSet rs = null;
 		
 
@@ -159,7 +159,9 @@ public class BWSetupDatabase {
 							&& !(Integer.parseInt(readLineErgebnis[1]) > 900)) {
 
 						String bundesland = readLineErgebnis[0];
-						bundeslandnummer = Integer.parseInt(getQueryResult(st, rs,
+						bundeslandnummer = Integer.parseInt(manager.getQueryResult(
+								//st, 
+								rs,
 								"SELECT bundeslandnummer FROM bundesland WHERE name = '"
 										+ bundesland
 										+ "' OR abkuerzung = '"
@@ -269,7 +271,9 @@ public class BWSetupDatabase {
 
 						// Listenkandidaten hinzufuegen
 						if (!bundesland.equals("")) {
-							bundeslandnummer = Integer.parseInt(getQueryResult(st, rs,
+							bundeslandnummer = Integer.parseInt(manager.getQueryResult(
+									//st, 
+									rs,
 									"SELECT bundeslandnummer FROM bundesland WHERE name = '"
 											+ bundesland
 											+ "' OR abkuerzung = '"
@@ -323,8 +327,9 @@ public class BWSetupDatabase {
 			for (int jahr = 0; jahr < 2; jahr++) {
 				String jahrName = Integer.toString(2005 + jahr * 4);
 				// Direktkandidaten der Übrigen Parteien generieren
-				int anzahlWahlkreise = Integer.parseInt(getQueryResult(
-						st, rs,
+				int anzahlWahlkreise = Integer.parseInt(manager.getQueryResult(
+						//st, 
+						rs,
 						"SELECT count(*) FROM wahlkreis WHERE jahr = "
 								+ jahrName + ";"));
 				for (int j = 0; j < anzahlWahlkreise; j++) {
@@ -460,23 +465,5 @@ public class BWSetupDatabase {
 			e.printStackTrace();
 			return "Setup unsuccessful. Error reading input files.";
 		}
-	}
-
-
-	/**
-	 * Gibt den ResultSet fuer eine Query und einen Statement zurueck.
-	 */
-	public static String getQueryResult(Statement st, ResultSet rs, String query)
-			throws SQLException {
-		String returnString = "";
-		rs = st.executeQuery(query);
-		if (rs.next()) {
-			try {
-				returnString = rs.getString(1);
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			}
-		}
-		return returnString;
 	}
 }
