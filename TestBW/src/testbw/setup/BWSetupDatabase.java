@@ -92,7 +92,6 @@ public class BWSetupDatabase {
 		Connection conn = manager.getConnection();
 		Statement st = manager.getStatement();
 		ResultSet rs = null;
-		
 
 		try { // Tabellen, Trigger + statische Daten anlegen
 

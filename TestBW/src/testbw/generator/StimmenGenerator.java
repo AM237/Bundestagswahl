@@ -84,13 +84,12 @@ public class StimmenGenerator {
 		Statement st = manager.getStatement();
 		ResultSet rs = null;
 
-
 		try { // Stimmengenerierung --------------------------------------------------
 			
 			for (int jahr = 0; jahr < 2; jahr++) {
 				String jahrName = Integer.toString(2005 + jahr * 4);
 				
-				System.out.println("Generating started from " + Thread.currentThread().getName());
+				System.out.println("Generating started from thread" + Thread.currentThread().getId());
 				String[] readLineErgebnis;
 
 				// Wahlberechtigte Tabelle leeren
