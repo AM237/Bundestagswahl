@@ -23,8 +23,7 @@
   </servlet-mapping>
   
   
-  
-  
+ 
   <servlet>
     <servlet-name>AnalysisServiceImpl</servlet-name>
     <servlet-class>testbw.server.AnalysisServiceImpl</servlet-class>
@@ -33,6 +32,18 @@
   <servlet-mapping>
     <servlet-name>AnalysisServiceImpl</servlet-name>
     <url-pattern>/testbw/analysis</url-pattern>
+  </servlet-mapping>
+  
+  
+  
+  <servlet>
+    <servlet-name>GeneratorServiceImpl</servlet-name>
+    <servlet-class>testbw.server.GeneratorServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>GeneratorServiceImpl</servlet-name>
+    <url-pattern>/testbw/generator</url-pattern>
   </servlet-mapping>
 
 </web-app>

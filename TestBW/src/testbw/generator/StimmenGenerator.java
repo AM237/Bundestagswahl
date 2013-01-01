@@ -90,7 +90,7 @@ public class StimmenGenerator {
 			for (int jahr = 0; jahr < 2; jahr++) {
 				String jahrName = Integer.toString(2005 + jahr * 4);
 				
-				System.out.print("Generating started ");
+				System.out.println("Generating started from " + Thread.currentThread().getName());
 				String[] readLineErgebnis;
 
 				// Wahlberechtigte Tabelle leeren
@@ -221,15 +221,17 @@ public class StimmenGenerator {
 			
 		st.close();
 		conn.close();
+		
+		return "Data generation successful.";
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return "Data generation unsuccessful, problem with SQL queries.";
+			if (e.getMessage().contains("violates unique constraint"))
+				return "Unique key constraint violation encoutered, please wait ...";
+			else return "Problem with SQL setup queries";
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "Data generation unsuccessful, problem reading or writing files.";
 		}
-		
-		return "Data generation successful.";
 	}	
 }

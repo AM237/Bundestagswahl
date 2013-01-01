@@ -6,5 +6,5 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 @RemoteServiceRelativePath("generator")
 public interface GeneratorService extends RemoteService {
 
-  String generateStimmen(String[] properties);
+  String generateData(String[] properties);
 }

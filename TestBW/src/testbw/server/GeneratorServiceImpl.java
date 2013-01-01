@@ -10,7 +10,7 @@ public class GeneratorServiceImpl extends RemoteServiceServlet implements
 		GeneratorService {
 
 	@Override
-	public String generateStimmen(String[] properties) {
+	public String generateData(String[] properties) {
 		
 		return new StimmenGenerator().generateStimmen(properties);
 	}
