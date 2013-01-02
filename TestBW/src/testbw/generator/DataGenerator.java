@@ -21,7 +21,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 import testbw.util.DBManager;
 import testbw.util.InputDirectory;
 
-public class StimmenGenerator {
+public class DataGenerator {
 	
 	// Input Dateien
 	private static String ergebnis05Pfad = InputDirectory.ergebnis05Pfad;
@@ -31,7 +31,7 @@ public class StimmenGenerator {
 	private static String zweitstimmen05Pfad = InputDirectory.zweitstimmen05Pfad;
 	private static String zweitstimmen09Pfad = InputDirectory.zweitstimmen09Pfad;
 
-	public String generateStimmen(String[] properties){
+	public String generateData(String[] properties){
 
 		CSVReader readerErgebnis[] = new CSVReader[2];
 		CSVWriter writerErststimmen[] = new CSVWriter[2];
@@ -227,7 +227,7 @@ public class StimmenGenerator {
 			e.printStackTrace();
 			if (e.getMessage().contains("violates unique constraint"))
 				return "Unique key constraint violation encoutered, please wait ...";
-			else return "Problem with SQL setup queries";
+			else return "Problem with SQL queries ...";
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "Data generation unsuccessful, problem reading or writing files.";

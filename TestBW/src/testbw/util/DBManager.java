@@ -3,11 +3,11 @@ package testbw.util;
 import java.sql.*;
 
 public class DBManager {
-	
+
 	private String connectUrl;
 	private Connection conn;
 	private Statement st;
-	
+
 	// Konstruktor
 	public DBManager(String[] properties){
 		this.connectUrl = "jdbc:postgresql://localhost/" +
@@ -34,6 +34,31 @@ public class DBManager {
 			}
 		}
 		return returnString;
+	}
+
+	// Gibt Ausgabe einer Query als Tabelle in der Konsole zurueck
+	public static void printQueryResult(Statement st, ResultSet rs, String table)
+			throws SQLException {
+		//String returnString = "";
+		rs = st.executeQuery("SELECT * FROM " + table + " ;");
+		System.out.println(" ");
+		System.out.println("------------------------------");
+		System.out.println(table + " :");
+		ResultSetMetaData meta = rs.getMetaData();
+		int anzFields = meta.getColumnCount();
+		while (rs.next()) {
+			try {
+				for (int i = 0; i < anzFields; i++) {
+					System.out.print(rs.getString(i + 1) + " | ");
+
+				}
+				System.out.print("\n");
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("------------------------------");
+		System.out.println(" ");
 	}
 
 	// Get-Methoden

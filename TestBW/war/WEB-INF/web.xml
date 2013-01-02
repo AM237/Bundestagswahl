@@ -45,5 +45,16 @@
     <servlet-name>GeneratorServiceImpl</servlet-name>
     <url-pattern>/testbw/generator</url-pattern>
   </servlet-mapping>
+  
+  
+  <servlet>
+    <servlet-name>LoaderServiceImpl</servlet-name>
+    <servlet-class>testbw.server.LoaderServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>LoaderServiceImpl</servlet-name>
+    <url-pattern>/testbw/loader</url-pattern>
+  </servlet-mapping>
 
 </web-app>

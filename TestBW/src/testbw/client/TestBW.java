@@ -14,7 +14,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
@@ -43,6 +42,7 @@ public class TestBW implements EntryPoint {
 	private HorizontalPanel setupPanel = new HorizontalPanel();
 	private Button setupDBButton = new Button("SetupDB");
 	private Button generateButton = new Button("Generate data");
+	private Button loaderButton = new Button("Load data");
 	private Button analysisButton = new Button("Analyze");
 	private TextBox dbInputBox = new TextBox();
 	private TextBox projectName = new TextBox();
@@ -57,6 +57,7 @@ public class TestBW implements EntryPoint {
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);
 	private AnalysisServiceAsync analysisSvc = GWT.create(AnalysisService.class);
 	private GeneratorServiceAsync generateSvc = GWT.create(GeneratorService.class);
+	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
 
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -71,6 +72,7 @@ public class TestBW implements EntryPoint {
 		vpanel.add(passwordBox);
 		setupPanel.add(setupDBButton);
 		setupPanel.add(generateButton);
+		setupPanel.add(loaderButton);
 		setupPanel.add(analysisButton);
 		vpanel.add(setupPanel);
 		vpanel.add(resultLabel);
@@ -120,6 +122,16 @@ public class TestBW implements EntryPoint {
 				resultLabel.setText("Generating data ...");
 				resultLabel.setVisible(true);
 				generateData();
+			}
+		});
+		
+		
+		// listen for mouse events on the load data button.
+		loaderButton.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				resultLabel.setText("Loading data ...");
+				resultLabel.setVisible(true);
+				loadData();
 			}
 		});
 
@@ -185,11 +197,7 @@ public class TestBW implements EntryPoint {
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
 
-		for (int i = 0; i < input.length; i++)
-			if (input[i].equals(""))
-				Window.alert("Some or all inputs are empty!");
-			else
-				((SetupStaticDBServiceAsync) setupSvc).setupStaticDB(input, callback);
+		((SetupStaticDBServiceAsync) setupSvc).setupStaticDB(input, callback);
 
 	}
 	
@@ -210,7 +218,7 @@ public class TestBW implements EntryPoint {
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
 			public void onFailure(Throwable caught) {
 
-				resultLabel.setText("Error generating data: " + caught.toString());//caught.getMessage());
+				resultLabel.setText("Error generating data: " + caught.toString());
 				resultLabel.setVisible(true);
 			}
 
@@ -226,13 +234,45 @@ public class TestBW implements EntryPoint {
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
 
-		for (int i = 0; i < input.length; i++)
-			if (input[i].equals(""))
-				Window.alert("Some or all inputs are empty!");
-			else
-				((GeneratorServiceAsync) generateSvc).generateData(input, callback);
-
+		((GeneratorServiceAsync) generateSvc).generateData(input, callback);
 	}
+	
+	
+	/**
+	 * Load generated data into the database, add constraints.
+	 */
+	private void loadData(){
+		
+		// Initialize the service proxy.
+		if (loaderSvc == null) {
+			loaderSvc = (LoaderServiceAsync) GWT.create(LoaderService.class);
+			ServiceDefTarget target = (ServiceDefTarget) loaderSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "loader");
+		}
+
+		// Set up the callback object.
+		AsyncCallback<String> callback = new AsyncCallback<String>() {
+			public void onFailure(Throwable caught) {
+
+				resultLabel.setText("Error loading data: " + caught.toString());
+				resultLabel.setVisible(true);
+			}
+
+			public void onSuccess(String s) {
+				resultLabel.setText(s);
+				resultLabel.setVisible(true);
+			}
+		};
+
+		// Make the call to the loadData service.
+		String[] input = new String[3];
+		input[0] = projectName.getText();
+		input[1] = dbInputBox.getText();
+		input[2] = passwordBox.getText();
+
+		((LoaderServiceAsync) loaderSvc).loadData(input, callback);
+	}
+
 
 
 	/**
@@ -280,6 +320,7 @@ public class TestBW implements EntryPoint {
 		input[0] = projectName.getText();
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
+		
 		((AnalysisServiceAsync) analysisSvc).getAnalysis(input, callback);
 	}
 

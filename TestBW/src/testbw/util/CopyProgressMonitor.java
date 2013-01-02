@@ -1,4 +1,4 @@
-package testbw.setup;
+package testbw.util;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

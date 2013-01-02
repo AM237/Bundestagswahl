@@ -1,7 +1,7 @@
 package testbw.server;
 
 import testbw.client.GeneratorService;
-import testbw.generator.StimmenGenerator;
+import testbw.generator.DataGenerator;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
@@ -12,6 +12,6 @@ public class GeneratorServiceImpl extends RemoteServiceServlet implements
 	@Override
 	public String generateData(String[] properties) {
 		
-		return new StimmenGenerator().generateStimmen(properties);
+		return new DataGenerator().generateData(properties);
 	}
 }
