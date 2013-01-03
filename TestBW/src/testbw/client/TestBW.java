@@ -304,7 +304,7 @@ public class TestBW implements EntryPoint {
 
 				dialogVPanel.clear();
 				dialogBox.center();
-				dialogBox.setText("Analysis Results: Last update: " +  DateTimeFormat.getMediumDateFormat().format(new Date()));
+				dialogBox.setText("Analysis Results: Last update: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
 
 				// Draw pie chart
 				piechart = new PieChart(createTable(s), createOptions());
@@ -321,7 +321,7 @@ public class TestBW implements EntryPoint {
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
 		
-		((AnalysisServiceAsync) analysisSvc).getAnalysis(input, callback);
+		((AnalysisServiceAsync) analysisSvc).getSeatDistribution(input, callback);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////

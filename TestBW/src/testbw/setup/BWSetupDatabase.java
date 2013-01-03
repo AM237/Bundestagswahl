@@ -374,7 +374,7 @@ public class BWSetupDatabase {
 
 
 			//-- StimmenProPartei [Mock]
-			//-- Typ: wird berechnet (mehrmals) -> Initialisiere mit 0
+			//-- Typ: wird berechnet -> Initialisiere als Dummy
 			//-- Verweist auf: -
 			st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
 			st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
@@ -402,12 +402,12 @@ public class BWSetupDatabase {
 
 			//-- Load: Divisoren
 			//-- Typ: Vorberechnung
-			//-- Verweist auf: divisoren
+			//-- Verweist auf: divisoren, sitzeprojahr
 			st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
 
 			/*
 					//-- Erststimmen [Mock]
-					//-- Typ: wird berechnet (periodisch aus grosser 'Erststimme' Relation) -> Initialisiere mit 0
+					//-- Typ: wird berechnet
 					//-- Verweist auf: -
 					st.executeUpdate("DROP TABLE IF EXISTS erststimmen CASCADE;");
 					st.executeUpdate("CREATE TABLE erststimmen ( jahr INTEGER, kandnum INTEGER, wahlkreis INTEGER, " + 

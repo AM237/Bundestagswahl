@@ -69,7 +69,7 @@ public class DataGenerator {
 			return "Generation unsuccessful, file encoding is not supported.";
 		}
 
-		// Datenbank Verbindungsdaten -----------------------------------------
+		// Datenbankverbindung -------------------------------------------------------
 		DBManager manager = new DBManager(properties);
 		try {
 			manager.connect();

@@ -29,7 +29,7 @@ public class DataLoader {
 
 	public String loadData(String[] properties){
 
-		// Datenbank Verbindungsdaten -----------------------------------------
+		// Datenbankverbindung -----------------------------------------
 		DBManager manager = new DBManager(properties);
 		try {
 			manager.connect();
@@ -96,26 +96,26 @@ public class DataLoader {
 
 					System.out.println("\nCopying finished");
 				}
-				
-				
-				// Constraints ------------------------------------------------
-				System.out.println("\nAdding Constraints");
-
-				st.executeUpdate("ALTER TABLE wahlberechtigte ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
-				st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
-				st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-				st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
-				st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-				st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
-				st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
-				st.executeUpdate("ALTER TABLE erststimme ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
-				st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
-				st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-				st.executeUpdate("ALTER TABLE erststimmen ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
-				st.executeUpdate("ALTER TABLE zweitstimmen ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-
-				System.out.println("\nFinished adding constraints");
 			}
+			
+			
+			// Constraints ------------------------------------------------
+			System.out.println("\nAdding Constraints ... ");
+
+			st.executeUpdate("ALTER TABLE wahlberechtigte ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
+			st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
+			st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+			st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
+			st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+			st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
+			st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
+			st.executeUpdate("ALTER TABLE erststimme ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
+			st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
+			st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+			st.executeUpdate("ALTER TABLE erststimmen ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
+			st.executeUpdate("ALTER TABLE zweitstimmen ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+
+			System.out.println("\nFinished adding constraints");
 
 			st.close();
 			conn.close();
