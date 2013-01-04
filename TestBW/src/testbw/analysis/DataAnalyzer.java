@@ -1,6 +1,7 @@
 package testbw.analysis;
 
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -124,6 +125,60 @@ public class DataAnalyzer {
 			result.add(rs.getString(2));
 		}
 
+		return result;
+	}
+	
+	/**
+	 * Get the winners for every Wahlkreis
+	 */
+	public ArrayList<String> getWahlkreissieger(String[] queryInput) throws SQLException, NumberFormatException {
+		
+		ArrayList<String> result = new ArrayList<String>();
+		
+		String jahrName = queryInput[0];
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  s1.wahlkreis, s1.kandidatennummer, s1.anzahl FROM erststimmen s1 , wahlkreis w WHERE s1.jahr = "
+				+ jahrName
+				+ " AND w.jahr = "
+				+ jahrName
+				+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM erststimmen s2 WHERE s2.jahr = "
+				+ jahrName
+				+ " AND s2.wahlkreis = w.wahlkreisnummer)");
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmengewinner AS SELECT s1.wahlkreis, s1.partei, s1.anzahl FROM zweitstimmen s1 , wahlkreis w WHERE s1.jahr = "
+				+ jahrName
+				+ " AND w.jahr = "
+				+ jahrName
+				+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM zweitstimmen s2 WHERE s2.jahr = "
+				+ jahrName
+				+ " AND s2.wahlkreis = w.wahlkreisnummer)");
+		
+		// erststimmen
+		rs = st.executeQuery("SELECT * FROM " + "erststimmengewinner;");
+		ResultSetMetaData meta = rs.getMetaData();
+		int anzFields = meta.getColumnCount();
+		while (rs.next()) {
+			for (int i = 0; i < anzFields; i++) {
+				result.add(rs.getString(i+1));
+			}
+			// add delimiter
+			result.add("$");
+		}
+		
+		// add delimiter
+		result.add("&");
+		
+		// zweitstimmen
+		rs = st.executeQuery("SELECT * FROM " + "zweitstimmengewinner;");
+		ResultSetMetaData meta2 = rs.getMetaData();
+		int anzFields2 = meta2.getColumnCount();
+		while (rs.next()) {
+			for (int i = 0; i < anzFields2; i++) {
+				result.add(rs.getString(i+1));
+			}
+			// add delimiter
+			result.add("$");
+		}
+		
+		
 		return result;
 	}
 }

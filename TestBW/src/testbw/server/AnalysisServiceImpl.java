@@ -15,7 +15,9 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class AnalysisServiceImpl extends RemoteServiceServlet implements AnalysisService {
 	
 	@Override
-	public ArrayList<String> getSeatDistribution(String[] projectInput, String[] queryInput) {
+	public ArrayList<String> analyze(String[] projectInput, String[] queryInput) {
+		
+		ArrayList<String> result = new ArrayList<String>();
 		
 		// Datenbankverbindung ------------------------------------------------
 		DBManager manager = new DBManager(projectInput);
@@ -34,11 +36,21 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 		ResultSet rs = null;
 		
 		DataAnalyzer analyzer = new DataAnalyzer(st, rs);
-		ArrayList<String> dist = null;
 		
 		try { // Get seat distribution ---------------------------------------
-			dist = analyzer.getSeatDistribution(queryInput);
+			result.addAll(analyzer.getSeatDistribution(queryInput));
 		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		// add delimiter to distinguish between the results of each respective query
+		result.add("##");
+		
+		try { // Get Wahlkreis winners ----------------------------------------
+			result.addAll(analyzer.getWahlkreissieger(queryInput));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		}
 		
@@ -48,6 +60,6 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 			e.printStackTrace();
 		}
 		
-		return dist;
+		return result;
 	}
 }

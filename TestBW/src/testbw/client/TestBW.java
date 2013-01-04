@@ -7,6 +7,7 @@ import testbw.client.SetupStaticDBServiceAsync;
 // Java API
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 // GWT GUI API
 import com.google.gwt.core.client.EntryPoint;
@@ -14,6 +15,8 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.user.cellview.client.CellTable;
+import com.google.gwt.user.cellview.client.DataGrid;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
@@ -37,7 +40,7 @@ import com.google.gwt.visualization.client.visualizations.corechart.PieChart.Pie
 
 
 public class TestBW implements EntryPoint {
-
+	
 	// GUI elements
 	private VerticalPanel mainVPanel = new VerticalPanel();
 	private VerticalPanel inputVPanel = new VerticalPanel();
@@ -60,7 +63,10 @@ public class TestBW implements EntryPoint {
 	private Label resultLabel = new Label();
 	private DialogBox dialogBox = new DialogBox();
 	private Button closeButton = new Button("Close");
-	private VerticalPanel dialogVPanel = new VerticalPanel();
+	private VerticalPanel analysisVPanel = new VerticalPanel();
+	private HorizontalPanel analysisHPanel = new HorizontalPanel();
+	private DataGrid<String> erststimmeTable = new DataGrid<String>();
+	private DataGrid<String> zweitstimmeTable = new DataGrid<String>();
 	private PieChart piechart;
 	private TextArea ta = new TextArea();
 	private Label taLabel = new Label();
@@ -90,9 +96,12 @@ public class TestBW implements EntryPoint {
 		dialogBox.setGlassEnabled(true);
 		dialogBox.setAnimationEnabled(true);
 		closeButton.getElement().setId("closeButton");
-		dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
-		dialogVPanel.addStyleName("dialogVPanel");
-		dialogBox.add(dialogVPanel);
+		analysisHPanel.add(analysisVPanel);
+		analysisHPanel.add(erststimmeTable);
+		analysisHPanel.add(zweitstimmeTable);
+		analysisVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+		analysisVPanel.addStyleName("dialogVPanel");
+		dialogBox.add(analysisVPanel);
 		
 
 		// Build GUI -----------------------------------------------------------
@@ -141,13 +150,14 @@ public class TestBW implements EntryPoint {
 		dbInputBox.setSize("380px", "15px");
 		passwordBox.setSize("380px", "15px");
 		
-		buttonsVPanel.setSpacing(20);
+		buttonsVPanel.setSpacing(5);
 		buttonsPanelLabel.setText("Operations");
 		resultLabel.setText("Message: ");
 		resultLabel.setVisible(true);
 		
 		
 		generateOutputVert.setBorderWidth(5);
+		generateOutputVert.setSpacing(5);
 		taLabel.setText("Console Output");
 		taLabel.setVisible(true);
 		ta.setWidth("370px");
@@ -217,9 +227,7 @@ public class TestBW implements EntryPoint {
 		// Create a callback to be called when the visualization API
 		// has been loaded.
 		Runnable onLoadCallback = new Runnable() {
-			public void run() {
-
-			}
+			public void run() {}
 		};
 
 		// Load the visualization api, passing the onLoadCallback to be called
@@ -268,7 +276,7 @@ public class TestBW implements EntryPoint {
 	 * Generates low level data (votes) corresponding to the known 
 	 * statistics within each Wahlkreis.
 	 */
-	private void generateData(){
+	public void generateData(){
 		
 		// Initialize the service proxy.
 		if (generateSvc == null) {
@@ -361,19 +369,24 @@ public class TestBW implements EntryPoint {
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(ArrayList<String> s) {
-
+				
+				ArrayList<List<String>> parsed = parseReturned(s);
+			
 				resultLabel.setText("Analysis complete.");
 				resultLabel.setVisible(true);
 
-				dialogVPanel.clear();
+				analysisVPanel.clear();
 				dialogBox.center();
 				dialogBox.setText("Analysis Results: Last update: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
 
 				// Draw pie chart
-				piechart = new PieChart(createTable(s), createOptions());
-				dialogVPanel.add(piechart);
+				piechart = new PieChart(createTable(parsed.get(0)), createOptions());
+				analysisVPanel.add(piechart);
+				
+				// Wahlkreissieger
+				
 
-				dialogVPanel.add(closeButton);
+				analysisVPanel.add(closeButton);
 				closeButton.setFocus(true);
 			}
 		};
@@ -387,7 +400,7 @@ public class TestBW implements EntryPoint {
 		queryInput[0] = yearInput.getText();
 		queryInput[1] = wahlkreisInput.getText();
 		
-		((AnalysisServiceAsync) analysisSvc).getSeatDistribution(projectInput, queryInput, callback);
+		((AnalysisServiceAsync) analysisSvc).analyze(projectInput, queryInput, callback);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -409,7 +422,7 @@ public class TestBW implements EntryPoint {
 	/**
 	 * Create data source to feed to pie chart.
 	 */
-	private AbstractDataTable createTable(ArrayList<String> fromServer) {
+	private AbstractDataTable createTable(List<String> fromServer) {
 
 		DataTable dataTable = DataTable.create();
 
@@ -424,5 +437,30 @@ public class TestBW implements EntryPoint {
 		}
 
 		return dataTable;
+	}
+	
+	/**
+	 * Parse string returned from server for analysis
+	 */
+	private ArrayList<List<String>> parseReturned(ArrayList<String> s){
+		
+		int counter = 0;
+		ArrayList<List<String>> list = new ArrayList<List<String>>();
+		
+		List<String> temp = s;
+		while(temp.indexOf("##") != -1){
+			list.add(new ArrayList<String>());
+			temp = temp.subList(temp.indexOf("##")+1, temp.size());
+		}
+		list.add(new ArrayList<String>());
+		
+		for (int i = 0; i < s.size(); i++){
+			if (s.get(i).equals("##")) {
+				counter++;
+				continue;
+			}
+			list.get(counter).add(s.get(i));
+		}
+		return list;
 	}
 }
