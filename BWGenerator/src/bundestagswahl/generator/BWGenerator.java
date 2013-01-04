@@ -508,6 +508,63 @@ public class BWGenerator {
 
 				System.out.println("\nFinished");
 
+				// Q7: Wahlkreisübersicht (Einzelstimmen)
+				System.out.println("\n Q7: Wahlkreisübersicht (Einzelstimmen)");
+
+				try {
+					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsoluteinzelstimmen AS "
+							+ "SELECT sum(anzahl) FROM (SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr) WHERE jahr = "
+							+ jahrName + " AND wahlkreis = " + wahlkreis);
+
+					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativeinzelstimmen AS "
+							+ "SELECT (SELECT * FROM wahlbeteiligungabsoluteinzelstimmen) / (  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = "
+							+ jahrName
+							+ " AND wahlkreis = "
+							+ wahlkreis
+							+ " )::float ;");
+
+					st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidateinzelstimmen AS "
+							+ "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politiker AND d.kandidatennummer = (SELECT e.kandidatennummer FROM (SELECT  s1.wahlkreis, s1.kandidatennummer, s1.anzahl FROM ( SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr) s1 , wahlkreis w WHERE s1.jahr = "
+							+ jahrName
+							+ " AND w.jahr = "
+							+ jahrName
+							+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = (SELECT max(s2.anzahl) FROM ( SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr) s2 WHERE s2.jahr = "
+							+ jahrName
+							+ " AND s2.wahlkreis = w.wahlkreisnummer)) e ORDER BY RANDOM() LIMIT 1)");
+
+					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsoluteinzelstimmen AS "
+							+ "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM (SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr) zs WHERE zs.jahr = "
+							+ jahrName
+							+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+
+					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativeinzelstimmen AS "
+							+ "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsoluteinzelstimmen) as anteil FROM parteinenanteilabsoluteinzelstimmen pa ");
+
+					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahreinzelstimmen AS "
+							+ "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM (SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr) zs WHERE zs.jahr = "
+							+ Integer.toString(Integer.parseInt(jahrName) - 4)
+							+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+
+					st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderungeinzelstimmen AS "
+							+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahreinzelstimmen pa2, parteinenanteilabsoluteinzelstimmen pa1 WHERE pa1.parteinummer = pa2.parteinummer");
+
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+				printQueryResult(st, rs, "wahlbeteiligungabsoluteinzelstimmen");
+				printQueryResult(st, rs, "wahlbeteiligungrelativeinzelstimmen");
+				printQueryResult(st, rs,
+						"erststimmengewinnerkandidateinzelstimmen");
+				printQueryResult(st, rs, "parteinenanteilabsoluteinzelstimmen");
+				printQueryResult(st, rs, "parteinenanteilrelativeinzelstimmen");
+				printQueryResult(st, rs,
+						"parteinenanteilabsolutvorjahreinzelstimmen");
+				printQueryResult(st, rs,
+						"parteinenanteilveraenderungeinzelstimmen");
+
+				System.out.println("\nFinished");
+
 				st.close();
 				conn.close();
 
