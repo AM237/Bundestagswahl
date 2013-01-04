@@ -343,8 +343,8 @@ public class BWSetupDatabase {
 		st.executeUpdate("DROP TABLE IF EXISTS sitzeprojahr CASCADE;");
 		st.executeUpdate("CREATE TABLE sitzeprojahr ( jahr INTEGER PRIMARY KEY, sitze INTEGER NOT NULL);");
 		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2013', '700');");
-		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2005', '598');");
-		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2008', '598');");
+		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2005', '614');");
+		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2009', '622');");
 
 		//-- Divisoren
 		//-- Typ: vordefiniert

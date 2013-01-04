@@ -79,8 +79,8 @@ public class DataAnalyzer {
 		//-- Auswertungsanfrage: Endergebnisse (Erststimmen)
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS (" +
 				"WITH maxvotes AS ( " + 
-				"	SELECT wahlkreis, max(anzahl) AS max " + 
-				"	FROM erststimmen " +
+				"  SELECT wahlkreis, max(anzahl) AS max " + 
+				"  FROM erststimmen " +
 				"  WHERE jahr = '"+jahr+"' " +
 				"	GROUP BY wahlkreis), " +
 
