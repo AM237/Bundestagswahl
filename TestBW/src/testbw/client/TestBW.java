@@ -39,11 +39,16 @@ import com.google.gwt.visualization.client.visualizations.corechart.PieChart.Pie
 public class TestBW implements EntryPoint {
 
 	// GUI elements
-	private VerticalPanel vpanel = new VerticalPanel();
-	private HorizontalPanel setupPanel = new HorizontalPanel();
-	private Button setupDBButton = new Button("SetupDB");
-	private Button generateButton = new Button("Generate data");
-	private Button loaderButton = new Button("Load data");
+	private VerticalPanel mainVPanel = new VerticalPanel();
+	private VerticalPanel inputFieldsVPanel = new VerticalPanel();
+	private Label inputFieldsLabel = new Label();
+	private VerticalPanel buttonsVPanel = new VerticalPanel();
+	private VerticalPanel outputVPanel = new VerticalPanel();
+	private HorizontalPanel buttonsPanel = new HorizontalPanel();
+	private Label buttonsPanelLabel = new Label();
+	private Button setupDBButton = new Button("Setup");
+	private Button generateButton = new Button("Generate");
+	private Button loaderButton = new Button("Load");
 	private Button analysisButton = new Button("Analyze");
 	private TextBox dbInputBox = new TextBox();
 	private TextBox projectName = new TextBox();
@@ -54,6 +59,10 @@ public class TestBW implements EntryPoint {
 	private VerticalPanel dialogVPanel = new VerticalPanel();
 	private PieChart piechart;
 	private TextArea ta = new TextArea();
+	private Label taLabel = new Label();
+	private Button outputClear = new Button("Clear");
+	private HorizontalPanel outputLabel = new HorizontalPanel();
+	private VerticalPanel generateOutputVert = new VerticalPanel();
 
 	// Services
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);
@@ -83,32 +92,55 @@ public class TestBW implements EntryPoint {
 		
 
 		// Build GUI -----------------------------------------------------------
-		vpanel.add(projectName);
-		vpanel.add(dbInputBox);
-		vpanel.add(passwordBox);
-		setupPanel.add(setupDBButton);
-		setupPanel.add(generateButton);
-		setupPanel.add(loaderButton);
-		setupPanel.add(analysisButton);
-		vpanel.add(setupPanel);
-		vpanel.add(resultLabel);
-		RootPanel.get("setupDB").add(vpanel);
+		inputFieldsVPanel.add(inputFieldsLabel);
+		inputFieldsVPanel.add(projectName);
+		inputFieldsVPanel.add(dbInputBox);
+		inputFieldsVPanel.add(passwordBox);
+		buttonsPanel.add(setupDBButton);
+		buttonsPanel.add(generateButton);
+		buttonsPanel.add(loaderButton);
+		buttonsPanel.add(analysisButton);
+		buttonsPanel.add(outputClear);
+		buttonsVPanel.add(buttonsPanelLabel);
+		buttonsVPanel.add(buttonsPanel);
+		buttonsVPanel.add(resultLabel);
+		outputLabel.add(taLabel);
+		generateOutputVert.add(outputLabel);
+		generateOutputVert.add(ta);
+		outputVPanel.add(generateOutputVert);
+		mainVPanel.add(inputFieldsVPanel);
+		mainVPanel.add(buttonsVPanel);
+		mainVPanel.add(outputVPanel);
+		RootPanel.get("setupDB").add(mainVPanel);
 		
 		
 		// Widget options -----------------------------------------------------
-		projectName.setFocus(true);
+		mainVPanel.setSpacing(30);
+		mainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
+		
+		inputFieldsLabel.setText("Inputs");
 		projectName.setTitle("Enter Server name ... ");
 		dbInputBox.setTitle("Enter database name ...");
 		passwordBox.setTitle("Enter password ...");
-		setupPanel.addStyleName("setupPanel");
-		projectName.addStyleName("textBox");
-		dbInputBox.addStyleName("textBox");
-		passwordBox.addStyleName("textBox");
+		projectName.setFocus(true);
 		
-
+		projectName.setSize("380px", "15px");
+		dbInputBox.setSize("380px", "15px");
+		passwordBox.setSize("380px", "15px");
 		
-
+		buttonsVPanel.setSpacing(10);
+		buttonsPanelLabel.setText("Operations");
+		resultLabel.setText("Message: ");
+		resultLabel.setVisible(true);
 		
+		
+		generateOutputVert.setBorderWidth(5);
+		taLabel.setText("Console Output");
+		taLabel.setVisible(true);
+		ta.setWidth("370px");
+		ta.setHeight("500px");
+	    
+	
 
 		/////////////////////////////////////////////////////////////////////////
 		// Handles
@@ -120,7 +152,13 @@ public class TestBW implements EntryPoint {
 				dialogBox.hide();
 			}
 		});
-
+		
+		// Handler to clear output window
+		outputClear.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				ta.setText("");
+			}
+		});
 
 		// listen for mouse events on the SetupDB button.
 		setupDBButton.addClickHandler(new ClickHandler() {

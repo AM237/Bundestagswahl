@@ -49,7 +49,6 @@ public class DataGenerator {
 		CSVWriter writerZweitstimmen[] = new CSVWriter[2];
 
 		// CSV Reader/Writer initialisieren -----------------------------
-
 		readerErgebnis[0] = new CSVReader(new BufferedReader(
 				new InputStreamReader(new FileInputStream(
 						ergebnis05Pfad), "UTF-8")), ';');
