@@ -387,6 +387,25 @@ public class BWGenerator {
 
 					System.out.println("\nFinished");
 				}
+
+				// Q2: Mitglieder des Bundestages
+				System.out.println("\n Q2: Mitglieder des Bundestages");
+
+				st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS "
+						+ "SELECT esg.kandidatennummer, d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer");
+
+				st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
+						+ "WITH verteilung AS ( "
+						+ "	SELECT * "
+						+ "	FROM erststimmenergebnis  "
+						+ "  union all "
+						+ " 	SELECT * "
+						+ " 	FROM zweitstimmenergebnis)"
+						+ "SELECT listenkandidat.kandidatennummer, p.partei   FROM Listenkandidat lk, politiker p,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer AND p.partei = pa.parteinummer AND lk.listenplatz =< v.size- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
+						+ "UNION mitgliedererststimme )");
+
+				System.out.println("\nFinished");
+
 				// Parameter f�r Queries, �ber UI auszuw�hlen:
 				String jahrName = "2005";
 				int wahlkreis = 1;
