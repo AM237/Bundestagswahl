@@ -470,6 +470,9 @@ public class BWGenerator {
 				// Q5: �berhangmandate
 				System.out.println("\n Q5: �berhangmandate");
 
+				st.executeUpdate("CREATE OR REPLACE VIEW ueberhangmandate AS "
+						+ "SELECT pes.parteiname, pes.sitze - pzs.size FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.size) > 0 ");
+
 				System.out.println("\nFinished");
 
 				// Q6: Knappster Sieger
