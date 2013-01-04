@@ -15,10 +15,10 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class AnalysisServiceImpl extends RemoteServiceServlet implements AnalysisService {
 	
 	@Override
-	public ArrayList<String> getSeatDistribution(String[] properties) {
+	public ArrayList<String> getSeatDistribution(String[] projectInput, String[] queryInput) {
 		
 		// Datenbankverbindung ------------------------------------------------
-		DBManager manager = new DBManager(properties);
+		DBManager manager = new DBManager(projectInput);
 		try {
 			manager.connect();
 		} catch (SQLException e) {
@@ -37,7 +37,7 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 		ArrayList<String> dist = null;
 		
 		try { // Get seat distribution ---------------------------------------
-			dist = analyzer.getSeatDistribution();
+			dist = analyzer.getSeatDistribution(queryInput);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

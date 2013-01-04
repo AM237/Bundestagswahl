@@ -10,8 +10,8 @@ public class DataAnalyzer {
 	// Datenbankverbindungsdaten
 	private Statement st = null;
 	private ResultSet rs = null;
-	private String jahr =  "2005";
-	private String wahlkreis = "1";
+	private String jahr =  "";
+	private String wahlkreis = "";
 
 	public DataAnalyzer(Statement st, ResultSet rs){
 		this.st = st;
@@ -23,9 +23,11 @@ public class DataAnalyzer {
 	 * @return Mapping of parties to number of seats representing the distribution of seats
 	 * in the Bundestag
 	 */
-	public ArrayList<String> getSeatDistribution() throws SQLException {
+	public ArrayList<String> getSeatDistribution(String[] queryInput) throws SQLException {
 
 		ArrayList<String> result = new ArrayList<String>();
+		this.jahr = queryInput[0];
+		this.wahlkreis = queryInput[1];
 
 		// Auswertung ---------------------------------------------------
 

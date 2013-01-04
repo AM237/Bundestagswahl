@@ -40,7 +40,9 @@ public class TestBW implements EntryPoint {
 
 	// GUI elements
 	private VerticalPanel mainVPanel = new VerticalPanel();
-	private VerticalPanel inputFieldsVPanel = new VerticalPanel();
+	private VerticalPanel inputVPanel = new VerticalPanel();
+	private VerticalPanel inputFieldsVPanelProject = new VerticalPanel();
+	private VerticalPanel inputFieldsVPanelQuery = new VerticalPanel();
 	private Label inputFieldsLabel = new Label();
 	private VerticalPanel buttonsVPanel = new VerticalPanel();
 	private VerticalPanel outputVPanel = new VerticalPanel();
@@ -53,6 +55,8 @@ public class TestBW implements EntryPoint {
 	private TextBox dbInputBox = new TextBox();
 	private TextBox projectName = new TextBox();
 	private TextBox passwordBox = new PasswordTextBox();
+	private TextBox yearInput = new TextBox();
+	private TextBox wahlkreisInput = new TextBox();
 	private Label resultLabel = new Label();
 	private DialogBox dialogBox = new DialogBox();
 	private Button closeButton = new Button("Close");
@@ -65,10 +69,10 @@ public class TestBW implements EntryPoint {
 	private VerticalPanel generateOutputVert = new VerticalPanel();
 
 	// Services
-	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);
-	private AnalysisServiceAsync analysisSvc = GWT.create(AnalysisService.class);
+	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);	
 	private GeneratorServiceAsync generateSvc = GWT.create(GeneratorService.class);
 	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
+	private AnalysisServiceAsync analysisSvc = GWT.create(AnalysisService.class);
 
 
 	/**
@@ -92,10 +96,12 @@ public class TestBW implements EntryPoint {
 		
 
 		// Build GUI -----------------------------------------------------------
-		inputFieldsVPanel.add(inputFieldsLabel);
-		inputFieldsVPanel.add(projectName);
-		inputFieldsVPanel.add(dbInputBox);
-		inputFieldsVPanel.add(passwordBox);
+		inputFieldsVPanelProject.add(inputFieldsLabel);
+		inputFieldsVPanelProject.add(projectName);
+		inputFieldsVPanelProject.add(dbInputBox);
+		inputFieldsVPanelProject.add(passwordBox);
+		inputFieldsVPanelQuery.add(yearInput);
+		inputFieldsVPanelQuery.add(wahlkreisInput);
 		buttonsPanel.add(setupDBButton);
 		buttonsPanel.add(generateButton);
 		buttonsPanel.add(loaderButton);
@@ -108,7 +114,9 @@ public class TestBW implements EntryPoint {
 		generateOutputVert.add(outputLabel);
 		generateOutputVert.add(ta);
 		outputVPanel.add(generateOutputVert);
-		mainVPanel.add(inputFieldsVPanel);
+		inputVPanel.add(inputFieldsVPanelProject);
+		inputVPanel.add(inputFieldsVPanelQuery);
+		mainVPanel.add(inputVPanel);
 		mainVPanel.add(buttonsVPanel);
 		mainVPanel.add(outputVPanel);
 		RootPanel.get("setupDB").add(mainVPanel);
@@ -118,17 +126,22 @@ public class TestBW implements EntryPoint {
 		mainVPanel.setSpacing(30);
 		mainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
 		
+		inputVPanel.setSpacing(10);
 		inputFieldsLabel.setText("Inputs");
 		projectName.setTitle("Enter Server name ... ");
 		dbInputBox.setTitle("Enter database name ...");
 		passwordBox.setTitle("Enter password ...");
+		yearInput.setTitle("For which year should results be analyzed?");
+		wahlkreisInput.setTitle("Give overview for which Wahlkreis (number)?");
 		projectName.setFocus(true);
 		
+		yearInput.setSize("380px", "15px");
+		wahlkreisInput.setSize("380px", "15px");
 		projectName.setSize("380px", "15px");
 		dbInputBox.setSize("380px", "15px");
 		passwordBox.setSize("380px", "15px");
 		
-		buttonsVPanel.setSpacing(10);
+		buttonsVPanel.setSpacing(20);
 		buttonsPanelLabel.setText("Operations");
 		resultLabel.setText("Message: ");
 		resultLabel.setVisible(true);
@@ -138,7 +151,7 @@ public class TestBW implements EntryPoint {
 		taLabel.setText("Console Output");
 		taLabel.setVisible(true);
 		ta.setWidth("370px");
-		ta.setHeight("500px");
+		ta.setHeight("300px");
 	    
 	
 
@@ -366,12 +379,15 @@ public class TestBW implements EntryPoint {
 		};
 
 		// Make the call to the get analysis service.
-		String[] input = new String[3];
-		input[0] = projectName.getText();
-		input[1] = dbInputBox.getText();
-		input[2] = passwordBox.getText();
+		String[] projectInput = new String[5];
+		String[] queryInput = new String[2];
+		projectInput[0] = projectName.getText();
+		projectInput[1] = dbInputBox.getText();
+		projectInput[2] = passwordBox.getText();
+		queryInput[0] = yearInput.getText();
+		queryInput[1] = wahlkreisInput.getText();
 		
-		((AnalysisServiceAsync) analysisSvc).getSeatDistribution(input, callback);
+		((AnalysisServiceAsync) analysisSvc).getSeatDistribution(projectInput, queryInput, callback);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -386,7 +402,7 @@ public class TestBW implements EntryPoint {
 		options.setWidth(800);
 		options.setHeight(600);
 		options.set3D(true);
-		options.setTitle("Sitzverteilung");
+		options.setTitle("Sitzverteilung " + yearInput.getText());
 		return options;
 	}
 

@@ -5,5 +5,5 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public interface AnalysisServiceAsync {
 
-	void getSeatDistribution(String[] properties, AsyncCallback< ArrayList<String> > callback);
+	void getSeatDistribution(String[] projectInput, String[] queryInput, AsyncCallback< ArrayList<String> > callback);
 }

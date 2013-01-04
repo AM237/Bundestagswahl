@@ -91,6 +91,22 @@ public class DataLoader {
 			}
 		}
 	}
+	
+	/**
+	 * Aggregate votes on Wahlkreis level
+	 */
+	public void aggregateData() throws SQLException {
+		
+		System.out.print("Aggregating votes .... ");
+		
+		st.executeUpdate("DELETE FROM erststimmen;");
+		st.executeUpdate("DELETE FROM zweitstimmen;");
+		st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
+		st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+		
+		System.out.println("finished.");
+		
+	}
 
 	/**
 	 * Add constraints to all base tables
@@ -113,21 +129,5 @@ public class DataLoader {
 		st.executeUpdate("ALTER TABLE zweitstimmen ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
 
 		System.out.println("\nFinished adding constraints");
-	}
-	
-	/**
-	 * Aggregate votes on Wahlkreis level
-	 */
-	public void aggregateData() throws SQLException {
-		
-		System.out.print("Aggregating votes .... ");
-		
-		st.executeUpdate("DELETE FROM erststimmen;");
-		st.executeUpdate("DELETE FROM zweitstimmen;");
-		st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
-		st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
-		
-		System.out.println("finished.");
-		
 	}
 }
