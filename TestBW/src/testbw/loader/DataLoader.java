@@ -38,7 +38,6 @@ public class DataLoader {
 	public void loadData() throws SQLException, IOException {
 
 		// Stimmen Laden --------------------------------------------------
-
 		SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss");
 
 		for (int jahr = 0; jahr < 2; jahr++) {
@@ -91,6 +90,12 @@ public class DataLoader {
 				System.out.println("\nCopying finished");
 			}
 		}
+		
+		//-- Stimmen aggregrieren (auf Wahlkreisebene) ------------------------
+		st.executeUpdate("DELETE FROM erststimmen;");
+		st.executeUpdate("DELETE FROM zweitstimmen;");
+		st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
+		st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
 	}
 
 	/**

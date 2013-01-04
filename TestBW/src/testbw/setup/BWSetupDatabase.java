@@ -106,7 +106,7 @@ public class BWSetupDatabase {
 		st.executeUpdate("CREATE TABLE erststimme( jahr integer, stimmzettelnummer integer, kandidatennummer integer, wahlkreis integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
 		st.executeUpdate("CREATE TABLE zweitstimme( jahr integer, stimmzettelnummer integer, partei integer, wahlkreis integer, bundesland integer, PRIMARY KEY (jahr,stimmzettelnummer))WITH (OIDS=FALSE);");
 		st.executeUpdate("CREATE TABLE erststimmen( jahr integer, wahlkreis integer, kandidatennummer integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,kandidatennummer))WITH (OIDS=FALSE);");
-		st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer, wahlkreis integer, partei integer UNIQUE, anzahl integer, PRIMARY KEY (jahr,partei))WITH (OIDS=FALSE);");
+		st.executeUpdate("CREATE TABLE zweitstimmen( jahr integer, wahlkreis integer, partei integer, anzahl integer, PRIMARY KEY (jahr,partei,wahlkreis))WITH (OIDS=FALSE);");
 
 		// Tabelle Bundeslaender fuellen-----------------------------------
 		int bundeslandnummer;
@@ -364,11 +364,12 @@ public class BWSetupDatabase {
 		//-- Typ: wird berechnet -> Initialisiere als Dummy
 		//-- Verweist auf: -
 		st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
-		st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
-		st.executeUpdate("CREATE TABLE stimmenpropartei ( partei CHARACTER VARYING PRIMARY KEY, anzahl INTEGER);");
+		//st.executeUpdate("CREATE TABLE stimmenpropartei ( partei CHARACTER VARYING PRIMARY KEY, anzahl INTEGER);");
 		//st.executeUpdate("INSERT INTO stimmenpropartei VALUES ('X', '5200'), ('Y', '1700'), ('Z', '3100');");
 
-
+		// Nun Teil der Auswertung wegen der Abhaengigkeit an 'stimmenpropartei', die nicht im Voraus berechnet werden darf.
+		
+		/*
 		//-- Trigger Divisoren -> ItrErgebnisse
 		//-- Typ: vordefiniert?
 		//-- Verweist auf: stimmenpropartei
@@ -391,7 +392,9 @@ public class BWSetupDatabase {
 		//-- Typ: Vorberechnung?
 		//-- Verweist auf: divisoren, sitzeprojahr
 		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
-
+		 */
+		
+		
 		/*
 					//-- Erststimmen [Mock]
 					//-- Typ: wird berechnet

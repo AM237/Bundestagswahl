@@ -10,6 +10,8 @@ public class DataAnalyzer {
 	// Datenbankverbindungsdaten
 	private Statement st = null;
 	private ResultSet rs = null;
+	private String jahr =  "2005";
+	private String wahlkreis = "1";
 
 	public DataAnalyzer(Statement st, ResultSet rs){
 		this.st = st;
@@ -27,19 +29,46 @@ public class DataAnalyzer {
 
 		// Auswertung ---------------------------------------------------
 
-		//-- Stimmen aggregrieren
-		st.executeUpdate("DELETE FROM erststimmen;");
-		st.executeUpdate("DELETE FROM zweitstimmen;");
-		st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
-		st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+		//-- View 'stimmenpropartei'
+		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( " +
+				"SELECT p.name AS partei, t1.anzahl AS anzahl FROM " +
+				"((SELECT partei, sum(anzahl) AS anzahl " +
+				" FROM zweitstimmen " +
+				" WHERE jahr = '2013' " +
+				" GROUP BY partei) t1 " +
+				"JOIN " +
+				"parteien p ON t1.partei::text = p.parteinum::text));"); 
+		
+		//-- Trigger Divisoren -> ItrErgebnisse
+		//-- Typ: vordefiniert?
+		//-- Verweist auf: stimmenpropartei
+		st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
+		st.executeUpdate("DROP FUNCTION IF EXISTS berechneitr() CASCADE;");
+		st.executeUpdate("DELETE FROM itrergebnisse;");
+		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " +
+				"BEGIN " +
+				"  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " +
+				"  RETURN NEW; " +
+				"END; " + 
+				"$$ LANGUAGE plpgsql;");
 
+		st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse " +
+				"AFTER INSERT ON divisoren " +
+				"FOR EACH ROW " + 
+				"EXECUTE PROCEDURE berechneitr();");
+
+		//-- Load: Divisoren
+		//-- Typ: Vorberechnung?
+		//-- Verweist auf: divisoren, sitzeprojahr
+		st.executeUpdate("DELETE FROM divisoren;");
+		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
 
 		//-- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
 		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS (" +
 				"WITH sitzzuweisung AS ( " + 
 				"	SELECT * FROM itrergebnisse " + 
 				"	ORDER BY anzahl DESC " +
-				"  LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '2013')) " +
+				"  LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '"+jahr+"')) " +
 				"SELECT partei as parteiname, COUNT(*) as sitze " +
 				"FROM sitzzuweisung " +
 				"GROUP BY partei); ");
@@ -50,13 +79,13 @@ public class DataAnalyzer {
 				"WITH maxvotes AS ( " + 
 				"	SELECT wahlkreis, max(anzahl) AS max " + 
 				"	FROM erststimmen " +
-				"  WHERE jahr = '2013' " +
+				"  WHERE jahr = '"+jahr+"' " +
 				"	GROUP BY wahlkreis), " +
 
 					 "maxvoteskand AS ( " +
 					 "SELECT e.kandnum AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " +
-					 "FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '2013') e " +
-					 "ON m.wahlkreis = e.wahlkreis AND m.max = e.quantitaet), " +
+					 "FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '"+jahr+"') e " +
+					 "ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl), " +
 
 					 "maxvotesuniquekand AS ( " +
 					 "SELECT wahlkreis, max, min(kandnum) AS kandnum " +
@@ -65,7 +94,7 @@ public class DataAnalyzer {
 
 					 "parteinsitze AS ( " +
 					 "SELECT partei, count(*) AS sitze " +
-					 "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidaten dk WHERE dk.jahr = '2013') d " +
+					 "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidaten dk WHERE dk.jahr = '"+jahr+"') d " +
 					 "ON m.kandnum = d.kandnum AND m.wahlkreis = d.wahlkreis " +
 					 "GROUP BY partei) " +
 
