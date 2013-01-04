@@ -6,5 +6,6 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 @RemoteServiceRelativePath("loader")
 public interface LoaderService extends RemoteService {
 
-  String loadData(String[] properties);
+	// Load data into database
+	String loadData(String[] properties);
 }

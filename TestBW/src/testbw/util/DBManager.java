@@ -37,7 +37,7 @@ public class DBManager {
 	}
 
 	// Gibt Ausgabe einer Query als Tabelle in der Konsole zurueck
-	public static void printQueryResult(Statement st, ResultSet rs, String table)
+	public void printQueryResult(Statement st, ResultSet rs, String table)
 			throws SQLException {
 		//String returnString = "";
 		rs = st.executeQuery("SELECT * FROM " + table + " ;");

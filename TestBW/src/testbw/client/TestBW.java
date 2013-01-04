@@ -22,6 +22,7 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
@@ -52,6 +53,7 @@ public class TestBW implements EntryPoint {
 	private Button closeButton = new Button("Close");
 	private VerticalPanel dialogVPanel = new VerticalPanel();
 	private PieChart piechart;
+	private TextArea ta = new TextArea();
 
 	// Services
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);
@@ -60,11 +62,25 @@ public class TestBW implements EntryPoint {
 	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
 
 
-	/////////////////////////////////////////////////////////////////////////////
-	// Entry point method
-	/////////////////////////////////////////////////////////////////////////////
-
+	/**
+	 * Entry point method.
+	 */
 	public void onModuleLoad() {
+		
+		///////////////////////////////////////////////////////////////////////
+		// GUI Elements
+		///////////////////////////////////////////////////////////////////////
+		
+		// Analysis pop up ----------------------------------------------------
+		dialogBox.addStyleName("dialogBox");
+		dialogBox.setText("Analysis Results");
+		dialogBox.setGlassEnabled(true);
+		dialogBox.setAnimationEnabled(true);
+		closeButton.getElement().setId("closeButton");
+		dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+		dialogVPanel.addStyleName("dialogVPanel");
+		dialogBox.add(dialogVPanel);
+		
 
 		// Build GUI -----------------------------------------------------------
 		vpanel.add(projectName);
@@ -77,6 +93,9 @@ public class TestBW implements EntryPoint {
 		vpanel.add(setupPanel);
 		vpanel.add(resultLabel);
 		RootPanel.get("setupDB").add(vpanel);
+		
+		
+		// Widget options -----------------------------------------------------
 		projectName.setFocus(true);
 		projectName.setTitle("Enter Server name ... ");
 		dbInputBox.setTitle("Enter database name ...");
@@ -85,20 +104,16 @@ public class TestBW implements EntryPoint {
 		projectName.addStyleName("textBox");
 		dbInputBox.addStyleName("textBox");
 		passwordBox.addStyleName("textBox");
+		
 
-		// Create the pop-up dialog box
-		dialogBox.addStyleName("dialogBox");
-		dialogBox.setText("Analysis Results");
-		dialogBox.setGlassEnabled(true);
-		dialogBox.setAnimationEnabled(true);
-		closeButton.getElement().setId("closeButton");
-		dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
-		dialogVPanel.addStyleName("dialogVPanel");
-		dialogBox.add(dialogVPanel);
+		
 
+		
 
-		// Handles --------------------------------------------------------------
-
+		/////////////////////////////////////////////////////////////////////////
+		// Handles
+		/////////////////////////////////////////////////////////////////////////
+		
 		// Add a handler to close the DialogBox
 		closeButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
@@ -144,9 +159,10 @@ public class TestBW implements EntryPoint {
 			}
 		});
 
-
-		// Load visualization API -----------------------------------------------
-
+		/////////////////////////////////////////////////////////////////////////
+		// Load visualization API
+		/////////////////////////////////////////////////////////////////////////
+		
 		// Create a callback to be called when the visualization API
 		// has been loaded.
 		Runnable onLoadCallback = new Runnable() {
@@ -160,10 +176,6 @@ public class TestBW implements EntryPoint {
 		VisualizationUtils.loadVisualizationApi(onLoadCallback, CoreChart.PACKAGE);
 	}
 
-
-	/////////////////////////////////////////////////////////////////////////////
-	// Button functionality methods
-	/////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Sets up a database with required relations and other static data.

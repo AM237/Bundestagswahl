@@ -13,12 +13,8 @@ import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 
 import testbw.util.CopyProgressMonitor;
-import testbw.util.DBManager;
 import testbw.util.InputDirectory;
 
-/**
- * Lade Stimmen in die Datenbank, und fuege Constraints hinzu.
- */
 public class DataLoader {
 
 	// Input Dateien
@@ -27,107 +23,96 @@ public class DataLoader {
 	private static String zweitstimmen05Pfad = InputDirectory.zweitstimmen05Pfad;
 	private static String zweitstimmen09Pfad = InputDirectory.zweitstimmen09Pfad;
 
-	public String loadData(String[] properties){
+	// Datenbankverbindungsdaten
+	private Connection conn = null;
+	private Statement st = null;
 
-		// Datenbankverbindung -----------------------------------------
-		DBManager manager = new DBManager(properties);
-		try {
-			manager.connect();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return "Setup unsuccessful. Problem setting up connection to database.";
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
-		}
-		Connection conn = manager.getConnection();
-		Statement st = manager.getStatement();
+	public DataLoader(Connection conn, Statement st){
+		this.conn = conn;
+		this.st = st;
+	}
 
-		try { // Stimmen Laden --------------------------------------------------
+	/**
+	 * Load data into the database
+	 */
+	public void loadData() throws SQLException, IOException {
 
-			SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss");
+		// Stimmen Laden --------------------------------------------------
 
-			for (int jahr = 0; jahr < 2; jahr++) {
+		SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss");
 
-				// Bulk Load der ErstStimmen----------------------------------------
-				CopyManager copyManager = new CopyManager((BaseConnection) conn);
-				String actPfad;
-				String progressString;
-				String tableDestination;
-				for (int stimme = 0; stimme < 2; stimme++) {
+		for (int jahr = 0; jahr < 2; jahr++) {
 
-					System.out.println("\nCopying started: " + format.format(new Date()));
+			// Bulk Load der ErstStimmen----------------------------------------
+			CopyManager copyManager = new CopyManager((BaseConnection) conn);
+			String actPfad;
+			String progressString;
+			String tableDestination;
+			for (int stimme = 0; stimme < 2; stimme++) {
 
-					switch (stimme) {
+				System.out.println("\nCopying started: " + format.format(new Date()));
+
+				switch (stimme) {
+				case 0:
+					tableDestination = "erststimme";
+					switch (jahr) {
 					case 0:
-						tableDestination = "erststimme";
-						switch (jahr) {
-						case 0:
-							actPfad = erststimmen05Pfad;
-							progressString = "Erststimmen 2005 laden";
-							break;
-						default:
-							actPfad = erststimmen09Pfad;
-							progressString = "Erststimmen 2009 laden";
-							break;
-						}
+						actPfad = erststimmen05Pfad;
+						progressString = "Erststimmen 2005 laden";
 						break;
 					default:
-						tableDestination = "zweitstimme";
-						switch (jahr) {
-						case 0:
-							actPfad = zweitstimmen05Pfad;
-							progressString = "Zweitstimmen 2005 laden";
-							break;
-						default:
-							actPfad = zweitstimmen09Pfad;
-							progressString = "Zweitstimmen 2009 laden";
-							break;
-						}
+						actPfad = erststimmen09Pfad;
+						progressString = "Erststimmen 2009 laden";
 						break;
 					}
-
-					System.out.println(tableDestination + " " + actPfad);
-					InputStream in = new BufferedInputStream(
-							CopyProgressMonitor.getCopyProgressMonitor(
-									actPfad, progressString));
-					copyManager.copyIn("COPY " + tableDestination
-							+ " FROM STDIN WITH DELIMITER ';' CSV", in);
-
-					System.out.println("\nCopying finished");
+					break;
+				default:
+					tableDestination = "zweitstimme";
+					switch (jahr) {
+					case 0:
+						actPfad = zweitstimmen05Pfad;
+						progressString = "Zweitstimmen 2005 laden";
+						break;
+					default:
+						actPfad = zweitstimmen09Pfad;
+						progressString = "Zweitstimmen 2009 laden";
+						break;
+					}
+					break;
 				}
+
+				System.out.println(tableDestination + " " + actPfad);
+				InputStream in = new BufferedInputStream(
+						CopyProgressMonitor.getCopyProgressMonitor(
+								actPfad, progressString));
+				copyManager.copyIn("COPY " + tableDestination
+						+ " FROM STDIN WITH DELIMITER ';' CSV", in);
+
+				System.out.println("\nCopying finished");
 			}
-			
-			
-			// Constraints ------------------------------------------------
-			System.out.println("\nAdding Constraints ... ");
-
-			st.executeUpdate("ALTER TABLE wahlberechtigte ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
-			st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
-			st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-			st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
-			st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-			st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
-			st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
-			st.executeUpdate("ALTER TABLE erststimme ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
-			st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
-			st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-			st.executeUpdate("ALTER TABLE erststimmen ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
-			st.executeUpdate("ALTER TABLE zweitstimmen ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
-
-			System.out.println("\nFinished adding constraints");
-
-			st.close();
-			conn.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return "Problem with SQL queries ...";
-		} catch (IOException e) {
-			e.printStackTrace();
-			return "Data loading unsuccessful, problem copying from files.";
 		}
+	}
 
-		return "Data successfully loaded.";
-	}	
+	/**
+	 * Add constraints to all base tables
+	 */
+	public void addConstraints() throws SQLException {
+
+		System.out.println("\nAdding Constraints ... ");
+
+		st.executeUpdate("ALTER TABLE wahlberechtigte ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
+		st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
+		st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+		st.executeUpdate("ALTER TABLE direktkandidat ADD CONSTRAINT wahlkreis FOREIGN KEY (jahr,wahlkreis) REFERENCES wahlkreis(jahr,wahlkreisnummer);");
+		st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+		st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
+		st.executeUpdate("ALTER TABLE listenkandidat ADD CONSTRAINT politiker FOREIGN KEY (politiker) REFERENCES politiker;");
+		st.executeUpdate("ALTER TABLE erststimme ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
+		st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT bundesland FOREIGN KEY (bundesland) REFERENCES bundesland;");
+		st.executeUpdate("ALTER TABLE zweitstimme ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+		st.executeUpdate("ALTER TABLE erststimmen ADD CONSTRAINT kandidatennummer FOREIGN KEY (kandidatennummer) REFERENCES direktkandidat(kandidatennummer);");
+		st.executeUpdate("ALTER TABLE zweitstimmen ADD CONSTRAINT partei FOREIGN KEY (partei) REFERENCES partei;");
+
+		System.out.println("\nFinished adding constraints");
+	}
 }
