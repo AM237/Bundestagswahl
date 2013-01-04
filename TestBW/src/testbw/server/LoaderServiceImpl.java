@@ -18,7 +18,7 @@ public class LoaderServiceImpl extends RemoteServiceServlet implements
 	@Override
 	public String loadData(String[] properties) {
 		
-		// Datenbankverbindung -----------------------------------------
+		// Datenbankverbindung ------------------------------------------------
 		DBManager manager = new DBManager(properties);
 		try {
 			manager.connect();
@@ -42,6 +42,13 @@ public class LoaderServiceImpl extends RemoteServiceServlet implements
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "Data loading unsuccessful, problem copying from files.";
+		}
+		
+		try { // Aggregate data -----------------------------------------------
+			loader.aggregateData();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return "Problem with SQL queries (aggregating).";
 		}
 		
 		try { // Add constraints ----------------------------------------------

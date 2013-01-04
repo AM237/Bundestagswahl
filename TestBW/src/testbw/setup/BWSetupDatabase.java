@@ -359,18 +359,8 @@ public class BWSetupDatabase {
 		st.executeUpdate("DROP TABLE IF EXISTS itrergebnisse CASCADE;");
 		st.executeUpdate("CREATE TABLE itrergebnisse ( partei CHARACTER VARYING NOT NULL, anzahl NUMERIC NOT NULL, PRIMARY KEY(partei, anzahl));");
 
-
-		//-- StimmenProPartei [Mock]
-		//-- Typ: wird berechnet -> Initialisiere als Dummy
-		//-- Verweist auf: -
-		st.executeUpdate("DROP TABLE IF EXISTS stimmenpropartei CASCADE;");
-		//st.executeUpdate("CREATE TABLE stimmenpropartei ( partei CHARACTER VARYING PRIMARY KEY, anzahl INTEGER);");
-		//st.executeUpdate("INSERT INTO stimmenpropartei VALUES ('X', '5200'), ('Y', '1700'), ('Z', '3100');");
-
 		// Nun Teil der Auswertung wegen der Abhaengigkeit an 'stimmenpropartei', die nicht im Voraus berechnet werden darf.
-		
-		/*
-		//-- Trigger Divisoren -> ItrErgebnisse
+		/*//-- Trigger Divisoren -> ItrErgebnisse
 		//-- Typ: vordefiniert?
 		//-- Verweist auf: stimmenpropartei
 		st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
@@ -392,52 +382,6 @@ public class BWSetupDatabase {
 		//-- Typ: Vorberechnung?
 		//-- Verweist auf: divisoren, sitzeprojahr
 		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
-		 */
-		
-		
-		/*
-					//-- Erststimmen [Mock]
-					//-- Typ: wird berechnet
-					//-- Verweist auf: -
-					st.executeUpdate("DROP TABLE IF EXISTS erststimmen CASCADE;");
-					st.executeUpdate("CREATE TABLE erststimmen ( jahr INTEGER, kandnum INTEGER, wahlkreis INTEGER, " + 
-										"quantitaet INTEGER, CONSTRAINT erststimmen_pkey PRIMARY KEY (jahr, kandnum, wahlkreis));");
-
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '1', '11', '5');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '2', '11', '3');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '3', '11', '8');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '4', '12', '1');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '5', '12', '20');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '6', '12', '3');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '7', '13', '12');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '8', '13', '5');");
-					st.executeUpdate("INSERT INTO erststimmen VALUES ('2013', '9', '13', '4');");
-
-
-					//-- Direktkandidaten [Mock]
-					//-- Typ: vordefiniert
-					//-- Verweist auf: -
-					st.executeUpdate("DROP TABLE IF EXISTS direktkandidaten CASCADE;");
-					st.executeUpdate("CREATE TABLE direktkandidaten( jahr INTEGER, kandnum INTEGER, polnr INTEGER, partei INTEGER, wahlkreis INTEGER, " + 
-									 "CONSTRAINT direktkandidaten_pkey PRIMARY KEY (jahr, kandnum));");
-
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '1', '1', '21', '11');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '2', '2', '22', '11');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '3', '3', '23', '11');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '4', '4', '21', '12');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '5', '5', '22', '12');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '6', '6', '23', '12');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '7', '7', '21', '13');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '8', '8', '22', '13');");
-					st.executeUpdate("INSERT INTO direktkandidaten VALUES ('2013', '9', '9', '23', '13');");
-
-
-					//-- Parteien [Mock]
-					//-- Typ: vordefiniert
-					//-- Verweist auf: -
-					st.executeUpdate("DROP TABLE IF EXISTS parteien CASCADE;");
-					st.executeUpdate("CREATE TABLE parteien ( parteinum INTEGER PRIMARY KEY, name CHARACTER VARYING NOT NULL);");
-					st.executeUpdate("INSERT INTO parteien VALUES ('21', 'X'), ('22', 'Y'), ('23', 'Z');");
 		 */
 	}
 }

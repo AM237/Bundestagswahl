@@ -34,10 +34,10 @@ public class DataAnalyzer {
 				"SELECT p.name AS partei, t1.anzahl AS anzahl FROM " +
 				"((SELECT partei, sum(anzahl) AS anzahl " +
 				" FROM zweitstimmen " +
-				" WHERE jahr = '2013' " +
+				" WHERE jahr = '"+jahr+"' " +
 				" GROUP BY partei) t1 " +
 				"JOIN " +
-				"parteien p ON t1.partei::text = p.parteinum::text));"); 
+				"partei p ON t1.partei::text = p.parteinummer::text));"); 
 		
 		//-- Trigger Divisoren -> ItrErgebnisse
 		//-- Typ: vordefiniert?
@@ -83,7 +83,7 @@ public class DataAnalyzer {
 				"	GROUP BY wahlkreis), " +
 
 					 "maxvoteskand AS ( " +
-					 "SELECT e.kandnum AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " +
+					 "SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " +
 					 "FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '"+jahr+"') e " +
 					 "ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl), " +
 
@@ -94,13 +94,13 @@ public class DataAnalyzer {
 
 					 "parteinsitze AS ( " +
 					 "SELECT partei, count(*) AS sitze " +
-					 "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidaten dk WHERE dk.jahr = '"+jahr+"') d " +
-					 "ON m.kandnum = d.kandnum AND m.wahlkreis = d.wahlkreis " +
+					 "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"+jahr+"') d " +
+					 "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " +
 					 "GROUP BY partei) " +
 
 					 "SELECT p.name AS parteiname, pn.sitze AS sitze " +
-					 "FROM parteinsitze pn join parteien p " + 
-				"ON pn.partei = p.parteinum);");
+					 "FROM parteinsitze pn join partei p " + 
+				"ON pn.partei = p.parteinummer);");
 
 
 		//-- Auswertung der Gesamtverteilung (Sitze -> Partei)
