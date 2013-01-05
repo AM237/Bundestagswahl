@@ -3,10 +3,12 @@ package testbw.client;
 // Dependencies
 import testbw.client.SetupStaticDBService;
 import testbw.client.SetupStaticDBServiceAsync;
+import testbw.client.TestBW.WKTableEntry;
 //import testbw.util.Parser;
 
 // Java API
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +21,8 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.DataGrid;
+import com.google.gwt.user.cellview.client.SimplePager;
+import com.google.gwt.user.cellview.client.SimplePager.TextLocation;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
@@ -32,6 +36,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
+import com.google.gwt.view.client.ListDataProvider;
 // Visualization API
 import com.google.gwt.visualization.client.AbstractDataTable;
 import com.google.gwt.visualization.client.VisualizationUtils;
@@ -45,7 +50,8 @@ import com.google.gwt.visualization.client.visualizations.corechart.PieChart.Pie
 public class TestBW implements EntryPoint {
 	
 	// GUI elements
-	private VerticalPanel mainVPanel = new VerticalPanel();
+	private HorizontalPanel mainHPanel = new HorizontalPanel();
+	private VerticalPanel leftVPanel = new VerticalPanel();
 	private VerticalPanel inputVPanel = new VerticalPanel();
 	private VerticalPanel inputFieldsVPanelProject = new VerticalPanel();
 	private VerticalPanel inputFieldsVPanelQuery = new VerticalPanel();
@@ -65,16 +71,16 @@ public class TestBW implements EntryPoint {
 	private TextBox wahlkreisInput = new TextBox();
 	private Label resultLabel = new Label();
 	private DialogBox distDialogBox = new DialogBox();
-	private DialogBox wkDialogBox = new DialogBox();
 	private Button distCloseButton = new Button("Close");
-	private Button wkCloseButton = new Button("Close");
 	private VerticalPanel distVPanel = new VerticalPanel();
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
 	private VerticalPanel wkVPanel = new VerticalPanel();
-	//private DataGrid<String> erststimmeTable = new DataGrid<String>();
-	//private DataGrid<String> zweitstimmeTable = new DataGrid<String>();
 	private CellTable<WKTableEntry> wkErstTable = new CellTable<WKTableEntry>();
-	private CellTable<WKTableEntry> wkZweitTable = new CellTable<WKTableEntry>();
+	//private DataGrid<WKTableEntry> wkErstTable = new DataGrid<WKTableEntry>();
+	//private CellTable<WKTableEntry> wkZweitTable = new CellTable<WKTableEntry>();
+	private DataGrid<WKTableEntry> wkZweitTable = new DataGrid<WKTableEntry>();
+	private SimplePager pager;
+	private ListDataProvider<WKTableEntry> dataProvider = new ListDataProvider<WKTableEntry>();
 	private PieChart piechart;
 	private TextArea ta = new TextArea();
 	private Label taLabel = new Label();
@@ -107,12 +113,12 @@ public class TestBW implements EntryPoint {
 		
 		
 		// WK Sieger pop up ---------------------------------------------------
-		wkDialogBox.setText("Wahlkreis Winners");
-		wkDialogBox.setGlassEnabled(true);
-		wkDialogBox.setAnimationEnabled(true);
+		//wkDialogBox.setText("Wahlkreis Winners");
+		//wkDialogBox.setGlassEnabled(true);
+		//wkDialogBox.setAnimationEnabled(true);
 		wkVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
 		wkHPanel.setSpacing(80);
-		wkDialogBox.add(wkVPanel);
+		//wkDialogBox.add(wkVPanel);
 		
 
 		// Build GUI ----------------------------------------------------------
@@ -136,15 +142,17 @@ public class TestBW implements EntryPoint {
 		outputVPanel.add(generateOutputVert);
 		inputVPanel.add(inputFieldsVPanelProject);
 		inputVPanel.add(inputFieldsVPanelQuery);
-		mainVPanel.add(inputVPanel);
-		mainVPanel.add(buttonsVPanel);
-		mainVPanel.add(outputVPanel);
-		RootPanel.get("setupDB").add(mainVPanel);
+		leftVPanel.add(inputVPanel);
+		leftVPanel.add(buttonsVPanel);
+		leftVPanel.add(outputVPanel);
+		mainHPanel.add(leftVPanel);
+		//mainHPanel.add(rightHPanel);
+		RootPanel.get("setupDB").add(mainHPanel);
 		
 		
 		// Widget options -----------------------------------------------------
-		mainVPanel.setSpacing(30);
-		mainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
+		leftVPanel.setSpacing(30);
+		leftVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
 		
 		inputVPanel.setSpacing(10);
 		inputFieldsLabel.setText("Inputs");
@@ -184,13 +192,6 @@ public class TestBW implements EntryPoint {
 		distCloseButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
 				distDialogBox.hide();
-			}
-		});
-		
-		// Add a handler to close the WK Sieger DialogBox
-		wkCloseButton.addClickHandler(new ClickHandler() {
-			public void onClick(ClickEvent event) {
-				wkDialogBox.hide();
 			}
 		});
 		
@@ -415,6 +416,18 @@ public class TestBW implements EntryPoint {
 				WKErststimmen = extractRows(erststimmen, erstColLength);
 				WKZweitstimmen = extractRows(zweitstimmen, zweitColLength);
 				
+
+				
+			    // Create a Pager to control the table.
+			    SimplePager.Resources pagerResources = GWT.create(SimplePager.Resources.class);
+			    pager = new SimplePager(TextLocation.CENTER, pagerResources, true, 0, true);
+			    pager.setDisplay(wkErstTable);
+			    
+				dataProvider.addDataDisplay(wkErstTable);
+				dataProvider.setList(WKErststimmen);
+				pager.setPageSize(3);
+				wkVPanel.add(pager);
+				
 			    // Create wahlkreis column.
 			    TextColumn<WKTableEntry> wahlkreisColumn = new TextColumn<WKTableEntry>() {
 			      @Override
@@ -436,6 +449,12 @@ public class TestBW implements EntryPoint {
 			        return entry.quantity;
 			      }
 			    };
+			    
+			    wahlkreisColumn.setSortable(true);
+			    idColumn.setSortable(true);
+			    quantColumn.setSortable(true);
+			    
+			    
 			    // Add the columns.
 			    wkErstTable.addColumn(wahlkreisColumn, "Wahlkreis");
 			    wkErstTable.addColumn(idColumn, "Kandidatennummer");
@@ -447,24 +466,24 @@ public class TestBW implements EntryPoint {
 
 			    // Set the total row count. This isn't strictly necessary, but it affects
 			    // paging calculations, so its good habit to keep the row count up to date.
-			    //wkErstTable.setRowCount(299, true);
-			    //wkZweitTable.setRowCount(299, true);
+			    wkErstTable.setRowCount(WKErststimmen.size(), true);
+			    wkZweitTable.setRowCount(WKZweitstimmen.size(), true);
+			    
+			    //wkErstTable.setVisibleRange(0, 20);
 
 			    // Push the data into the widget.
-			    wkErstTable.setRowData(0, WKErststimmen);
-			    wkZweitTable.setRowData(0, WKZweitstimmen);
+			    //wkErstTable.setRowData(0, WKErststimmen);
+			   // wkZweitTable.setRowData(0, WKZweitstimmen);
+			    
+			  
 			    
 			    // Add table to UI
-			    wkDialogBox.center();
-			    wkDialogBox.setText("Wahlkreis winners: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
-			    wkVPanel.clear();
-			    wkHPanel.clear();
+			    //wkVPanel.clear();
+			    //wkHPanel.clear();
 			    wkVPanel.add(wkHPanel);
-			    wkVPanel.add(wkCloseButton);
 			    wkHPanel.add(wkErstTable);
 			    wkHPanel.add(wkZweitTable);
-			    wkVPanel.add(wkCloseButton);
-			    wkCloseButton.setFocus(true);
+			    mainHPanel.add(wkVPanel);
 			}
 		};
 
@@ -484,7 +503,7 @@ public class TestBW implements EntryPoint {
 	// Other methods / static classes
 	/////////////////////////////////////////////////////////////////////////////
 
-	// Seat distrubution ------------------------------------------------------
+	// Seat distribution ------------------------------------------------------
 	
 	/**
 	 * Options for pie chart.

@@ -179,11 +179,7 @@ public class DataAnalyzer {
 			// add delimiter
 			result.add("$$");
 		}
-		
-		
-		//DBManager.printQueryResult(st, rs, "erststimmengewinner");
-		
-		
+			
 		return result;
 	}
 }
