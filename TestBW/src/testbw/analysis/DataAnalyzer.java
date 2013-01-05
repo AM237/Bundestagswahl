@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import testbw.util.DBManager;
+
 public class DataAnalyzer {
 
 	// Datenbankverbindungsdaten
@@ -160,11 +162,11 @@ public class DataAnalyzer {
 				result.add(rs.getString(i+1));
 			}
 			// add delimiter
-			result.add("$");
+			result.add("$$");
 		}
 		
 		// add delimiter
-		result.add("&");
+		result.add("&&");
 		
 		// zweitstimmen
 		rs = st.executeQuery("SELECT * FROM " + "zweitstimmengewinner;");
@@ -175,8 +177,11 @@ public class DataAnalyzer {
 				result.add(rs.getString(i+1));
 			}
 			// add delimiter
-			result.add("$");
+			result.add("$$");
 		}
+		
+		
+		//DBManager.printQueryResult(st, rs, "erststimmengewinner");
 		
 		
 		return result;

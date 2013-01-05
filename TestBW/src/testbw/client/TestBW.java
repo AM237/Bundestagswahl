@@ -3,10 +3,12 @@ package testbw.client;
 // Dependencies
 import testbw.client.SetupStaticDBService;
 import testbw.client.SetupStaticDBServiceAsync;
+//import testbw.util.Parser;
 
 // Java API
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 // GWT GUI API
@@ -17,6 +19,7 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.DataGrid;
+import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
@@ -61,12 +64,17 @@ public class TestBW implements EntryPoint {
 	private TextBox yearInput = new TextBox();
 	private TextBox wahlkreisInput = new TextBox();
 	private Label resultLabel = new Label();
-	private DialogBox dialogBox = new DialogBox();
-	private Button closeButton = new Button("Close");
-	private VerticalPanel analysisVPanel = new VerticalPanel();
-	private HorizontalPanel analysisHPanel = new HorizontalPanel();
-	private DataGrid<String> erststimmeTable = new DataGrid<String>();
-	private DataGrid<String> zweitstimmeTable = new DataGrid<String>();
+	private DialogBox distDialogBox = new DialogBox();
+	private DialogBox wkDialogBox = new DialogBox();
+	private Button distCloseButton = new Button("Close");
+	private Button wkCloseButton = new Button("Close");
+	private VerticalPanel distVPanel = new VerticalPanel();
+	private HorizontalPanel wkHPanel = new HorizontalPanel();
+	private VerticalPanel wkVPanel = new VerticalPanel();
+	//private DataGrid<String> erststimmeTable = new DataGrid<String>();
+	//private DataGrid<String> zweitstimmeTable = new DataGrid<String>();
+	private CellTable<WKTableEntry> wkErstTable = new CellTable<WKTableEntry>();
+	private CellTable<WKTableEntry> wkZweitTable = new CellTable<WKTableEntry>();
 	private PieChart piechart;
 	private TextArea ta = new TextArea();
 	private Label taLabel = new Label();
@@ -90,21 +98,24 @@ public class TestBW implements EntryPoint {
 		// GUI Elements
 		///////////////////////////////////////////////////////////////////////
 		
-		// Analysis pop up ----------------------------------------------------
-		dialogBox.addStyleName("dialogBox");
-		dialogBox.setText("Analysis Results");
-		dialogBox.setGlassEnabled(true);
-		dialogBox.setAnimationEnabled(true);
-		closeButton.getElement().setId("closeButton");
-		analysisHPanel.add(analysisVPanel);
-		analysisHPanel.add(erststimmeTable);
-		analysisHPanel.add(zweitstimmeTable);
-		analysisVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
-		analysisVPanel.addStyleName("dialogVPanel");
-		dialogBox.add(analysisVPanel);
+		// Seat distribution pop up -------------------------------------------
+		distDialogBox.setText("Analysis Results");
+		distDialogBox.setGlassEnabled(true);
+		distDialogBox.setAnimationEnabled(true);
+		distVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+		distDialogBox.add(distVPanel);
+		
+		
+		// WK Sieger pop up ---------------------------------------------------
+		wkDialogBox.setText("Wahlkreis Winners");
+		wkDialogBox.setGlassEnabled(true);
+		wkDialogBox.setAnimationEnabled(true);
+		wkVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+		wkHPanel.setSpacing(80);
+		wkDialogBox.add(wkVPanel);
 		
 
-		// Build GUI -----------------------------------------------------------
+		// Build GUI ----------------------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsLabel);
 		inputFieldsVPanelProject.add(projectName);
 		inputFieldsVPanelProject.add(dbInputBox);
@@ -169,10 +180,17 @@ public class TestBW implements EntryPoint {
 		// Handles
 		/////////////////////////////////////////////////////////////////////////
 		
-		// Add a handler to close the DialogBox
-		closeButton.addClickHandler(new ClickHandler() {
+		// Add a handler to close the seat distribution DialogBox
+		distCloseButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
-				dialogBox.hide();
+				distDialogBox.hide();
+			}
+		});
+		
+		// Add a handler to close the WK Sieger DialogBox
+		wkCloseButton.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				wkDialogBox.hide();
 			}
 		});
 		
@@ -370,24 +388,83 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onSuccess(ArrayList<String> s) {
 				
-				ArrayList<List<String>> parsed = parseReturned(s);
+				ArrayList<ArrayList<String>> parsed = parse(s, "##");
 			
 				resultLabel.setText("Analysis complete.");
 				resultLabel.setVisible(true);
 
-				analysisVPanel.clear();
-				dialogBox.center();
-				dialogBox.setText("Analysis Results: Last update: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
-
-				// Draw pie chart
+				// Seat distribution ------------------------------------------
+				distVPanel.clear();
+				distDialogBox.center();
+				distDialogBox.setText("Seat Distribution Results: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
 				piechart = new PieChart(createTable(parsed.get(0)), createOptions());
-				analysisVPanel.add(piechart);
+				distVPanel.add(piechart);				
+				distVPanel.add(distCloseButton);
+				distCloseButton.setFocus(true);
+							
+				// Wahlkreissieger --------------------------------------------
+				//Parser parser =  new Parser();
+				ArrayList<String> wks = new ArrayList<String>(parsed.get(1));
+				ArrayList<ArrayList<String>> wksTables = parse(wks, "&&");
+				ArrayList<String> erststimmen = wksTables.get(0);
+				ArrayList<String> zweitstimmen = wksTables.get(1);
 				
-				// Wahlkreissieger
+				int erstColLength = getDelimLength(erststimmen, "$$");
+				int zweitColLength = getDelimLength(zweitstimmen, "$$");
 				
+				WKErststimmen = extractRows(erststimmen, erstColLength);
+				WKZweitstimmen = extractRows(zweitstimmen, zweitColLength);
+				
+			    // Create wahlkreis column.
+			    TextColumn<WKTableEntry> wahlkreisColumn = new TextColumn<WKTableEntry>() {
+			      @Override
+			      public String getValue(WKTableEntry entry) {
+			        return entry.wahlkreis;
+			      }
+			    };
+			    // Create identifier column.
+			    TextColumn<WKTableEntry> idColumn = new TextColumn<WKTableEntry>() {
+			      @Override
+			      public String getValue(WKTableEntry entry) {
+			        return entry.identifier;
+			      }
+			    };
+			    // Create quantity column.
+			    TextColumn<WKTableEntry> quantColumn = new TextColumn<WKTableEntry>() {
+			      @Override
+			      public String getValue(WKTableEntry entry) {
+			        return entry.quantity;
+			      }
+			    };
+			    // Add the columns.
+			    wkErstTable.addColumn(wahlkreisColumn, "Wahlkreis");
+			    wkErstTable.addColumn(idColumn, "Kandidatennummer");
+			    wkErstTable.addColumn(quantColumn, "Anzahl");
+			    
+			    wkZweitTable.addColumn(wahlkreisColumn, "Wahlkreis");
+			    wkZweitTable.addColumn(idColumn, "Partei");
+			    wkZweitTable.addColumn(quantColumn, "Anzahl");
 
-				analysisVPanel.add(closeButton);
-				closeButton.setFocus(true);
+			    // Set the total row count. This isn't strictly necessary, but it affects
+			    // paging calculations, so its good habit to keep the row count up to date.
+			    //wkErstTable.setRowCount(299, true);
+			    //wkZweitTable.setRowCount(299, true);
+
+			    // Push the data into the widget.
+			    wkErstTable.setRowData(0, WKErststimmen);
+			    wkZweitTable.setRowData(0, WKZweitstimmen);
+			    
+			    // Add table to UI
+			    wkDialogBox.center();
+			    wkDialogBox.setText("Wahlkreis winners: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
+			    wkVPanel.clear();
+			    wkHPanel.clear();
+			    wkVPanel.add(wkHPanel);
+			    wkVPanel.add(wkCloseButton);
+			    wkHPanel.add(wkErstTable);
+			    wkHPanel.add(wkZweitTable);
+			    wkVPanel.add(wkCloseButton);
+			    wkCloseButton.setFocus(true);
 			}
 		};
 
@@ -404,9 +481,11 @@ public class TestBW implements EntryPoint {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////
-	// Other methods
+	// Other methods / static classes
 	/////////////////////////////////////////////////////////////////////////////
 
+	// Seat distrubution ------------------------------------------------------
+	
 	/**
 	 * Options for pie chart.
 	 */
@@ -438,29 +517,99 @@ public class TestBW implements EntryPoint {
 
 		return dataTable;
 	}
+
+	// Wahlkreissieger --------------------------------------------------------
 	
+	// Data type representing an entry in the output tables
+	public static class WKTableEntry {
+		private final String wahlkreis;
+		private final String identifier;
+		private final String quantity;
+
+		public WKTableEntry(String wk, String id, String quant) {
+			this.wahlkreis = wk;
+			this.identifier = id;
+			this.quantity = quant;
+		}
+		
+		public WKTableEntry(ArrayList<String> properties){
+			this.wahlkreis = properties.get(0);
+			this.identifier = properties.get(1);
+			this.quantity = properties.get(2);
+		}
+	}
+
+	// Data to be modeled in the tables
+	private static List<WKTableEntry> WKErststimmen;
+	private static List<WKTableEntry> WKZweitstimmen;
+
 	/**
-	 * Parse string returned from server for analysis
+	 * Parse string returned from server for analysis.
+	 * Splits an ArrayList<String> along the given delimiter,
+	 * result is an ArrayList of Lists
+	 * @param s - input list
+	 * @param delim - delimiter string
+	 * @return see above
 	 */
-	private ArrayList<List<String>> parseReturned(ArrayList<String> s){
+	private ArrayList<ArrayList<String>> parse(ArrayList<String> s, String delim){
 		
 		int counter = 0;
-		ArrayList<List<String>> list = new ArrayList<List<String>>();
+		ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
 		
 		List<String> temp = s;
-		while(temp.indexOf("##") != -1){
+		while(temp.indexOf(delim) != -1){
 			list.add(new ArrayList<String>());
-			temp = temp.subList(temp.indexOf("##")+1, temp.size());
+			temp = temp.subList(temp.indexOf(delim)+1, temp.size());
 		}
 		list.add(new ArrayList<String>());
 		
 		for (int i = 0; i < s.size(); i++){
-			if (s.get(i).equals("##")) {
+			if (s.get(i).equals(delim)) {
 				counter++;
 				continue;
 			}
 			list.get(counter).add(s.get(i));
 		}
 		return list;
+	}
+	
+	/**
+	 * Returns the length of the lists of strings between the given delimiter
+	 * @param s - input list
+	 * @param delim - delimiter string
+	 * @return -1 if length inconsistent
+	 */
+	private int getDelimLength(ArrayList<String> s, String delim){
+		
+		ArrayList<Integer> counters = new ArrayList<Integer>();
+		
+		int counter = 0;
+		for (int i = 0; i < s.size(); i++){
+			if (!s.get(i).equals(delim)){
+				counter++;
+			} else {
+				counters.add(new Integer(counter));
+				counter = 0;
+				continue;
+			}
+		}
+		
+		HashSet<Integer> set = new HashSet<Integer>(counters);
+		if (set.size() > 1) return -1;
+		return counters.get(0);
+	}
+	
+	public ArrayList<WKTableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
+		
+		ArrayList<WKTableEntry> result = new ArrayList<WKTableEntry>();
+		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
+			ArrayList<String> temp = new ArrayList<String>();
+			for (int j = 0; j < colLength; j++){
+				temp.add(toBeParsed.get(i+j));
+			}
+			result.add(new WKTableEntry(temp));
+		}
+		
+		return result;
 	}
 }
