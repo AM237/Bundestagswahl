@@ -153,7 +153,7 @@ public class DataAnalyzer {
 				+ " AND s2.wahlkreis = w.wahlkreisnummer)");
 		
 		// erststimmen
-		rs = st.executeQuery("SELECT * FROM " + "erststimmengewinner;");
+		rs = st.executeQuery("SELECT * FROM erststimmengewinner;");
 		ResultSetMetaData meta = rs.getMetaData();
 		int anzFields = meta.getColumnCount();
 		while (rs.next()) {
@@ -168,7 +168,7 @@ public class DataAnalyzer {
 		result.add("&&");
 		
 		// zweitstimmen
-		rs = st.executeQuery("SELECT * FROM " + "zweitstimmengewinner;");
+		rs = st.executeQuery("SELECT * FROM zweitstimmengewinner;");
 		ResultSetMetaData meta2 = rs.getMetaData();
 		int anzFields2 = meta2.getColumnCount();
 		while (rs.next()) {
@@ -179,6 +179,40 @@ public class DataAnalyzer {
 			result.add("$$");
 		}
 			
+		return result;
+	}
+	
+	/**
+	 * Return the members of the Bundestag
+	 */
+	public ArrayList<String> getMembers(String[] queryInput) throws SQLException{
+		
+		ArrayList<String> result = new ArrayList<String>();
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS ( SELECT esg.kandidatennummer, d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer)");
+
+		st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
+				+ "WITH verteilung AS ( "
+				+ "	SELECT * "
+				+ "	FROM erststimmenergebnis  "
+				+ "  union all "
+				+ " 	SELECT * "
+				+ " 	FROM zweitstimmenergebnis)"
+				+ "SELECT lk.politiker, pa.name   FROM listenkandidat lk, politiker p,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer AND lk.listenplatz =< v.size- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
+				+ "UNION (SELECT * FROM mitgliedererststimme) )");
+		
+		rs = st.executeQuery("SELECT * FROM mitglieder");
+
+		while (rs.next()) {
+			ResultSetMetaData meta = rs.getMetaData();
+			int anzFields = meta.getColumnCount();
+			for (int i = 0; i < anzFields; i++) {
+				result.add(rs.getString(i+1));
+			}
+			// add delimiter
+			result.add("$$");
+		}
+
 		return result;
 	}
 }

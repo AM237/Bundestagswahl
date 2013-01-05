@@ -30,8 +30,6 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 			e.printStackTrace();
 			//return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
 		}
-		
-		// Connection conn = manager.getConnection();
 		Statement st = manager.getStatement();
 		ResultSet rs = null;
 		
@@ -53,6 +51,15 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		}
+		
+		// add delimiter to distinguish between the results of each respective query
+		result.add("##");
+				
+		try { // Get Bundestag members ----------------------------------------
+			result.addAll(analyzer.getMembers(queryInput));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
 		
 		try { // Close DB connection ------------------------------------------
 			st.close();

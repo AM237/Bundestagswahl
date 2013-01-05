@@ -19,14 +19,12 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.cellview.client.CellTable;
-import com.google.gwt.user.cellview.client.DataGrid;
 import com.google.gwt.user.cellview.client.SimplePager;
 import com.google.gwt.user.cellview.client.SimplePager.TextLocation;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
@@ -109,6 +107,13 @@ public class TestBW implements EntryPoint {
 	private ListDataProvider<WKTableEntry> wkErstTableDataProvider = new ListDataProvider<WKTableEntry>();
 	private ListDataProvider<WKTableEntry> wkZweitTableDataProvider = new ListDataProvider<WKTableEntry>();
 	
+	// Query results: Bundestag members ---------------------------------------
+	private VerticalPanel membersTableVPanel = new VerticalPanel();
+	private VerticalPanel membersVPanel = new VerticalPanel();
+	private CellTable<MembersTableEntry> membersTable = new CellTable<MembersTableEntry>();
+	private SimplePager membersPager;
+	private ListDataProvider<MembersTableEntry> membersTableDataProvider = new ListDataProvider<MembersTableEntry>();
+	
 
 	// Services ---------------------------------------------------------------
 	// ------------------------------------------------------------------------
@@ -135,6 +140,9 @@ public class TestBW implements EntryPoint {
 		wkHPanel.setBorderWidth(0);
 		wkErstTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		wkZweitTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		
+		// Bundestag members --------------------------------------------------
+		membersTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 
 		// Projects input section ---------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
@@ -482,6 +490,8 @@ public class TestBW implements EntryPoint {
 				// Add table to UI
 				wkErstTableVPanel.clear();
 				wkZweitTableVPanel.clear();
+				wkErstTable.setTitle("Wahlkreissieger " + dropList.get(yearInput.getSelectedIndex()) + ": Kandidaten");
+				wkZweitTable.setTitle("Wahlkreissieger " + dropList.get(yearInput.getSelectedIndex()) + ": Parteien");
 				wkErstTableVPanel.add(wkErstTable);
 				wkErstTablePager.setPageSize(15);
 				wkZweitTablePager.setPageSize(15);
@@ -491,6 +501,60 @@ public class TestBW implements EntryPoint {
 			    wkHPanel.add(wkErstTableVPanel);
 			    wkHPanel.add(wkZweitTableVPanel);
 			    queryResults2VPanel.add(wkHPanel);
+			    
+			    
+			    // Bundestag members ------------------------------------------
+			    // ------------------------------------------------------------
+			    
+			    ArrayList<String> members = new ArrayList<String>(parsed.get(2));
+			    
+			    for (int i = 0; i < members.size(); i++)
+			    	System.out.println(members.get(i));
+			    
+			    int membersColLength = getDelimLength(members, "$$");
+			    
+			    // Get data in table format
+				bwMembers = extractRowsMem(members, membersColLength);
+				
+			    // Create table columns
+			    TextColumn<MembersTableEntry> candColumn = new TextColumn<MembersTableEntry>() {
+			      @Override
+			      public String getValue(MembersTableEntry entry) {
+			        return entry.candNum;
+			      }
+			    };
+			    TextColumn<MembersTableEntry> partyColumn = new TextColumn<MembersTableEntry>() {
+			      @Override
+			      public String getValue(MembersTableEntry entry) {
+			        return entry.party;
+			      }
+			    };
+
+			    candColumn.setSortable(true);
+			    partyColumn.setSortable(true);
+			    
+			    // Add the columns.
+			    membersTable.addColumn(candColumn, "Kandidat");
+			    membersTable.addColumn(partyColumn, "Partei");
+			    
+			    // Create pagers to control the table.
+			    SimplePager.Resources pagerResourcesMembersTable = GWT.create(SimplePager.Resources.class);
+			    membersPager = new SimplePager(TextLocation.CENTER, pagerResourcesMembersTable, true, 3, true);
+			    membersPager.setDisplay(membersTable);
+			    
+			    // Set row count
+			    membersTable.setRowCount(bwMembers.size(), true);
+			    
+			    // Load data
+				membersTableDataProvider.addDataDisplay(membersTable);
+				membersTableDataProvider.setList(bwMembers);
+				
+				// Add table to UI
+				membersTableVPanel.clear();
+				membersTable.setTitle("Bundestagmitglieder " + dropList.get(yearInput.getSelectedIndex()));
+				membersTableVPanel.add(membersTable);
+				membersTableVPanel.add(membersPager);
+				queryResults2VPanel.add(membersTableVPanel);
 			}
 		};
 
@@ -506,12 +570,11 @@ public class TestBW implements EntryPoint {
 		((AnalysisServiceAsync) analysisSvc).analyze(projectInput, queryInput, callback);
 	}
 
-	/////////////////////////////////////////////////////////////////////////////
-	// Other methods / static classes
-	/////////////////////////////////////////////////////////////////////////////
+	
+	// Other methods / static classes -----------------------------------------
+	// ------------------------------------------------------------------------
 
 	// Seat distribution ------------------------------------------------------
-	
 	/**
 	 * Options for pie chart.
 	 */
@@ -555,8 +618,10 @@ public class TestBW implements EntryPoint {
 
 	// Wahlkreissieger --------------------------------------------------------
 	
+	public static class TableEntry { }
+	
 	// Data type representing an entry in the output tables
-	public static class WKTableEntry {
+	public static class WKTableEntry extends TableEntry {
 		private final String wahlkreis;
 		private final String identifier;
 		private final String quantity;
@@ -577,6 +642,31 @@ public class TestBW implements EntryPoint {
 	// Data to be modeled in the tables
 	private static List<WKTableEntry> WKErststimmen;
 	private static List<WKTableEntry> WKZweitstimmen;
+	
+	
+	// Bundestag members -----------------------------------------------------
+	
+	// Data type representing an entry in the output table
+	public static class MembersTableEntry extends TableEntry {
+		private final String candNum;
+		private final String party;
+
+		public MembersTableEntry(String candNum, String party) {
+			this.candNum = candNum;
+			this.party = party;
+		}
+		
+		public MembersTableEntry(ArrayList<String> properties){
+			this.candNum = properties.get(0);
+			this.party = properties.get(1);
+		}
+	}
+	
+	// Data to be modeled in the tables
+	private static List<MembersTableEntry> bwMembers;
+	
+	// Parser -----------------------------------------------------------------
+	// ------------------------------------------------------------------------
 
 	/**
 	 * Parse string returned from server for analysis.
@@ -634,15 +724,33 @@ public class TestBW implements EntryPoint {
 		return counters.get(0);
 	}
 	
-	public ArrayList<WKTableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
+	// todo: clean this up
+	public List<WKTableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
 		
 		ArrayList<WKTableEntry> result = new ArrayList<WKTableEntry>();
+		
 		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
 			ArrayList<String> temp = new ArrayList<String>();
 			for (int j = 0; j < colLength; j++){
 				temp.add(toBeParsed.get(i+j));
 			}
 			result.add(new WKTableEntry(temp));
+		}
+		
+		return result;
+	}
+	
+	
+	public List<MembersTableEntry> extractRowsMem(ArrayList<String> toBeParsed, int colLength){
+		
+		ArrayList<MembersTableEntry> result = new ArrayList<MembersTableEntry>();
+		
+		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
+			ArrayList<String> temp = new ArrayList<String>();
+			for (int j = 0; j < colLength; j++){
+				temp.add(toBeParsed.get(i+j));
+			}
+			result.add(new MembersTableEntry(temp));
 		}
 		
 		return result;
