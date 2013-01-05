@@ -1,9 +1,8 @@
 package testbw.client;
 
-// Dependencies
+// Project dependencies
 import testbw.client.SetupStaticDBService;
 import testbw.client.SetupStaticDBServiceAsync;
-import testbw.client.TestBW.WKTableEntry;
 //import testbw.util.Parser;
 
 // Java API
@@ -30,15 +29,18 @@ import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-
 import com.google.gwt.view.client.ListDataProvider;
+
 // Visualization API
 import com.google.gwt.visualization.client.AbstractDataTable;
+import com.google.gwt.visualization.client.ChartArea;
+import com.google.gwt.visualization.client.LegendPosition;
 import com.google.gwt.visualization.client.VisualizationUtils;
 import com.google.gwt.visualization.client.DataTable;
 import com.google.gwt.visualization.client.AbstractDataTable.ColumnType;
@@ -49,46 +51,67 @@ import com.google.gwt.visualization.client.visualizations.corechart.PieChart.Pie
 
 public class TestBW implements EntryPoint {
 	
-	// GUI elements
+	// GUI elements -----------------------------------------------------------
+	// ------------------------------------------------------------------------
+	
 	private HorizontalPanel mainHPanel = new HorizontalPanel();
-	private VerticalPanel leftVPanel = new VerticalPanel();
-	private VerticalPanel inputVPanel = new VerticalPanel();
+	
+	// Project input section --------------------------------------------------
+	private VerticalPanel inputMainVPanel = new VerticalPanel();
+	private Label inputFieldsProjectLabel = new Label();
 	private VerticalPanel inputFieldsVPanelProject = new VerticalPanel();
+	private TextBox dbInputBox = new TextBox();
+	private TextBox serverName = new TextBox();
+	private TextBox passwordBox = new PasswordTextBox();
+	
+	// Query parameter input section ------------------------------------------
 	private VerticalPanel inputFieldsVPanelQuery = new VerticalPanel();
-	private Label inputFieldsLabel = new Label();
-	private VerticalPanel buttonsVPanel = new VerticalPanel();
+	private HorizontalPanel inputFieldsHPanelQuery = new HorizontalPanel();
+	private Label inputFieldsQueryLabel = new Label();
+	private ListBox yearInput = new ListBox(false);
+	private TextBox wahlkreisInput = new TextBox();
+	private List<String> dropList = Arrays.asList("2005", "2009", "2013");
+	
+	// Controls section -------------------------------------------------------
+	private VerticalPanel controlsVPanel = new VerticalPanel();
 	private VerticalPanel outputVPanel = new VerticalPanel();
-	private HorizontalPanel buttonsPanel = new HorizontalPanel();
+	private HorizontalPanel buttonsHPanel = new HorizontalPanel();
 	private Label buttonsPanelLabel = new Label();
 	private Button setupDBButton = new Button("Setup");
 	private Button generateButton = new Button("Generate");
 	private Button loaderButton = new Button("Load");
 	private Button analysisButton = new Button("Analyze");
-	private TextBox dbInputBox = new TextBox();
-	private TextBox projectName = new TextBox();
-	private TextBox passwordBox = new PasswordTextBox();
-	private TextBox yearInput = new TextBox();
-	private TextBox wahlkreisInput = new TextBox();
-	private Label resultLabel = new Label();
-	private DialogBox distDialogBox = new DialogBox();
-	private Button distCloseButton = new Button("Close");
-	private VerticalPanel distVPanel = new VerticalPanel();
-	private HorizontalPanel wkHPanel = new HorizontalPanel();
-	private VerticalPanel wkVPanel = new VerticalPanel();
-	private CellTable<WKTableEntry> wkErstTable = new CellTable<WKTableEntry>();
-	//private DataGrid<WKTableEntry> wkErstTable = new DataGrid<WKTableEntry>();
-	//private CellTable<WKTableEntry> wkZweitTable = new CellTable<WKTableEntry>();
-	private DataGrid<WKTableEntry> wkZweitTable = new DataGrid<WKTableEntry>();
-	private SimplePager pager;
-	private ListDataProvider<WKTableEntry> dataProvider = new ListDataProvider<WKTableEntry>();
-	private PieChart piechart;
+	private Button outputClear = new Button("Clear");
+	private Label serverMessageLabel = new Label();
+	
+	// Output text (console) area ---------------------------------------------
+	private VerticalPanel consoleOutputVPanel = new VerticalPanel();
 	private TextArea ta = new TextArea();
 	private Label taLabel = new Label();
-	private Button outputClear = new Button("Clear");
-	private HorizontalPanel outputLabel = new HorizontalPanel();
-	private VerticalPanel generateOutputVert = new VerticalPanel();
 
-	// Services
+	// Query results section --------------------------------------------------
+	private VerticalPanel queryResults1VPanel = new VerticalPanel();
+	private VerticalPanel queryResults2VPanel = new VerticalPanel();
+	
+	// Query result: seat distribution ----------------------------------------
+	private VerticalPanel distVPanel = new VerticalPanel();
+	private PieChart piechart;
+	private Label distResultLabel = new Label();
+	
+	// Query result: Wahlkreis winners ----------------------------------------
+	private HorizontalPanel wkHPanel = new HorizontalPanel();
+	private VerticalPanel wkErstTableVPanel = new VerticalPanel();
+	private VerticalPanel wkZweitTableVPanel = new VerticalPanel();
+	private CellTable<WKTableEntry> wkErstTable = new CellTable<WKTableEntry>();
+	private CellTable<WKTableEntry> wkZweitTable = new CellTable<WKTableEntry>();
+	private SimplePager wkErstTablePager;
+	private SimplePager wkZweitTablePager;
+	private ListDataProvider<WKTableEntry> wkErstTableDataProvider = new ListDataProvider<WKTableEntry>();
+	private ListDataProvider<WKTableEntry> wkZweitTableDataProvider = new ListDataProvider<WKTableEntry>();
+	
+
+	// Services ---------------------------------------------------------------
+	// ------------------------------------------------------------------------
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);	
 	private GeneratorServiceAsync generateSvc = GWT.create(GeneratorService.class);
 	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
@@ -100,100 +123,89 @@ public class TestBW implements EntryPoint {
 	 */
 	public void onModuleLoad() {
 		
-		///////////////////////////////////////////////////////////////////////
-		// GUI Elements
-		///////////////////////////////////////////////////////////////////////
+		// GUI elements -----------------------------------------------------------
+		// ------------------------------------------------------------------------
 		
-		// Seat distribution pop up -------------------------------------------
-		distDialogBox.setText("Analysis Results");
-		distDialogBox.setGlassEnabled(true);
-		distDialogBox.setAnimationEnabled(true);
-		distVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
-		distDialogBox.add(distVPanel);
+		// Seat distribution --------------------------------------------------
+		distVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		
 		
-		// WK Sieger pop up ---------------------------------------------------
-		//wkDialogBox.setText("Wahlkreis Winners");
-		//wkDialogBox.setGlassEnabled(true);
-		//wkDialogBox.setAnimationEnabled(true);
-		wkVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
-		wkHPanel.setSpacing(80);
-		//wkDialogBox.add(wkVPanel);
-		
+		// Wahlkreis winners --------------------------------------------------
+		wkHPanel.setSpacing(20);
+		wkHPanel.setBorderWidth(0);
+		wkErstTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		wkZweitTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 
-		// Build GUI ----------------------------------------------------------
-		inputFieldsVPanelProject.add(inputFieldsLabel);
-		inputFieldsVPanelProject.add(projectName);
+		// Projects input section ---------------------------------------------
+		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
+		inputFieldsVPanelProject.add(serverName);
 		inputFieldsVPanelProject.add(dbInputBox);
 		inputFieldsVPanelProject.add(passwordBox);
-		inputFieldsVPanelQuery.add(yearInput);
-		inputFieldsVPanelQuery.add(wahlkreisInput);
-		buttonsPanel.add(setupDBButton);
-		buttonsPanel.add(generateButton);
-		buttonsPanel.add(loaderButton);
-		buttonsPanel.add(analysisButton);
-		buttonsPanel.add(outputClear);
-		buttonsVPanel.add(buttonsPanelLabel);
-		buttonsVPanel.add(buttonsPanel);
-		buttonsVPanel.add(resultLabel);
-		outputLabel.add(taLabel);
-		generateOutputVert.add(outputLabel);
-		generateOutputVert.add(ta);
-		outputVPanel.add(generateOutputVert);
-		inputVPanel.add(inputFieldsVPanelProject);
-		inputVPanel.add(inputFieldsVPanelQuery);
-		leftVPanel.add(inputVPanel);
-		leftVPanel.add(buttonsVPanel);
-		leftVPanel.add(outputVPanel);
-		mainHPanel.add(leftVPanel);
-		//mainHPanel.add(rightHPanel);
-		RootPanel.get("setupDB").add(mainHPanel);
-		
-		
-		// Widget options -----------------------------------------------------
-		leftVPanel.setSpacing(30);
-		leftVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
-		
-		inputVPanel.setSpacing(10);
-		inputFieldsLabel.setText("Inputs");
-		projectName.setTitle("Enter Server name ... ");
+		inputMainVPanel.add(inputFieldsVPanelProject);
+		inputMainVPanel.add(controlsVPanel);
+		inputMainVPanel.add(outputVPanel);
+		inputMainVPanel.setSpacing(30);
+		inputMainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
+		inputFieldsProjectLabel.setText("Project Inputs");
+		inputFieldsQueryLabel.setText("Query Inputs");
+		serverName.setTitle("Enter Server name ... ");
 		dbInputBox.setTitle("Enter database name ...");
 		passwordBox.setTitle("Enter password ...");
-		yearInput.setTitle("For which year should results be analyzed?");
-		wahlkreisInput.setTitle("Give overview for which Wahlkreis (number)?");
-		projectName.setFocus(true);
-		
-		yearInput.setSize("380px", "15px");
-		wahlkreisInput.setSize("380px", "15px");
-		projectName.setSize("380px", "15px");
+		serverName.setFocus(true);
+		serverName.setSize("380px", "15px");
 		dbInputBox.setSize("380px", "15px");
 		passwordBox.setSize("380px", "15px");
 		
-		buttonsVPanel.setSpacing(5);
-		buttonsPanelLabel.setText("Operations");
-		resultLabel.setText("Message: ");
-		resultLabel.setVisible(true);
+		// Query parameters input section -------------------------------------
+		inputFieldsVPanelQuery.add(inputFieldsQueryLabel);
+		inputFieldsVPanelQuery.add(inputFieldsHPanelQuery);
+		inputFieldsHPanelQuery.add(yearInput);
+		inputFieldsHPanelQuery.add(wahlkreisInput);
+		inputMainVPanel.add(inputFieldsVPanelQuery);
+		wahlkreisInput.setTitle("Give overview for which Wahlkreis (number)?");
+		yearInput.setWidth("100px");
+		wahlkreisInput.setWidth("100px");
+		for (int i = 0; i < dropList.size(); i++) yearInput.addItem(dropList.get(i));
 		
+		// Controls section ---------------------------------------------------
+		buttonsHPanel.add(setupDBButton);
+		buttonsHPanel.add(generateButton);
+		buttonsHPanel.add(loaderButton);
+		buttonsHPanel.add(analysisButton);
+		buttonsHPanel.add(outputClear);
+		controlsVPanel.add(buttonsPanelLabel);
+		controlsVPanel.add(buttonsHPanel);
+		controlsVPanel.add(serverMessageLabel);
+		controlsVPanel.setSpacing(5);
+		buttonsPanelLabel.setText("Controls");
+		serverMessageLabel.setText("Message: ");
+		serverMessageLabel.setVisible(true);
 		
-		generateOutputVert.setBorderWidth(5);
-		generateOutputVert.setSpacing(5);
+		// Output text (console) area -----------------------------------------
+		consoleOutputVPanel.add(taLabel);
+		consoleOutputVPanel.add(ta);
+		inputMainVPanel.add(consoleOutputVPanel);
+		consoleOutputVPanel.setBorderWidth(5);
+		consoleOutputVPanel.setSpacing(5);
 		taLabel.setText("Console Output");
 		taLabel.setVisible(true);
 		ta.setWidth("370px");
 		ta.setHeight("300px");
-	    
-	
 
-		/////////////////////////////////////////////////////////////////////////
-		// Handles
-		/////////////////////////////////////////////////////////////////////////
+		// All inputs, query results ------------------------------------------
+		mainHPanel.add(inputMainVPanel);
+		mainHPanel.add(queryResults1VPanel);
+		queryResults1VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		queryResults2VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		mainHPanel.add(queryResults2VPanel);
 		
-		// Add a handler to close the seat distribution DialogBox
-		distCloseButton.addClickHandler(new ClickHandler() {
-			public void onClick(ClickEvent event) {
-				distDialogBox.hide();
-			}
-		});
+		// Root ----------------------------------------------------------------
+		RootPanel.get("setupDB").add(mainHPanel);
+			
+
+		
+		// Handles ------------------------------------------------------------
+		// --------------------------------------------------------------------
 		
 		// Handler to clear output window
 		outputClear.addClickHandler(new ClickHandler() {
@@ -205,8 +217,8 @@ public class TestBW implements EntryPoint {
 		// listen for mouse events on the SetupDB button.
 		setupDBButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
-				resultLabel.setText("Setting up database ...");
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Setting up database ...");
+				serverMessageLabel.setVisible(true);
 				setupDB();
 			}
 		});
@@ -214,8 +226,8 @@ public class TestBW implements EntryPoint {
 		// listen for mouse events on the Generate data button.
 		generateButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
-				resultLabel.setText("Generating data ...");
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Generating data ...");
+				serverMessageLabel.setVisible(true);
 				generateData();
 			}
 		});
@@ -224,8 +236,8 @@ public class TestBW implements EntryPoint {
 		// listen for mouse events on the load data button.
 		loaderButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
-				resultLabel.setText("Loading data ...");
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Loading data ...");
+				serverMessageLabel.setVisible(true);
 				loadData();
 			}
 		});
@@ -233,15 +245,14 @@ public class TestBW implements EntryPoint {
 		// listen for mouse events on the analysis button.
 		analysisButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
-				resultLabel.setText("Analysing data ...");
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Analysing data ...");
+				serverMessageLabel.setVisible(true);
 				getAnalysis();
 			}
 		});
-
-		/////////////////////////////////////////////////////////////////////////
-		// Load visualization API
-		/////////////////////////////////////////////////////////////////////////
+		
+		// Load visualization API ---------------------------------------------
+		// --------------------------------------------------------------------
 		
 		// Create a callback to be called when the visualization API
 		// has been loaded.
@@ -271,19 +282,19 @@ public class TestBW implements EntryPoint {
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
 			public void onFailure(Throwable caught) {
 
-				resultLabel.setText("Error setting up the database: " + caught.getMessage());
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Error setting up the database: " + caught.getMessage());
+				serverMessageLabel.setVisible(true);
 			}
 
 			public void onSuccess(String s) {
-				resultLabel.setText(s);
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText(s);
+				serverMessageLabel.setVisible(true);
 			}
 		};
 
 		// Make the call to the setupDB service.
 		String[] input = new String[3];
-		input[0] = projectName.getText();
+		input[0] = serverName.getText();
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
 
@@ -308,19 +319,19 @@ public class TestBW implements EntryPoint {
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
 			public void onFailure(Throwable caught) {
 
-				resultLabel.setText("Error generating data: " + caught.toString());
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Error generating data: " + caught.toString());
+				serverMessageLabel.setVisible(true);
 			}
 
 			public void onSuccess(String s) {
-				resultLabel.setText(s);
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText(s);
+				serverMessageLabel.setVisible(true);
 			}
 		};
 
 		// Make the call to the generateData service.
 		String[] input = new String[3];
-		input[0] = projectName.getText();
+		input[0] = serverName.getText();
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
 
@@ -344,19 +355,19 @@ public class TestBW implements EntryPoint {
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
 			public void onFailure(Throwable caught) {
 
-				resultLabel.setText("Error loading data: " + caught.toString());
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Error loading data: " + caught.toString());
+				serverMessageLabel.setVisible(true);
 			}
 
 			public void onSuccess(String s) {
-				resultLabel.setText(s);
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText(s);
+				serverMessageLabel.setVisible(true);
 			}
 		};
 
 		// Make the call to the loadData service.
 		String[] input = new String[3];
-		input[0] = projectName.getText();
+		input[0] = serverName.getText();
 		input[1] = dbInputBox.getText();
 		input[2] = passwordBox.getText();
 
@@ -382,8 +393,8 @@ public class TestBW implements EntryPoint {
 		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
 			public void onFailure(Throwable caught) {
 
-				resultLabel.setText("Error while getting analysis: " + caught.getMessage());
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Error while getting analysis: " + caught.getMessage());
+				serverMessageLabel.setVisible(true);
 			}
 
 			@SuppressWarnings("deprecation")
@@ -391,17 +402,17 @@ public class TestBW implements EntryPoint {
 				
 				ArrayList<ArrayList<String>> parsed = parse(s, "##");
 			
-				resultLabel.setText("Analysis complete.");
-				resultLabel.setVisible(true);
+				serverMessageLabel.setText("Analysis complete: " + DateTimeFormat.getShortDateTimeFormat().format(new Date()));
+				serverMessageLabel.setVisible(true);
 
 				// Seat distribution ------------------------------------------
 				distVPanel.clear();
-				distDialogBox.center();
-				distDialogBox.setText("Seat Distribution Results: " +  DateTimeFormat.getShortDateTimeFormat().format(new Date()));
 				piechart = new PieChart(createTable(parsed.get(0)), createOptions());
-				distVPanel.add(piechart);				
-				distVPanel.add(distCloseButton);
-				distCloseButton.setFocus(true);
+				distVPanel.add(distResultLabel);
+				distVPanel.add(piechart);
+				queryResults1VPanel.remove(distVPanel);
+				queryResults1VPanel.add(distVPanel);
+
 							
 				// Wahlkreissieger --------------------------------------------
 				//Parser parser =  new Parser();
@@ -413,47 +424,32 @@ public class TestBW implements EntryPoint {
 				int erstColLength = getDelimLength(erststimmen, "$$");
 				int zweitColLength = getDelimLength(zweitstimmen, "$$");
 				
+				// Get data in table format
 				WKErststimmen = extractRows(erststimmen, erstColLength);
 				WKZweitstimmen = extractRows(zweitstimmen, zweitColLength);
 				
-
-				
-			    // Create a Pager to control the table.
-			    SimplePager.Resources pagerResources = GWT.create(SimplePager.Resources.class);
-			    pager = new SimplePager(TextLocation.CENTER, pagerResources, true, 0, true);
-			    pager.setDisplay(wkErstTable);
-			    
-				dataProvider.addDataDisplay(wkErstTable);
-				dataProvider.setList(WKErststimmen);
-				pager.setPageSize(3);
-				wkVPanel.add(pager);
-				
-			    // Create wahlkreis column.
+			    // Create table columns
 			    TextColumn<WKTableEntry> wahlkreisColumn = new TextColumn<WKTableEntry>() {
 			      @Override
 			      public String getValue(WKTableEntry entry) {
 			        return entry.wahlkreis;
 			      }
 			    };
-			    // Create identifier column.
 			    TextColumn<WKTableEntry> idColumn = new TextColumn<WKTableEntry>() {
 			      @Override
 			      public String getValue(WKTableEntry entry) {
 			        return entry.identifier;
 			      }
 			    };
-			    // Create quantity column.
 			    TextColumn<WKTableEntry> quantColumn = new TextColumn<WKTableEntry>() {
 			      @Override
 			      public String getValue(WKTableEntry entry) {
 			        return entry.quantity;
 			      }
 			    };
-			    
 			    wahlkreisColumn.setSortable(true);
 			    idColumn.setSortable(true);
 			    quantColumn.setSortable(true);
-			    
 			    
 			    // Add the columns.
 			    wkErstTable.addColumn(wahlkreisColumn, "Wahlkreis");
@@ -463,37 +459,48 @@ public class TestBW implements EntryPoint {
 			    wkZweitTable.addColumn(wahlkreisColumn, "Wahlkreis");
 			    wkZweitTable.addColumn(idColumn, "Partei");
 			    wkZweitTable.addColumn(quantColumn, "Anzahl");
-
+				
+			    // Create pagers to control the tables.
+			    SimplePager.Resources pagerResourcesErstTable = GWT.create(SimplePager.Resources.class);
+			    SimplePager.Resources pagerResourcesZweitTable = GWT.create(SimplePager.Resources.class);
+			    wkErstTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesErstTable, true, 3, true);
+			    wkZweitTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesZweitTable, true, 3, true);
+			    wkErstTablePager.setDisplay(wkErstTable);
+			    wkZweitTablePager.setDisplay(wkZweitTable);
+			    
 			    // Set the total row count. This isn't strictly necessary, but it affects
 			    // paging calculations, so its good habit to keep the row count up to date.
 			    wkErstTable.setRowCount(WKErststimmen.size(), true);
 			    wkZweitTable.setRowCount(WKZweitstimmen.size(), true);
 			    
-			    //wkErstTable.setVisibleRange(0, 20);
-
-			    // Push the data into the widget.
-			    //wkErstTable.setRowData(0, WKErststimmen);
-			   // wkZweitTable.setRowData(0, WKZweitstimmen);
-			    
-			  
-			    
-			    // Add table to UI
-			    //wkVPanel.clear();
-			    //wkHPanel.clear();
-			    wkVPanel.add(wkHPanel);
-			    wkHPanel.add(wkErstTable);
-			    wkHPanel.add(wkZweitTable);
-			    mainHPanel.add(wkVPanel);
+			    // Load data
+				wkErstTableDataProvider.addDataDisplay(wkErstTable);
+				wkErstTableDataProvider.setList(WKErststimmen);
+				wkZweitTableDataProvider.addDataDisplay(wkZweitTable);
+				wkZweitTableDataProvider.setList(WKZweitstimmen);
+				
+				// Add table to UI
+				wkErstTableVPanel.clear();
+				wkZweitTableVPanel.clear();
+				wkErstTableVPanel.add(wkErstTable);
+				wkErstTablePager.setPageSize(15);
+				wkZweitTablePager.setPageSize(15);
+				wkErstTableVPanel.add(wkErstTablePager);
+				wkZweitTableVPanel.add(wkZweitTable);
+				wkZweitTableVPanel.add(wkZweitTablePager);
+			    wkHPanel.add(wkErstTableVPanel);
+			    wkHPanel.add(wkZweitTableVPanel);
+			    queryResults2VPanel.add(wkHPanel);
 			}
 		};
 
 		// Make the call to the get analysis service.
 		String[] projectInput = new String[5];
 		String[] queryInput = new String[2];
-		projectInput[0] = projectName.getText();
+		projectInput[0] = serverName.getText();
 		projectInput[1] = dbInputBox.getText();
 		projectInput[2] = passwordBox.getText();
-		queryInput[0] = yearInput.getText();
+		queryInput[0] = dropList.get(yearInput.getSelectedIndex());
 		queryInput[1] = wahlkreisInput.getText();
 		
 		((AnalysisServiceAsync) analysisSvc).analyze(projectInput, queryInput, callback);
@@ -510,10 +517,19 @@ public class TestBW implements EntryPoint {
 	 */
 	private PieOptions createOptions() {
 		PieOptions options = PieOptions.create();
-		options.setWidth(800);
-		options.setHeight(600);
+	
+        ChartArea chartArea = ChartArea.create();
+        chartArea.setTop(50);
+        chartArea.setHeight(400);
+        chartArea.setWidth(400);
+        chartArea.setLeft(50);
+        options.setChartArea(chartArea);
+        options.setHeight(400);
+        options.setLegend(LegendPosition.RIGHT);
+        options.setLineWidth(5);
+        options.setTitle("Sitzverteilung " + dropList.get(yearInput.getSelectedIndex()));
+        options.setWidth(400);
 		options.set3D(true);
-		options.setTitle("Sitzverteilung " + yearInput.getText());
 		return options;
 	}
 
