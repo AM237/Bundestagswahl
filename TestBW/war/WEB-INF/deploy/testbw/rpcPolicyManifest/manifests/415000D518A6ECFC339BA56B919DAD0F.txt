@@ -1,0 +1,2 @@
+serviceClass: testbw.client.GeneratorService
+path: 051BD11A7C87096EEDB9E6BAA4CC9E9F.gwt.rpc

@@ -1,0 +1,2 @@
+serviceClass: testbw.client.LoaderService
+path: 209735DB181A259BDCA23FF9B4A4D23C.gwt.rpc
