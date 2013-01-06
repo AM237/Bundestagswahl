@@ -29,65 +29,73 @@ package bundestagswahl.benchmark;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
-import org.apache.http.nio.client.HttpAsyncClient;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
 
 public class BWBenchmark {
+	static String serverUrl;
+	static int numberTerminals;
+	static int numberRequests;
+	static double requestDelay;
+
+	static double[] resultTime;
 
 	public static void main(String[] args) throws Exception {
 
+		resultTime = new double[6];
+
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("Please enter URL: ");
-		String url = scanner.nextLine();
+		serverUrl = scanner.nextLine();
+		System.out.print("Please enter number of terminals: ");
+		numberTerminals = scanner.nextInt();
+		System.out.print("Please enter number of requests: ");
+		numberRequests = scanner.nextInt();
+		System.out
+				.print("Please enter delay between two requests in seconds: ");
+		requestDelay = scanner.nextDouble();
+		scanner.close();
 
-		HttpAsyncClient httpclient = new DefaultHttpAsyncClient();
+		PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
+		cm.setMaxTotal(numberTerminals);
+		HttpClient httpclient = new DefaultHttpClient(cm);
 		httpclient
 				.getParams()
-				.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 3000)
-				.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 3000)
+				.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 300000)
+				.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT,
+						300000)
 				.setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
 						8 * 1024)
 				.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true);
-
-		httpclient.start();
 		try {
-			HttpGet[] requests = new HttpGet[] {
-					new HttpGet(url),
-					new HttpGet(url),
-					new HttpGet(url) };
-			final CountDownLatch latch = new CountDownLatch(requests.length);
-			for (final HttpGet request : requests) {
-				httpclient.execute(request, new FutureCallback<HttpResponse>() {
-
-					public void completed(final HttpResponse response) {
-						latch.countDown();
-						System.out.println(request.getRequestLine() + "->"
-								+ response.getStatusLine());
-					}
-
-					public void failed(final Exception ex) {
-						latch.countDown();
-						System.out.println(request.getRequestLine() + "->" + ex);
-					}
-
-					public void cancelled() {
-						latch.countDown();
-						System.out.println(request.getRequestLine()
-								+ " cancelled");
-					}
-
-				});
+			final CountDownLatch latch = new CountDownLatch(numberTerminals);
+			for (int i = 0; i < numberTerminals; i++) {
+				BenchmarkTerminal terminal = new BenchmarkTerminal(httpclient,
+						latch, serverUrl, numberRequests, requestDelay);
+				terminal.start();
 			}
 			latch.await();
-			System.out.println("Shutting down");
+			httpclient.getConnectionManager().shutdown();
 		} finally {
-			httpclient.shutdown();
+
 		}
+
+		printResultTimes();
+		System.out.println(" ");
 		System.out.println("Done");
+	}
+
+	public static synchronized void addResultTime(int query, double time) {
+		resultTime[query] += time;
+	}
+
+	public static synchronized void printResultTimes() {
+		for (int i = 0; i < 6; i++) {
+			System.out.println("Query " + Integer.toString(i + 1) + " : "
+					+ resultTime[i] / 6.0f);
+		}
 	}
 
 }
