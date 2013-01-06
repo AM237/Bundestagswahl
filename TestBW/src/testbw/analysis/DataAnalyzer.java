@@ -189,6 +189,7 @@ public class DataAnalyzer {
 		
 		ArrayList<String> result = new ArrayList<String>();
 		
+		/*
 		st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS ( SELECT esg.kandidatennummer, d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer)");
 
 		st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
@@ -198,11 +199,39 @@ public class DataAnalyzer {
 				+ "  union all "
 				+ " 	SELECT * "
 				+ " 	FROM zweitstimmenergebnis)"
-				+ "SELECT lk.politiker, pa.name   FROM listenkandidat lk, politiker p,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer AND lk.listenplatz =< v.size- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
+				+ "SELECT lk.politiker, pa.parteinummer   FROM listenkandidat lk, politiker p,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer AND lk.listenplatz => v.sitze- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
 				+ "UNION (SELECT * FROM mitgliedererststimme) )");
 		
 		rs = st.executeQuery("SELECT * FROM mitglieder");
+		 */
+		
+		rs = st.executeQuery("SELECT * FROM partei");
+		
+		while (rs.next()) {
+			ResultSetMetaData meta = rs.getMetaData();
+			int anzFields = meta.getColumnCount();
+			for (int i = 0; i < anzFields; i++) {
+				result.add(rs.getString(i+1));
+			}
+			// add delimiter
+			result.add("$$");
+		}
 
+		return result;
+	}
+	
+	/**
+	 * Return a view of all Ueberhangsmandate
+	 */
+	public ArrayList<String> getUeberhangsmandate(String[] queryInput) throws SQLException {
+
+		ArrayList<String> result = new ArrayList<String>();
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangsmandate AS "
+				+ "SELECT pes.parteiname, pes.sitze - pzs.sitze AS ueberhangsmandate FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.sitze) > 0 ");
+
+		rs = st.executeQuery("SELECT * FROM ueberhangsmandate");
+		
 		while (rs.next()) {
 			ResultSetMetaData meta = rs.getMetaData();
 			int anzFields = meta.getColumnCount();
