@@ -64,7 +64,7 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 		// add delimiter
 		result.add("##");
 				
-		try { // Get Ueberhangsmandate members ----------------------------------------
+		try { // Get Ueberhangsmandate members --------------------------------
 			result.addAll(analyzer.getUeberhangsmandate(queryInput));
 		} catch (SQLException e) {
 			e.printStackTrace();

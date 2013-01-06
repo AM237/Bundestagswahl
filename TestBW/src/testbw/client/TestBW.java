@@ -512,7 +512,6 @@ public class TestBW implements EntryPoint {
 			    
 			    // Bundestag members ------------------------------------------			    
 			    ArrayList<String> members = new ArrayList<String>(parsed.get(2));
-			    			    
 			    int membersColLength = getDelimLength(members, "$$");
 			    
 			    // Get data in table format
@@ -561,7 +560,15 @@ public class TestBW implements EntryPoint {
 				
 				// Ueberhangsmandate ------------------------------------------
 				ArrayList<String> mandate = new ArrayList<String>(parsed.get(3));
-			    int umandateColLength = getDelimLength(mandate, "$$");
+				
+				int umandateColLength;
+				if (mandate.size()==0){
+					mandate.add("no data");
+					mandate.add("no data");
+					umandateColLength = 2;
+				} else {
+					umandateColLength = getDelimLength(mandate, "$$");
+				}
 			    
 			    // Get data in table format
 				umandate = extractRowsMem(mandate, umandateColLength);
