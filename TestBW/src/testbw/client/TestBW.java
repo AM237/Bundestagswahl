@@ -33,6 +33,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -87,7 +88,6 @@ public class TestBW implements EntryPoint {
 	private Button loaderButton = new Button("Load");
 	private Button analysisButton = new Button("Analyze");
 	private Button outputClear = new Button("Clear");
-	private Label serverMessageLabel = new Label();
 	
 	// Output text (console) area ---------------------------------------------
 	private VerticalPanel consoleOutputVPanel = new VerticalPanel();
@@ -157,18 +157,27 @@ public class TestBW implements EntryPoint {
 	    tabPanel.setVisible(true);
 		
 		// Seat distribution --------------------------------------------------
-		distVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
-		distVPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
-		distVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");	
+		distVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		distVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		//distVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");	
 		
 		// Wahlkreis winners --------------------------------------------------
-		wkHPanel.setSpacing(20);
-		wkHPanel.setBorderWidth(0);
-		wkErstTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
-		wkZweitTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		//wkHPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		wkHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		wkHPanel.setSpacing(50);
+		wkErstTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		wkZweitTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		
 		// Bundestag members --------------------------------------------------
-		membersTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		//membersTableVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+		membersTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		membersTableVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		
+		// Ueberhangsmandate --------------------------------------------------
+		//mandateTableVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+		mandateTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		mandateTableVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 
 		// Projects input section ---------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
@@ -210,12 +219,9 @@ public class TestBW implements EntryPoint {
 		buttonsHPanel.add(outputClear);
 		controlsVPanel.add(buttonsPanelLabel);
 		controlsVPanel.add(buttonsHPanel);
-		controlsVPanel.add(serverMessageLabel);
 		inputInnerVPanel.add(controlsVPanel);
 		controlsVPanel.setSpacing(5);
 		buttonsPanelLabel.setText("Controls");
-		serverMessageLabel.setText("Message: ");
-		serverMessageLabel.setVisible(false);
 		
 		// Output text (console) area -----------------------------------------
 		consoleOutputVPanel.add(taLabel);
@@ -448,9 +454,13 @@ public class TestBW implements EntryPoint {
 				piechart = new PieChart(createTable(parsed.get(0)), createOptions());
 				distVPanel.add(distResultLabel);
 				distVPanel.add(piechart);
-				tabPanel.add(distVPanel, "Sitzverteilung");
+				HorizontalPanel distTabPanel = new HorizontalPanel();
+				distTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+				distTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+				distTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				distTabPanel.add(distVPanel);
+				tabPanel.add(distTabPanel, "Sitzverteilung");
 				tabPanel.setVisible(true);
-				tabPanel.selectTab(0);
 
 							
 				// Wahlkreissieger --------------------------------------------
@@ -531,7 +541,12 @@ public class TestBW implements EntryPoint {
 				wkZweitTableVPanel.add(wkZweitTablePager);
 			    wkHPanel.add(wkErstTableVPanel);
 			    wkHPanel.add(wkZweitTableVPanel);
-			    //queryResults2VPanel.add(wkHPanel);
+				HorizontalPanel wkTabPanel = new HorizontalPanel();
+				wkTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+				wkTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+				wkTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				wkTabPanel.add(wkHPanel);
+			    tabPanel.add(wkTabPanel, "Wahlkreissieger");
 			    
 			    
 			    // Bundestag members ------------------------------------------			    
@@ -579,7 +594,12 @@ public class TestBW implements EntryPoint {
 				membersTable.setTitle("Bundestagmitglieder " + dropList.get(yearInput.getSelectedIndex()));
 				membersTableVPanel.add(membersTable);
 				membersTableVPanel.add(membersPager);
-				//queryResults2VPanel.add(membersTableVPanel);
+				HorizontalPanel membersTabPanel = new HorizontalPanel();
+				membersTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+				membersTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+				membersTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				membersTabPanel.add(membersTableVPanel);
+				tabPanel.add(membersTabPanel, "Bundestagsmitglieder");
 				
 				
 				// Ueberhangsmandate ------------------------------------------
@@ -635,7 +655,12 @@ public class TestBW implements EntryPoint {
 				mandateTable.setTitle("Ueberhangsmandate " + dropList.get(yearInput.getSelectedIndex()));
 				mandateTableVPanel.add(mandateTable);
 				mandateTableVPanel.add(mandatePager);
-				//queryResults1VPanel.add(mandateTableVPanel);
+				HorizontalPanel mandateTabPanel = new HorizontalPanel();
+				mandateTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+				mandateTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+				mandateTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				mandateTabPanel.add(mandateTableVPanel);
+				tabPanel.add(mandateTabPanel, "Ueberhangsmandate");
 			}
 		};
 
