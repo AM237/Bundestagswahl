@@ -100,19 +100,26 @@ public class TestBW implements EntryPoint {
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
 	private VerticalPanel wkErstTableVPanel = new VerticalPanel();
 	private VerticalPanel wkZweitTableVPanel = new VerticalPanel();
-	private CellTable<WKTableEntry> wkErstTable = new CellTable<WKTableEntry>();
-	private CellTable<WKTableEntry> wkZweitTable = new CellTable<WKTableEntry>();
+	private CellTable<TableEntry_3> wkErstTable = new CellTable<TableEntry_3>();
+	private CellTable<TableEntry_3> wkZweitTable = new CellTable<TableEntry_3>();
 	private SimplePager wkErstTablePager;
 	private SimplePager wkZweitTablePager;
-	private ListDataProvider<WKTableEntry> wkErstTableDataProvider = new ListDataProvider<WKTableEntry>();
-	private ListDataProvider<WKTableEntry> wkZweitTableDataProvider = new ListDataProvider<WKTableEntry>();
+	private ListDataProvider<TableEntry_3> wkErstTableDataProvider = new ListDataProvider<TableEntry_3>();
+	private ListDataProvider<TableEntry_3> wkZweitTableDataProvider = new ListDataProvider<TableEntry_3>();
 	
 	// Query results: Bundestag members ---------------------------------------
 	private VerticalPanel membersTableVPanel = new VerticalPanel();
 	private VerticalPanel membersVPanel = new VerticalPanel();
-	private CellTable<MembersTableEntry> membersTable = new CellTable<MembersTableEntry>();
+	private CellTable<TableEntry_2> membersTable = new CellTable<TableEntry_2>();
 	private SimplePager membersPager;
-	private ListDataProvider<MembersTableEntry> membersTableDataProvider = new ListDataProvider<MembersTableEntry>();
+	private ListDataProvider<TableEntry_2> membersTableDataProvider = new ListDataProvider<TableEntry_2>();
+	
+	// Query results: Ueberhangsmandate ---------------------------------------
+	private VerticalPanel mandateTableVPanel = new VerticalPanel();
+	private VerticalPanel mandateVPanel = new VerticalPanel();
+	private CellTable<TableEntry_2> mandateTable = new CellTable<TableEntry_2>();
+	private SimplePager mandatePager;
+	private ListDataProvider<TableEntry_2> mandateTableDataProvider = new ListDataProvider<TableEntry_2>();
 	
 
 	// Services ---------------------------------------------------------------
@@ -203,8 +210,8 @@ public class TestBW implements EntryPoint {
 		// All inputs, query results ------------------------------------------
 		mainHPanel.add(inputMainVPanel);
 		mainHPanel.add(queryResults1VPanel);
-		queryResults1VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
-		queryResults2VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		queryResults1VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
+		queryResults2VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
 		mainHPanel.add(queryResults2VPanel);
 		
 		// Root ----------------------------------------------------------------
@@ -423,7 +430,6 @@ public class TestBW implements EntryPoint {
 
 							
 				// Wahlkreissieger --------------------------------------------
-				//Parser parser =  new Parser();
 				ArrayList<String> wks = new ArrayList<String>(parsed.get(1));
 				ArrayList<ArrayList<String>> wksTables = parse(wks, "&&");
 				ArrayList<String> erststimmen = wksTables.get(0);
@@ -437,22 +443,22 @@ public class TestBW implements EntryPoint {
 				WKZweitstimmen = extractRows(zweitstimmen, zweitColLength);
 				
 			    // Create table columns
-			    TextColumn<WKTableEntry> wahlkreisColumn = new TextColumn<WKTableEntry>() {
+			    TextColumn<TableEntry_3> wahlkreisColumn = new TextColumn<TableEntry_3>() {
 			      @Override
-			      public String getValue(WKTableEntry entry) {
-			        return entry.wahlkreis;
+			      public String getValue(TableEntry_3 entry) {
+			        return entry._1;
 			      }
 			    };
-			    TextColumn<WKTableEntry> idColumn = new TextColumn<WKTableEntry>() {
+			    TextColumn<TableEntry_3> idColumn = new TextColumn<TableEntry_3>() {
 			      @Override
-			      public String getValue(WKTableEntry entry) {
-			        return entry.identifier;
+			      public String getValue(TableEntry_3 entry) {
+			        return entry._2;
 			      }
 			    };
-			    TextColumn<WKTableEntry> quantColumn = new TextColumn<WKTableEntry>() {
+			    TextColumn<TableEntry_3> quantColumn = new TextColumn<TableEntry_3>() {
 			      @Override
-			      public String getValue(WKTableEntry entry) {
-			        return entry.quantity;
+			      public String getValue(TableEntry_3 entry) {
+			        return entry._3;
 			      }
 			    };
 			    wahlkreisColumn.setSortable(true);
@@ -490,6 +496,7 @@ public class TestBW implements EntryPoint {
 				// Add table to UI
 				wkErstTableVPanel.clear();
 				wkZweitTableVPanel.clear();
+				wkHPanel.clear();
 				wkErstTable.setTitle("Wahlkreissieger " + dropList.get(yearInput.getSelectedIndex()) + ": Kandidaten");
 				wkZweitTable.setTitle("Wahlkreissieger " + dropList.get(yearInput.getSelectedIndex()) + ": Parteien");
 				wkErstTableVPanel.add(wkErstTable);
@@ -503,30 +510,25 @@ public class TestBW implements EntryPoint {
 			    queryResults2VPanel.add(wkHPanel);
 			    
 			    
-			    // Bundestag members ------------------------------------------
-			    // ------------------------------------------------------------
-			    
+			    // Bundestag members ------------------------------------------			    
 			    ArrayList<String> members = new ArrayList<String>(parsed.get(2));
-			    
-			    for (int i = 0; i < members.size(); i++)
-			    	System.out.println(members.get(i));
-			    
+			    			    
 			    int membersColLength = getDelimLength(members, "$$");
 			    
 			    // Get data in table format
 				bwMembers = extractRowsMem(members, membersColLength);
 				
 			    // Create table columns
-			    TextColumn<MembersTableEntry> candColumn = new TextColumn<MembersTableEntry>() {
+			    TextColumn<TableEntry_2> candColumn = new TextColumn<TableEntry_2>() {
 			      @Override
-			      public String getValue(MembersTableEntry entry) {
-			        return entry.candNum;
+			      public String getValue(TableEntry_2 entry) {
+			        return entry._1;
 			      }
 			    };
-			    TextColumn<MembersTableEntry> partyColumn = new TextColumn<MembersTableEntry>() {
+			    TextColumn<TableEntry_2> partyColumn = new TextColumn<TableEntry_2>() {
 			      @Override
-			      public String getValue(MembersTableEntry entry) {
-			        return entry.party;
+			      public String getValue(TableEntry_2 entry) {
+			        return entry._2;
 			      }
 			    };
 
@@ -555,6 +557,54 @@ public class TestBW implements EntryPoint {
 				membersTableVPanel.add(membersTable);
 				membersTableVPanel.add(membersPager);
 				queryResults2VPanel.add(membersTableVPanel);
+				
+				
+				// Ueberhangsmandate ------------------------------------------
+				ArrayList<String> mandate = new ArrayList<String>(parsed.get(3));
+			    int umandateColLength = getDelimLength(mandate, "$$");
+			    
+			    // Get data in table format
+				umandate = extractRowsMem(mandate, umandateColLength);
+				
+			    // Create table columns
+			    TextColumn<TableEntry_2> partyCol = new TextColumn<TableEntry_2>() {
+			      @Override
+			      public String getValue(TableEntry_2 entry) {
+			        return entry._1;
+			      }
+			    };
+			    TextColumn<TableEntry_2> seatsCol = new TextColumn<TableEntry_2>() {
+			      @Override
+			      public String getValue(TableEntry_2 entry) {
+			        return entry._2;
+			      }
+			    };
+
+			    partyCol.setSortable(true);
+			    seatsCol.setSortable(true);
+			    
+			    // Add the columns.
+			    mandateTable.addColumn(candColumn, "Partei");
+			    mandateTable.addColumn(partyColumn, "Ueberhangsmandate");
+			    
+			    // Create pagers to control the table.
+			    SimplePager.Resources pagerResourcesMandateTable = GWT.create(SimplePager.Resources.class);
+			    mandatePager = new SimplePager(TextLocation.CENTER, pagerResourcesMandateTable, true, 3, true);
+			    mandatePager.setDisplay(mandateTable);
+			    
+			    // Set row count
+			    mandateTable.setRowCount(umandate.size(), true);
+			    
+			    // Load data
+				mandateTableDataProvider.addDataDisplay(mandateTable);
+				mandateTableDataProvider.setList(umandate);
+				
+				// Add table to UI
+				mandateTableVPanel.clear();
+				mandateTable.setTitle("Ueberhangsmandate " + dropList.get(yearInput.getSelectedIndex()));
+				mandateTableVPanel.add(mandateTable);
+				mandateTableVPanel.add(mandatePager);
+				queryResults1VPanel.add(mandateTableVPanel);
 			}
 		};
 
@@ -615,55 +665,42 @@ public class TestBW implements EntryPoint {
 
 		return dataTable;
 	}
-
-	// Wahlkreissieger --------------------------------------------------------
 	
-	public static class TableEntry { }
-	
-	// Data type representing an entry in the output tables
-	public static class WKTableEntry extends TableEntry {
-		private final String wahlkreis;
-		private final String identifier;
-		private final String quantity;
-
-		public WKTableEntry(String wk, String id, String quant) {
-			this.wahlkreis = wk;
-			this.identifier = id;
-			this.quantity = quant;
-		}
+	// Table templates --------------------------------------------------------
+	public static class TableEntry_3 {
+		private final String _1;
+		private final String _2;
+		private final String _3;
 		
-		public WKTableEntry(ArrayList<String> properties){
-			this.wahlkreis = properties.get(0);
-			this.identifier = properties.get(1);
-			this.quantity = properties.get(2);
+		public TableEntry_3(ArrayList<String> properties){
+			this._1 = properties.get(0);
+			this._2 = properties.get(1);
+			this._3 = properties.get(2);
+		}
+	}
+	
+	public static class TableEntry_2 {
+		private final String _1;
+		private final String _2;
+		
+		public TableEntry_2(ArrayList<String> properties){
+			this._1 = properties.get(0);
+			this._2 = properties.get(1);
 		}
 	}
 
-	// Data to be modeled in the tables
-	private static List<WKTableEntry> WKErststimmen;
-	private static List<WKTableEntry> WKZweitstimmen;
+	// Wahlkreissieger --------------------------------------------------------	
+	private static List<TableEntry_3> WKErststimmen;
+	private static List<TableEntry_3> WKZweitstimmen;
 	
 	
 	// Bundestag members -----------------------------------------------------
+	private static List<TableEntry_2> bwMembers;
 	
-	// Data type representing an entry in the output table
-	public static class MembersTableEntry extends TableEntry {
-		private final String candNum;
-		private final String party;
-
-		public MembersTableEntry(String candNum, String party) {
-			this.candNum = candNum;
-			this.party = party;
-		}
-		
-		public MembersTableEntry(ArrayList<String> properties){
-			this.candNum = properties.get(0);
-			this.party = properties.get(1);
-		}
-	}
+	// Ueberhangsmandate -----------------------------------------------------
+	private static List<TableEntry_2> umandate;
 	
-	// Data to be modeled in the tables
-	private static List<MembersTableEntry> bwMembers;
+	
 	
 	// Parser -----------------------------------------------------------------
 	// ------------------------------------------------------------------------
@@ -725,32 +762,32 @@ public class TestBW implements EntryPoint {
 	}
 	
 	// todo: clean this up
-	public List<WKTableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
+	public List<TableEntry_3> extractRows(ArrayList<String> toBeParsed, int colLength){
 		
-		ArrayList<WKTableEntry> result = new ArrayList<WKTableEntry>();
+		ArrayList<TableEntry_3> result = new ArrayList<TableEntry_3>();
 		
 		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
 			ArrayList<String> temp = new ArrayList<String>();
 			for (int j = 0; j < colLength; j++){
 				temp.add(toBeParsed.get(i+j));
 			}
-			result.add(new WKTableEntry(temp));
+			result.add(new TableEntry_3(temp));
 		}
 		
 		return result;
 	}
 	
 	
-	public List<MembersTableEntry> extractRowsMem(ArrayList<String> toBeParsed, int colLength){
+	public List<TableEntry_2> extractRowsMem(ArrayList<String> toBeParsed, int colLength){
 		
-		ArrayList<MembersTableEntry> result = new ArrayList<MembersTableEntry>();
+		ArrayList<TableEntry_2> result = new ArrayList<TableEntry_2>();
 		
 		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
 			ArrayList<String> temp = new ArrayList<String>();
 			for (int j = 0; j < colLength; j++){
 				temp.add(toBeParsed.get(i+j));
 			}
-			result.add(new MembersTableEntry(temp));
+			result.add(new TableEntry_2(temp));
 		}
 		
 		return result;

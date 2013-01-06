@@ -41,7 +41,7 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 			e.printStackTrace();
 		}
 		
-		// add delimiter to distinguish between the results of each respective query
+		// add delimiter
 		result.add("##");
 		
 		try { // Get Wahlkreis winners ----------------------------------------
@@ -52,11 +52,20 @@ public class AnalysisServiceImpl extends RemoteServiceServlet implements Analysi
 			e.printStackTrace();
 		}
 		
-		// add delimiter to distinguish between the results of each respective query
+		// add delimiter
 		result.add("##");
 				
 		try { // Get Bundestag members ----------------------------------------
 			result.addAll(analyzer.getMembers(queryInput));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		
+		// add delimiter
+		result.add("##");
+				
+		try { // Get Ueberhangsmandate members ----------------------------------------
+			result.addAll(analyzer.getUeberhangsmandate(queryInput));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} 
