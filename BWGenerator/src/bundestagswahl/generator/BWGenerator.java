@@ -369,7 +369,7 @@ public class BWGenerator {
 				}
 
 				// Stimmen aggregieren
-				if (true) {
+				if (false) {
 					System.out.println("\n Aggregate Stimmen");
 
 					try {
@@ -387,24 +387,6 @@ public class BWGenerator {
 
 					System.out.println("\nFinished");
 				}
-
-				// Q2: Mitglieder des Bundestages
-				System.out.println("\n Q2: Mitglieder des Bundestages");
-
-				st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS "
-						+ "SELECT esg.kandidatennummer, d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer");
-
-				st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
-						+ "WITH verteilung AS ( "
-						+ "	SELECT * "
-						+ "	FROM erststimmenergebnis  "
-						+ "  union all "
-						+ " 	SELECT * "
-						+ " 	FROM zweitstimmenergebnis)"
-						+ "SELECT listenkandidat.kandidatennummer, p.partei   FROM Listenkandidat lk, politiker p,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer AND p.partei = pa.parteinummer AND lk.listenplatz =< v.size- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
-						+ "UNION mitgliedererststimme )");
-
-				System.out.println("\nFinished");
 
 				// Parameter f�r Queries, �ber UI auszuw�hlen:
 				String jahrName = "2005";
@@ -437,6 +419,26 @@ public class BWGenerator {
 				printQueryResult(st, rs, "zweitstimmengewinner");
 
 				System.out.println("\nFinished");
+
+				// Q2: Mitglieder des Bundestages
+				// System.out.println("\n Q2: Mitglieder des Bundestages");
+				// st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS "
+				// +
+				// "SELECT d.politiker , d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer");
+				//
+				// st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
+				// + "WITH verteilung AS ( "
+				// + "	SELECT * "
+				// + "	FROM erststimmenergebnis  "
+				// + "  union all "
+				// + " 	SELECT * "
+				// + " 	FROM zweitstimmenergebnis)"
+				// +
+				// "SELECT lk.politiker, lk.partei   FROM Listenkandidat lk,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer  AND lk.listenplatz =< v.size- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
+				// + "UNION SELECT * FROM mitgliedererststimme )");
+				//
+				//
+				// System.out.println("\nFinished");
 
 				// Q3: Wahlkreis�bersicht
 				System.out.println("\n Q3: Wahlkreis�bersicht");
@@ -487,12 +489,13 @@ public class BWGenerator {
 				System.out.println("\nFinished");
 
 				// Q5: �berhangmandate
-				System.out.println("\n Q5: �berhangmandate");
-
-				st.executeUpdate("CREATE OR REPLACE VIEW ueberhangmandate AS "
-						+ "SELECT pes.parteiname, pes.sitze - pzs.size FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.size) > 0 ");
-
-				System.out.println("\nFinished");
+				// System.out.println("\n Q5: �berhangmandate");
+				//
+				// st.executeUpdate("CREATE OR REPLACE VIEW ueberhangmandate AS "
+				// +
+				// "SELECT pes.parteiname, pes.sitze - pzs.size FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.size) > 0 ");
+				//
+				// System.out.println("\nFinished");
 
 				// Q6: Knappster Sieger
 				System.out.println("\n Q6: Knappster Sieger");
@@ -535,7 +538,7 @@ public class BWGenerator {
 
 				try {
 					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsoluteinzelstimmen AS "
-							+ "SELECT sum(anzahl) FROM (SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr) WHERE jahr = "
+							+ "SELECT sum(anzahl) FROM (SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr) AS stimmen WHERE jahr = "
 							+ jahrName + " AND wahlkreis = " + wahlkreis);
 
 					st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativeinzelstimmen AS "
