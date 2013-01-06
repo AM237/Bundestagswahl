@@ -382,8 +382,8 @@ public class BWGenerator {
 						e.printStackTrace();
 					}
 
-					printQueryResult(st, rs, "zweitstimmen");
-					printQueryResult(st, rs, "erststimmen");
+					// printQueryResult(st, rs, "zweitstimmen");
+					// printQueryResult(st, rs, "erststimmen");
 
 					System.out.println("\nFinished");
 				}
@@ -391,6 +391,10 @@ public class BWGenerator {
 				// Parameter f�r Queries, �ber UI auszuw�hlen:
 				String jahrName = "2005";
 				int wahlkreis = 1;
+
+				// Initialize the service proxy.
+
+				long millis = System.currentTimeMillis();
 
 				// Q4: Wahlkreissieger (Q3 ben�tigt View aus Q4)
 				System.out.println("\n Q4: Wahlkreissieger");
@@ -415,17 +419,17 @@ public class BWGenerator {
 					e.printStackTrace();
 				}
 
-				printQueryResult(st, rs, "erststimmengewinner");
-				printQueryResult(st, rs, "zweitstimmengewinner");
+				// printQueryResult(st, rs, "erststimmengewinner");
+				// printQueryResult(st, rs, "zweitstimmengewinner");
 
-				System.out.println("\nFinished");
-
+				System.out.println("\nQ4 Finished: "
+						+ (System.currentTimeMillis() - millis));
+				millis = System.currentTimeMillis();
 				// Q2: Mitglieder des Bundestages
-				// System.out.println("\n Q2: Mitglieder des Bundestages");
-				// st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS "
-				// +
-				// "SELECT d.politiker , d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer");
-				//
+				System.out.println("\n Q2: Mitglieder des Bundestages");
+				st.executeUpdate("CREATE OR REPLACE VIEW mitgliedererststimme AS "
+						+ "SELECT d.politiker , d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer");
+
 				// st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
 				// + "WITH verteilung AS ( "
 				// + "	SELECT * "
@@ -434,12 +438,12 @@ public class BWGenerator {
 				// + " 	SELECT * "
 				// + " 	FROM zweitstimmenergebnis)"
 				// +
-				// "SELECT lk.politiker, lk.partei   FROM Listenkandidat lk,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer  AND lk.listenplatz =< v.size- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
+				// "SELECT lk.politiker, lk.partei   FROM Listenkandidat lk,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer  AND lk.listenplatz <= v.sitze- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
 				// + "UNION SELECT * FROM mitgliedererststimme )");
-				//
-				//
-				// System.out.println("\nFinished");
 
+				System.out.println("\nQ2 Finished: "
+						+ (System.currentTimeMillis() - millis));
+				millis = System.currentTimeMillis();
 				// Q3: Wahlkreis�bersicht
 				System.out.println("\n Q3: Wahlkreis�bersicht");
 
@@ -478,25 +482,26 @@ public class BWGenerator {
 					e.printStackTrace();
 				}
 
-				printQueryResult(st, rs, "wahlbeteiligungabsolut");
-				printQueryResult(st, rs, "wahlbeteiligungrelativ");
-				printQueryResult(st, rs, "erststimmengewinnerkandidat");
-				printQueryResult(st, rs, "parteinenanteilabsolut");
-				printQueryResult(st, rs, "parteinenanteilrelativ");
-				printQueryResult(st, rs, "parteinenanteilabsolutvorjahr");
-				printQueryResult(st, rs, "parteinenanteilveraenderung");
+				// printQueryResult(st, rs, "wahlbeteiligungabsolut");
+				// printQueryResult(st, rs, "wahlbeteiligungrelativ");
+				// printQueryResult(st, rs, "erststimmengewinnerkandidat");
+				// printQueryResult(st, rs, "parteinenanteilabsolut");
+				// printQueryResult(st, rs, "parteinenanteilrelativ");
+				// printQueryResult(st, rs, "parteinenanteilabsolutvorjahr");
+				// printQueryResult(st, rs, "parteinenanteilveraenderung");
 
-				System.out.println("\nFinished");
-
+				System.out.println("\nQ4 Finished: "
+						+ (System.currentTimeMillis() - millis));
+				millis = System.currentTimeMillis();
 				// Q5: �berhangmandate
-				// System.out.println("\n Q5: �berhangmandate");
-				//
-				// st.executeUpdate("CREATE OR REPLACE VIEW ueberhangmandate AS "
-				// +
-				// "SELECT pes.parteiname, pes.sitze - pzs.size FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.size) > 0 ");
-				//
-				// System.out.println("\nFinished");
+				System.out.println("\n Q5: �berhangmandate");
 
+				st.executeUpdate("CREATE OR REPLACE VIEW ueberhangmandate AS "
+						+ "SELECT pes.parteiname, pes.sitze - pzs.sitze FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.sitze) > 0 ");
+
+				System.out.println("\nQ5 Finished: "
+						+ (System.currentTimeMillis() - millis));
+				millis = System.currentTimeMillis();
 				// Q6: Knappster Sieger
 				System.out.println("\n Q6: Knappster Sieger");
 
@@ -528,11 +533,12 @@ public class BWGenerator {
 					e.printStackTrace();
 				}
 
-				printQueryResult(st, rs, "knappstegewinner");
-				printQueryResult(st, rs, "knappsteergebnisse");
+				// printQueryResult(st, rs, "knappstegewinner");
+				// printQueryResult(st, rs, "knappsteergebnisse");
 
-				System.out.println("\nFinished");
-
+				System.out.println("\nQ6 Finished: "
+						+ (System.currentTimeMillis() - millis));
+				millis = System.currentTimeMillis();
 				// Q7: Wahlkreisübersicht (Einzelstimmen)
 				System.out.println("\n Q7: Wahlkreisübersicht (Einzelstimmen)");
 
@@ -588,7 +594,8 @@ public class BWGenerator {
 				printQueryResult(st, rs,
 						"parteinenanteilveraenderungeinzelstimmen");
 
-				System.out.println("\nFinished");
+				System.out.println("\nQ7 Finished: "
+						+ (System.currentTimeMillis() - millis));
 
 				st.close();
 				conn.close();
