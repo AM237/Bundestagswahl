@@ -15,6 +15,7 @@ import java.util.List;
 // GWT GUI API
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
@@ -25,11 +26,14 @@ import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.DecoratorPanel;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -55,7 +59,9 @@ public class TestBW implements EntryPoint {
 	private HorizontalPanel mainHPanel = new HorizontalPanel();
 	
 	// Project input section --------------------------------------------------
+	private DecoratorPanel projInputDec = new DecoratorPanel();
 	private VerticalPanel inputMainVPanel = new VerticalPanel();
+	private VerticalPanel inputInnerVPanel = new VerticalPanel();
 	private Label inputFieldsProjectLabel = new Label();
 	private VerticalPanel inputFieldsVPanelProject = new VerticalPanel();
 	private TextBox dbInputBox = new TextBox();
@@ -63,6 +69,7 @@ public class TestBW implements EntryPoint {
 	private TextBox passwordBox = new PasswordTextBox();
 	
 	// Query parameter input section ------------------------------------------
+	private DecoratorPanel queryInputDec = new DecoratorPanel();
 	private VerticalPanel inputFieldsVPanelQuery = new VerticalPanel();
 	private HorizontalPanel inputFieldsHPanelQuery = new HorizontalPanel();
 	private Label inputFieldsQueryLabel = new Label();
@@ -88,8 +95,7 @@ public class TestBW implements EntryPoint {
 	private Label taLabel = new Label();
 
 	// Query results section --------------------------------------------------
-	private VerticalPanel queryResults1VPanel = new VerticalPanel();
-	private VerticalPanel queryResults2VPanel = new VerticalPanel();
+	private TabLayoutPanel tabPanel = new TabLayoutPanel(2.5, Unit.EM);
 	
 	// Query result: seat distribution ----------------------------------------
 	private VerticalPanel distVPanel = new VerticalPanel();
@@ -109,14 +115,12 @@ public class TestBW implements EntryPoint {
 	
 	// Query results: Bundestag members ---------------------------------------
 	private VerticalPanel membersTableVPanel = new VerticalPanel();
-	private VerticalPanel membersVPanel = new VerticalPanel();
 	private CellTable<TableEntry_2> membersTable = new CellTable<TableEntry_2>();
 	private SimplePager membersPager;
 	private ListDataProvider<TableEntry_2> membersTableDataProvider = new ListDataProvider<TableEntry_2>();
 	
 	// Query results: Ueberhangsmandate ---------------------------------------
 	private VerticalPanel mandateTableVPanel = new VerticalPanel();
-	private VerticalPanel mandateVPanel = new VerticalPanel();
 	private CellTable<TableEntry_2> mandateTable = new CellTable<TableEntry_2>();
 	private SimplePager mandatePager;
 	private ListDataProvider<TableEntry_2> mandateTableDataProvider = new ListDataProvider<TableEntry_2>();
@@ -138,9 +142,24 @@ public class TestBW implements EntryPoint {
 		// GUI elements -----------------------------------------------------------
 		// ------------------------------------------------------------------------
 		
+		// Root ----------------------------------------------------------------
+		RootPanel.get("setupDB").add(mainHPanel);
+		
+		// All inputs, query results ------------------------------------------
+		mainHPanel.setSpacing(50);
+		mainHPanel.setVerticalAlignment(HorizontalPanel.ALIGN_TOP);
+		mainHPanel.add(inputMainVPanel);
+		mainHPanel.add(tabPanel);
+	    tabPanel.setAnimationDuration(500);
+	    HTML homeText = new HTML("Analysis results will be shown as new tabs.");
+	    tabPanel.add(homeText, "Start");
+	    tabPanel.setPixelSize(900, 700);
+	    tabPanel.setVisible(true);
+		
 		// Seat distribution --------------------------------------------------
 		distVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
-		
+		distVPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+		distVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");	
 		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setSpacing(20);
@@ -156,11 +175,10 @@ public class TestBW implements EntryPoint {
 		inputFieldsVPanelProject.add(serverName);
 		inputFieldsVPanelProject.add(dbInputBox);
 		inputFieldsVPanelProject.add(passwordBox);
-		inputMainVPanel.add(inputFieldsVPanelProject);
-		inputMainVPanel.add(controlsVPanel);
-		inputMainVPanel.add(outputVPanel);
-		inputMainVPanel.setSpacing(30);
+		projInputDec.add(inputFieldsVPanelProject);
+		inputMainVPanel.add(projInputDec);
 		inputMainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
+		inputInnerVPanel.setSpacing(30);		
 		inputFieldsProjectLabel.setText("Project Inputs");
 		inputFieldsQueryLabel.setText("Query Inputs");
 		serverName.setTitle("Enter Server name ... ");
@@ -174,9 +192,11 @@ public class TestBW implements EntryPoint {
 		// Query parameters input section -------------------------------------
 		inputFieldsVPanelQuery.add(inputFieldsQueryLabel);
 		inputFieldsVPanelQuery.add(inputFieldsHPanelQuery);
+		queryInputDec.add(inputFieldsVPanelQuery);
 		inputFieldsHPanelQuery.add(yearInput);
 		inputFieldsHPanelQuery.add(wahlkreisInput);
-		inputMainVPanel.add(inputFieldsVPanelQuery);
+		inputMainVPanel.add(inputInnerVPanel);
+		inputInnerVPanel.add(queryInputDec);
 		wahlkreisInput.setTitle("Give overview for which Wahlkreis (number)?");
 		yearInput.setWidth("100px");
 		wahlkreisInput.setWidth("100px");
@@ -191,15 +211,17 @@ public class TestBW implements EntryPoint {
 		controlsVPanel.add(buttonsPanelLabel);
 		controlsVPanel.add(buttonsHPanel);
 		controlsVPanel.add(serverMessageLabel);
+		inputInnerVPanel.add(controlsVPanel);
 		controlsVPanel.setSpacing(5);
 		buttonsPanelLabel.setText("Controls");
 		serverMessageLabel.setText("Message: ");
-		serverMessageLabel.setVisible(true);
+		serverMessageLabel.setVisible(false);
 		
 		// Output text (console) area -----------------------------------------
 		consoleOutputVPanel.add(taLabel);
 		consoleOutputVPanel.add(ta);
 		inputMainVPanel.add(consoleOutputVPanel);
+		inputMainVPanel.add(outputVPanel);
 		consoleOutputVPanel.setBorderWidth(5);
 		consoleOutputVPanel.setSpacing(5);
 		taLabel.setText("Console Output");
@@ -207,16 +229,6 @@ public class TestBW implements EntryPoint {
 		ta.setWidth("370px");
 		ta.setHeight("300px");
 
-		// All inputs, query results ------------------------------------------
-		mainHPanel.add(inputMainVPanel);
-		mainHPanel.add(queryResults1VPanel);
-		queryResults1VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
-		queryResults2VPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
-		mainHPanel.add(queryResults2VPanel);
-		
-		// Root ----------------------------------------------------------------
-		RootPanel.get("setupDB").add(mainHPanel);
-			
 
 		
 		// Handles ------------------------------------------------------------
@@ -231,18 +243,20 @@ public class TestBW implements EntryPoint {
 
 		// listen for mouse events on the SetupDB button.
 		setupDBButton.addClickHandler(new ClickHandler() {
+			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				serverMessageLabel.setText("Setting up database ...");
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Setting up database ...");
+				//serverMessageLabel.setVisible(true);
 				setupDB();
 			}
 		});
 
 		// listen for mouse events on the Generate data button.
 		generateButton.addClickHandler(new ClickHandler() {
+			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				serverMessageLabel.setText("Generating data ...");
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Generating data ...");
+				//serverMessageLabel.setVisible(true);
 				generateData();
 			}
 		});
@@ -250,18 +264,20 @@ public class TestBW implements EntryPoint {
 		
 		// listen for mouse events on the load data button.
 		loaderButton.addClickHandler(new ClickHandler() {
+			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				serverMessageLabel.setText("Loading data ...");
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Loading data ...");
+				//serverMessageLabel.setVisible(true);
 				loadData();
 			}
 		});
 
 		// listen for mouse events on the analysis button.
 		analysisButton.addClickHandler(new ClickHandler() {
+			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				serverMessageLabel.setText("Analysing data ...");
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Analyzing data ...");
+				//serverMessageLabel.setVisible(true);
 				getAnalysis();
 			}
 		});
@@ -295,15 +311,17 @@ public class TestBW implements EntryPoint {
 
 		// Set up the callback object.
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
+			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
 
-				serverMessageLabel.setText("Error setting up the database: " + caught.getMessage());
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error setting up the database: " + caught.getMessage());
+				//serverMessageLabel.setVisible(true);
 			}
 
+			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
-				serverMessageLabel.setText(s);
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
+				//serverMessageLabel.setVisible(true);
 			}
 		};
 
@@ -332,15 +350,17 @@ public class TestBW implements EntryPoint {
 
 		// Set up the callback object.
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
+			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
 
-				serverMessageLabel.setText("Error generating data: " + caught.toString());
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error generating data: " + caught.getMessage());
+				//serverMessageLabel.setVisible(true);
 			}
 
+			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
-				serverMessageLabel.setText(s);
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
+				//serverMessageLabel.setVisible(true);
 			}
 		};
 
@@ -368,15 +388,17 @@ public class TestBW implements EntryPoint {
 
 		// Set up the callback object.
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
+			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
 
-				serverMessageLabel.setText("Error loading data: " + caught.toString());
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error loading data: " + caught.getMessage());
+				//serverMessageLabel.setVisible(true);
 			}
 
+			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
-				serverMessageLabel.setText(s);
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
+				//serverMessageLabel.setVisible(true);
 			}
 		};
 
@@ -406,10 +428,11 @@ public class TestBW implements EntryPoint {
 
 		// Set up the callback object.
 		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
 
-				serverMessageLabel.setText("Error while getting analysis: " + caught.getMessage());
-				serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error while getting analysis: " + caught.getMessage());
+				//serverMessageLabel.setVisible(true);
 			}
 
 			@SuppressWarnings("deprecation")
@@ -417,16 +440,17 @@ public class TestBW implements EntryPoint {
 				
 				ArrayList<ArrayList<String>> parsed = parse(s, "##");
 			
-				serverMessageLabel.setText("Analysis complete: " + DateTimeFormat.getShortDateTimeFormat().format(new Date()));
-				serverMessageLabel.setVisible(true);
-
+				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Analysis complete.");
+				//serverMessageLabel.setVisible(true);
+				
 				// Seat distribution ------------------------------------------
 				distVPanel.clear();
 				piechart = new PieChart(createTable(parsed.get(0)), createOptions());
 				distVPanel.add(distResultLabel);
 				distVPanel.add(piechart);
-				queryResults1VPanel.remove(distVPanel);
-				queryResults1VPanel.add(distVPanel);
+				tabPanel.add(distVPanel, "Sitzverteilung");
+				tabPanel.setVisible(true);
+				tabPanel.selectTab(0);
 
 							
 				// Wahlkreissieger --------------------------------------------
@@ -507,7 +531,7 @@ public class TestBW implements EntryPoint {
 				wkZweitTableVPanel.add(wkZweitTablePager);
 			    wkHPanel.add(wkErstTableVPanel);
 			    wkHPanel.add(wkZweitTableVPanel);
-			    queryResults2VPanel.add(wkHPanel);
+			    //queryResults2VPanel.add(wkHPanel);
 			    
 			    
 			    // Bundestag members ------------------------------------------			    
@@ -555,7 +579,7 @@ public class TestBW implements EntryPoint {
 				membersTable.setTitle("Bundestagmitglieder " + dropList.get(yearInput.getSelectedIndex()));
 				membersTableVPanel.add(membersTable);
 				membersTableVPanel.add(membersPager);
-				queryResults2VPanel.add(membersTableVPanel);
+				//queryResults2VPanel.add(membersTableVPanel);
 				
 				
 				// Ueberhangsmandate ------------------------------------------
@@ -563,8 +587,8 @@ public class TestBW implements EntryPoint {
 				
 				int umandateColLength;
 				if (mandate.size()==0){
-					mandate.add("no data");
-					mandate.add("no data");
+					mandate.add(" ");
+					mandate.add(" ");
 					umandateColLength = 2;
 				} else {
 					umandateColLength = getDelimLength(mandate, "$$");
@@ -611,7 +635,7 @@ public class TestBW implements EntryPoint {
 				mandateTable.setTitle("Ueberhangsmandate " + dropList.get(yearInput.getSelectedIndex()));
 				mandateTableVPanel.add(mandateTable);
 				mandateTableVPanel.add(mandatePager);
-				queryResults1VPanel.add(mandateTableVPanel);
+				//queryResults1VPanel.add(mandateTableVPanel);
 			}
 		};
 
@@ -637,18 +661,13 @@ public class TestBW implements EntryPoint {
 	 */
 	private PieOptions createOptions() {
 		PieOptions options = PieOptions.create();
-	
         ChartArea chartArea = ChartArea.create();
-        chartArea.setTop(50);
-        chartArea.setHeight(400);
-        chartArea.setWidth(400);
-        chartArea.setLeft(50);
         options.setChartArea(chartArea);
-        options.setHeight(400);
-        options.setLegend(LegendPosition.RIGHT);
+        options.setHeight(800);
+        options.setWidth(800);
+        options.setLegend(LegendPosition.LEFT);
         options.setLineWidth(5);
         options.setTitle("Sitzverteilung " + dropList.get(yearInput.getSelectedIndex()));
-        options.setWidth(400);
 		options.set3D(true);
 		return options;
 	}
