@@ -1,4 +1,5 @@
-package testbw.server;
+
+/*package testbw.server;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,69 +14,86 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 @SuppressWarnings("serial")
 public class AnalysisServiceImpl extends RemoteServiceServlet implements AnalysisService {
-	
-	@Override
-	public ArrayList<String> analyze(String[] projectInput, String[] queryInput) {
-		
-		ArrayList<String> result = new ArrayList<String>();
-		
-		// Datenbankverbindung ------------------------------------------------
-		DBManager manager = new DBManager(projectInput);
+
+	private  DBManager manager;
+	private  Statement st;
+	private  ResultSet rs;
+	private  DataAnalyzer analyzer;
+
+	// Initialize analyzer
+	public int initialize(String[] projectInput){
+
+		// Datenbankverbindung
+		manager = new DBManager(projectInput);
 		try {
 			manager.connect();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			//return "Setup unsuccessful. Problem setting up connection to database.";
+			return 0;
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
-			//return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
+			return 0;
 		}
-		Statement st = manager.getStatement();
-		ResultSet rs = null;
+		st = manager.getStatement();
+		rs = null;
+		analyzer = new DataAnalyzer(st, rs);
 		
-		DataAnalyzer analyzer = new DataAnalyzer(st, rs);
+		return 1;
+	}
+	
+	// Close analyzer
+	public int close(){
+	
+		try { // Close DB connection
+			st.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return 0;
+		}
 		
-		try { // Get seat distribution ---------------------------------------
-			result.addAll(analyzer.getSeatDistribution(queryInput));
+		return 1;
+	}
+
+	// Get seat distribution
+	public ArrayList<String> getSeatDistribution(String[] queryInput) {
+		try { 
+			return analyzer.getSeatDistribution(queryInput);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
-		// add delimiter
-		result.add("##");
-		
-		try { // Get Wahlkreis winners ----------------------------------------
-			result.addAll(analyzer.getWahlkreissieger(queryInput));
+		return null;
+
+	}
+
+	// Get Wahlkreis winners
+	public ArrayList<ArrayList<String>> getWahlkreissieger(String[] queryInput){
+		try { 
+			return analyzer.getWahlkreissieger(queryInput);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		}
-		
-		// add delimiter
-		result.add("##");
-				
-		try { // Get Bundestag members ----------------------------------------
-			result.addAll(analyzer.getMembers(queryInput));
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} 
-		
-		// add delimiter
-		result.add("##");
-				
-		try { // Get Ueberhangsmandate members --------------------------------
-			result.addAll(analyzer.getUeberhangsmandate(queryInput));
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} 
-		
-		try { // Close DB connection ------------------------------------------
-			st.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		return result;
+		return null;
 	}
-}
+	
+	// Get Bundestag members
+	public ArrayList<String> getMembers(String[] queryInput){
+		try { 
+			return analyzer.getMembers(queryInput);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		return null;
+	}
+	
+	// Get Ueberhangsmandate
+	public ArrayList<String> getMandate(String[] queryInput){
+		try {
+			return analyzer.getUeberhangsmandate(queryInput);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		return null;
+	}
+}*/

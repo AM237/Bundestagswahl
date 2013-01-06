@@ -33,7 +33,6 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -106,24 +105,24 @@ public class TestBW implements EntryPoint {
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
 	private VerticalPanel wkErstTableVPanel = new VerticalPanel();
 	private VerticalPanel wkZweitTableVPanel = new VerticalPanel();
-	private CellTable<TableEntry_3> wkErstTable = new CellTable<TableEntry_3>();
-	private CellTable<TableEntry_3> wkZweitTable = new CellTable<TableEntry_3>();
+	private CellTable<TableEntry> wkErstTable = new CellTable<TableEntry>();
+	private CellTable<TableEntry> wkZweitTable = new CellTable<TableEntry>();
 	private SimplePager wkErstTablePager;
 	private SimplePager wkZweitTablePager;
-	private ListDataProvider<TableEntry_3> wkErstTableDataProvider = new ListDataProvider<TableEntry_3>();
-	private ListDataProvider<TableEntry_3> wkZweitTableDataProvider = new ListDataProvider<TableEntry_3>();
+	private ListDataProvider<TableEntry> wkErstTableDataProvider = new ListDataProvider<TableEntry>();
+	private ListDataProvider<TableEntry> wkZweitTableDataProvider = new ListDataProvider<TableEntry>();
 	
 	// Query results: Bundestag members ---------------------------------------
 	private VerticalPanel membersTableVPanel = new VerticalPanel();
-	private CellTable<TableEntry_2> membersTable = new CellTable<TableEntry_2>();
+	private CellTable<TableEntry> membersTable = new CellTable<TableEntry>();
 	private SimplePager membersPager;
-	private ListDataProvider<TableEntry_2> membersTableDataProvider = new ListDataProvider<TableEntry_2>();
+	private ListDataProvider<TableEntry> membersTableDataProvider = new ListDataProvider<TableEntry>();
 	
 	// Query results: Ueberhangsmandate ---------------------------------------
 	private VerticalPanel mandateTableVPanel = new VerticalPanel();
-	private CellTable<TableEntry_2> mandateTable = new CellTable<TableEntry_2>();
+	private CellTable<TableEntry> mandateTable = new CellTable<TableEntry>();
 	private SimplePager mandatePager;
-	private ListDataProvider<TableEntry_2> mandateTableDataProvider = new ListDataProvider<TableEntry_2>();
+	private ListDataProvider<TableEntry> mandateTableDataProvider = new ListDataProvider<TableEntry>();
 	
 
 	// Services ---------------------------------------------------------------
@@ -131,7 +130,10 @@ public class TestBW implements EntryPoint {
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);	
 	private GeneratorServiceAsync generateSvc = GWT.create(GeneratorService.class);
 	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
-	private AnalysisServiceAsync analysisSvc = GWT.create(AnalysisService.class);
+	private SeatDistributionServiceAsync seatDistSvc = GWT.create(SeatDistributionService.class);
+	private WahlkreissiegerServiceAsync wkSiegerSvc = GWT.create(WahlkreissiegerService.class);
+	private GetMembersServiceAsync getMembersSvc = GWT.create(GetMembersService.class);
+	private GetMandateServiceAsync getMandateSvc = GWT.create(GetMandateService.class);
 
 
 	/**
@@ -151,7 +153,7 @@ public class TestBW implements EntryPoint {
 		mainHPanel.add(inputMainVPanel);
 		mainHPanel.add(tabPanel);
 	    tabPanel.setAnimationDuration(500);
-	    HTML homeText = new HTML("Analysis results will be shown as new tabs.");
+	    HTML homeText = new HTML("Analysis results will be shown in new tabs as they become ready.");
 	    tabPanel.add(homeText, "Start");
 	    tabPanel.setPixelSize(900, 700);
 	    tabPanel.setVisible(true);
@@ -252,7 +254,6 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
 				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Setting up database ...");
-				//serverMessageLabel.setVisible(true);
 				setupDB();
 			}
 		});
@@ -262,7 +263,6 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
 				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Generating data ...");
-				//serverMessageLabel.setVisible(true);
 				generateData();
 			}
 		});
@@ -273,7 +273,6 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
 				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Loading data ...");
-				//serverMessageLabel.setVisible(true);
 				loadData();
 			}
 		});
@@ -283,7 +282,6 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
 				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Analyzing data ...");
-				//serverMessageLabel.setVisible(true);
 				getAnalysis();
 			}
 		});
@@ -424,34 +422,112 @@ public class TestBW implements EntryPoint {
 	 */
 	private void getAnalysis(){
 
-		// Initialize the service proxy.
-		if (analysisSvc == null) {
-			analysisSvc = (AnalysisServiceAsync) GWT.create(AnalysisService.class);
-			ServiceDefTarget target = (ServiceDefTarget) analysisSvc;
-			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "analysis");
+		// Initialize the service proxies.
+		if (seatDistSvc == null) {
+			seatDistSvc = (SeatDistributionServiceAsync) GWT.create(SeatDistributionService.class);
+			ServiceDefTarget target = (ServiceDefTarget) seatDistSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "distribution");
 		}
+		
+		if (wkSiegerSvc == null) {
+			wkSiegerSvc = (WahlkreissiegerServiceAsync) GWT.create(WahlkreissiegerService.class);
+			ServiceDefTarget target = (ServiceDefTarget) wkSiegerSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "wahlkreissieger");
+		}
+		
+		if (getMembersSvc == null) {
+			getMembersSvc = (GetMembersServiceAsync) GWT.create(GetMembersService.class);
+			ServiceDefTarget target = (ServiceDefTarget) getMembersSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "members");
+		}
+		
+		if (getMandateSvc == null) {
+			getMandateSvc = (GetMandateServiceAsync) GWT.create(GetMandateService.class);
+			ServiceDefTarget target = (ServiceDefTarget) getMandateSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "mandate");
+		}
+		
+		
+		// Prepare parameters
+		String[] projectInput = new String[3];
+		String[] queryInput = new String[2];
+		projectInput[0] = serverName.getText();
+		projectInput[1] = dbInputBox.getText();
+		projectInput[2] = passwordBox.getText();
+		queryInput[0] = dropList.get(yearInput.getSelectedIndex());
+		queryInput[1] = wahlkreisInput.getText();
+		
+		
+		// Setup all required callback objects and 
+		// make the call to each respective service.
+		((SeatDistributionServiceAsync) seatDistSvc).getSeatDistribution(projectInput, queryInput, setupSeatDistCallback());
+		((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
+		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
+		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
+	}
+			
+	// Setup callback objects -------------------------------------------------
+	// ------------------------------------------------------------------------
+	
+	// initialize
+	public AsyncCallback<Integer> setupInitializeCallback(){
+		
+		AsyncCallback<Integer> callback = new AsyncCallback<Integer>() {
 
-
-		// Set up the callback object.
-		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while initializing analyzer: " + caught.getMessage());
+			}
 
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error while getting analysis: " + caught.getMessage());
-				//serverMessageLabel.setVisible(true);
+			@SuppressWarnings("deprecation")
+			public void onSuccess(Integer i) {	}
+		};
+		
+		return callback;
+	}
+	
+	// close
+	public AsyncCallback<Integer> setupCloseCallback(){
+		
+		AsyncCallback<Integer> callback = new AsyncCallback<Integer>() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while closing analyzer: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(Integer i) {	}
+		};
+		
+		return callback;
+	}
+	
+	// seat distribution
+	public AsyncCallback< ArrayList<String> > setupSeatDistCallback(){
+
+		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting seat distribution: " + caught.getMessage());
 			}
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(ArrayList<String> s) {
-				
-				ArrayList<ArrayList<String>> parsed = parse(s, "##");
-			
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Analysis complete.");
-				//serverMessageLabel.setVisible(true);
-				
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Seat distribtion analysis complete.");
+
 				// Seat distribution ------------------------------------------
 				distVPanel.clear();
-				piechart = new PieChart(createTable(parsed.get(0)), createOptions());
+				piechart = new PieChart(createTable(s), createOptions());
 				distVPanel.add(distResultLabel);
 				distVPanel.add(piechart);
 				HorizontalPanel distTabPanel = new HorizontalPanel();
@@ -462,71 +538,69 @@ public class TestBW implements EntryPoint {
 				tabPanel.add(distTabPanel, "Sitzverteilung");
 				tabPanel.setVisible(true);
 
-							
-				// Wahlkreissieger --------------------------------------------
-				ArrayList<String> wks = new ArrayList<String>(parsed.get(1));
-				ArrayList<ArrayList<String>> wksTables = parse(wks, "&&");
-				ArrayList<String> erststimmen = wksTables.get(0);
-				ArrayList<String> zweitstimmen = wksTables.get(1);
+			}
+		};
+
+		return callback;
+	}
+
+	// wahlkreissieger
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupWKSiegerCallback(){
+
+
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting the Wahlkreissieger: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreissieger analysis complete.");
 				
+				ArrayList<String> erststimmen = s.get(0);
+				ArrayList<String> zweitstimmen = s.get(1);
+
 				int erstColLength = getDelimLength(erststimmen, "$$");
 				int zweitColLength = getDelimLength(zweitstimmen, "$$");
-				
+
 				// Get data in table format
 				WKErststimmen = extractRows(erststimmen, erstColLength);
 				WKZweitstimmen = extractRows(zweitstimmen, zweitColLength);
-				
-			    // Create table columns
-			    TextColumn<TableEntry_3> wahlkreisColumn = new TextColumn<TableEntry_3>() {
-			      @Override
-			      public String getValue(TableEntry_3 entry) {
-			        return entry._1;
-			      }
-			    };
-			    TextColumn<TableEntry_3> idColumn = new TextColumn<TableEntry_3>() {
-			      @Override
-			      public String getValue(TableEntry_3 entry) {
-			        return entry._2;
-			      }
-			    };
-			    TextColumn<TableEntry_3> quantColumn = new TextColumn<TableEntry_3>() {
-			      @Override
-			      public String getValue(TableEntry_3 entry) {
-			        return entry._3;
-			      }
-			    };
-			    wahlkreisColumn.setSortable(true);
-			    idColumn.setSortable(true);
-			    quantColumn.setSortable(true);
-			    
-			    // Add the columns.
-			    wkErstTable.addColumn(wahlkreisColumn, "Wahlkreis");
-			    wkErstTable.addColumn(idColumn, "Kandidatennummer");
-			    wkErstTable.addColumn(quantColumn, "Anzahl");
-			    
-			    wkZweitTable.addColumn(wahlkreisColumn, "Wahlkreis");
-			    wkZweitTable.addColumn(idColumn, "Partei");
-			    wkZweitTable.addColumn(quantColumn, "Anzahl");
-				
-			    // Create pagers to control the tables.
-			    SimplePager.Resources pagerResourcesErstTable = GWT.create(SimplePager.Resources.class);
-			    SimplePager.Resources pagerResourcesZweitTable = GWT.create(SimplePager.Resources.class);
-			    wkErstTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesErstTable, true, 3, true);
-			    wkZweitTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesZweitTable, true, 3, true);
-			    wkErstTablePager.setDisplay(wkErstTable);
-			    wkZweitTablePager.setDisplay(wkZweitTable);
-			    
-			    // Set the total row count. This isn't strictly necessary, but it affects
-			    // paging calculations, so its good habit to keep the row count up to date.
-			    wkErstTable.setRowCount(WKErststimmen.size(), true);
-			    wkZweitTable.setRowCount(WKZweitstimmen.size(), true);
-			    
-			    // Load data
+
+				// Add columns
+				wkErstTable.addColumn((new TextColumnWrapper(0)).testCol, "Wahlkreis");
+				wkErstTable.addColumn((new TextColumnWrapper(1)).testCol, "Kandidatennummer");
+				wkErstTable.addColumn((new TextColumnWrapper(2)).testCol, "Anzahl");
+
+				wkZweitTable.addColumn((new TextColumnWrapper(0)).testCol, "Wahlkreis");
+				wkZweitTable.addColumn((new TextColumnWrapper(1)).testCol, "Partei");
+				wkZweitTable.addColumn((new TextColumnWrapper(2)).testCol, "Anzahl");		    
+
+				// Create pagers to control the tables.
+				SimplePager.Resources pagerResourcesErstTable = GWT.create(SimplePager.Resources.class);
+				SimplePager.Resources pagerResourcesZweitTable = GWT.create(SimplePager.Resources.class);
+				wkErstTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesErstTable, true, 3, true);
+				wkZweitTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesZweitTable, true, 3, true);
+				wkErstTablePager.setDisplay(wkErstTable);
+				wkZweitTablePager.setDisplay(wkZweitTable);
+
+				// Set the total row count. This isn't strictly necessary, but it affects
+				// paging calculations, so its good habit to keep the row count up to date.
+				wkErstTable.setRowCount(WKErststimmen.size(), true);
+				wkZweitTable.setRowCount(WKZweitstimmen.size(), true);
+
+				// Load data
 				wkErstTableDataProvider.addDataDisplay(wkErstTable);
 				wkErstTableDataProvider.setList(WKErststimmen);
 				wkZweitTableDataProvider.addDataDisplay(wkZweitTable);
 				wkZweitTableDataProvider.setList(WKZweitstimmen);
-				
+
 				// Add table to UI
 				wkErstTableVPanel.clear();
 				wkZweitTableVPanel.clear();
@@ -539,43 +613,46 @@ public class TestBW implements EntryPoint {
 				wkErstTableVPanel.add(wkErstTablePager);
 				wkZweitTableVPanel.add(wkZweitTable);
 				wkZweitTableVPanel.add(wkZweitTablePager);
-			    wkHPanel.add(wkErstTableVPanel);
-			    wkHPanel.add(wkZweitTableVPanel);
+				wkHPanel.add(wkErstTableVPanel);
+				wkHPanel.add(wkZweitTableVPanel);
 				HorizontalPanel wkTabPanel = new HorizontalPanel();
 				wkTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
 				wkTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 				wkTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 				wkTabPanel.add(wkHPanel);
-			    tabPanel.add(wkTabPanel, "Wahlkreissieger");
-			    
-			    
-			    // Bundestag members ------------------------------------------			    
-			    ArrayList<String> members = new ArrayList<String>(parsed.get(2));
-			    int membersColLength = getDelimLength(members, "$$");
+				tabPanel.add(wkTabPanel, "Wahlkreissieger");
+			}
+		};
+
+		return callback;
+	}
+
+	// members
+	public AsyncCallback< ArrayList<String> > setupMembersCallback(){
+
+		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting Bundestag members: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<String> s) {
+
+				ta.setText(ta.getText() + "\n" + "-> " +
+						 DateTimeFormat.getFullTimeFormat().format(new Date()) +": Bundestag members analysis complete.");
+
+			    int membersColLength = getDelimLength(s, "$$");
 			    
 			    // Get data in table format
-				bwMembers = extractRowsMem(members, membersColLength);
-				
-			    // Create table columns
-			    TextColumn<TableEntry_2> candColumn = new TextColumn<TableEntry_2>() {
-			      @Override
-			      public String getValue(TableEntry_2 entry) {
-			        return entry._1;
-			      }
-			    };
-			    TextColumn<TableEntry_2> partyColumn = new TextColumn<TableEntry_2>() {
-			      @Override
-			      public String getValue(TableEntry_2 entry) {
-			        return entry._2;
-			      }
-			    };
-
-			    candColumn.setSortable(true);
-			    partyColumn.setSortable(true);
-			    
+				bwMembers = extractRows(s, membersColLength);
+		
 			    // Add the columns.
-			    membersTable.addColumn(candColumn, "Kandidat");
-			    membersTable.addColumn(partyColumn, "Partei");
+			    membersTable.addColumn((new TextColumnWrapper(1).testCol), "Kandidat");
+			    membersTable.addColumn((new TextColumnWrapper(1).testCol), "Partei");
 			    
 			    // Create pagers to control the table.
 			    SimplePager.Resources pagerResourcesMembersTable = GWT.create(SimplePager.Resources.class);
@@ -600,43 +677,46 @@ public class TestBW implements EntryPoint {
 				membersTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 				membersTabPanel.add(membersTableVPanel);
 				tabPanel.add(membersTabPanel, "Bundestagsmitglieder");
+			}
+		};
+
+		return callback;
+	}
+	
+	// ueberhangsmandate
+	public AsyncCallback< ArrayList<String> > setupMandateCallback(){
+		
+		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting Ueberhangsmandate: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<String> s) {
 				
-				
-				// Ueberhangsmandate ------------------------------------------
-				ArrayList<String> mandate = new ArrayList<String>(parsed.get(3));
-				
+				ta.setText(ta.getText() + "\n" + "-> " +
+						 DateTimeFormat.getFullTimeFormat().format(new Date()) +": Ueberhangsmandate analysis complete.");
+
+				// todo: fix this
 				int umandateColLength;
-				if (mandate.size()==0){
-					mandate.add(" ");
-					mandate.add(" ");
+				if (s.size()==0){
+					s.add(" ");
+					s.add(" ");
 					umandateColLength = 2;
 				} else {
-					umandateColLength = getDelimLength(mandate, "$$");
+					umandateColLength = getDelimLength(s, "$$");
 				}
 			    
 			    // Get data in table format
-				umandate = extractRowsMem(mandate, umandateColLength);
-				
-			    // Create table columns
-			    TextColumn<TableEntry_2> partyCol = new TextColumn<TableEntry_2>() {
-			      @Override
-			      public String getValue(TableEntry_2 entry) {
-			        return entry._1;
-			      }
-			    };
-			    TextColumn<TableEntry_2> seatsCol = new TextColumn<TableEntry_2>() {
-			      @Override
-			      public String getValue(TableEntry_2 entry) {
-			        return entry._2;
-			      }
-			    };
-
-			    partyCol.setSortable(true);
-			    seatsCol.setSortable(true);
-			    
+				umandate = extractRows(s, umandateColLength);
+							    
 			    // Add the columns.
-			    mandateTable.addColumn(candColumn, "Partei");
-			    mandateTable.addColumn(partyColumn, "Ueberhangsmandate");
+			    mandateTable.addColumn((new TextColumnWrapper(1).testCol), "Partei");
+			    mandateTable.addColumn((new TextColumnWrapper(1).testCol), "Ueberhangsmandate");
 			    
 			    // Create pagers to control the table.
 			    SimplePager.Resources pagerResourcesMandateTable = GWT.create(SimplePager.Resources.class);
@@ -664,18 +744,10 @@ public class TestBW implements EntryPoint {
 			}
 		};
 
-		// Make the call to the get analysis service.
-		String[] projectInput = new String[5];
-		String[] queryInput = new String[2];
-		projectInput[0] = serverName.getText();
-		projectInput[1] = dbInputBox.getText();
-		projectInput[2] = passwordBox.getText();
-		queryInput[0] = dropList.get(yearInput.getSelectedIndex());
-		queryInput[1] = wahlkreisInput.getText();
-		
-		((AnalysisServiceAsync) analysisSvc).analyze(projectInput, queryInput, callback);
+		return callback;
 	}
 
+	
 	
 	// Other methods / static classes -----------------------------------------
 	// ------------------------------------------------------------------------
@@ -716,40 +788,48 @@ public class TestBW implements EntryPoint {
 
 		return dataTable;
 	}
-	
-	// Table templates --------------------------------------------------------
-	public static class TableEntry_3 {
-		private final String _1;
-		private final String _2;
-		private final String _3;
-		
-		public TableEntry_3(ArrayList<String> properties){
-			this._1 = properties.get(0);
-			this._2 = properties.get(1);
-			this._3 = properties.get(2);
-		}
-	}
-	
-	public static class TableEntry_2 {
-		private final String _1;
-		private final String _2;
-		
-		public TableEntry_2(ArrayList<String> properties){
-			this._1 = properties.get(0);
-			this._2 = properties.get(1);
-		}
-	}
 
-	// Wahlkreissieger --------------------------------------------------------	
-	private static List<TableEntry_3> WKErststimmen;
-	private static List<TableEntry_3> WKZweitstimmen;
+
 	
 	
-	// Bundestag members -----------------------------------------------------
-	private static List<TableEntry_2> bwMembers;
+
+
+	// Tables info --------------------------------------------------------	
 	
-	// Ueberhangsmandate -----------------------------------------------------
-	private static List<TableEntry_2> umandate;
+	/**
+	 * A class representing a row of a table
+	 */
+	public static class TableEntry {
+		private final ArrayList<String> cols;
+		
+		public TableEntry(ArrayList<String> cols){
+			this.cols = new ArrayList<String>(cols);
+		}
+	}
+	
+	/**
+	 *Wrapper for the TextColumn class, extend provided info by a column
+	 *number of interest ( = index)
+	 */
+	public class TextColumnWrapper {
+		private int index = -1;
+		
+		TextColumnWrapper(int index){
+			this.index = index;
+		}
+		
+		TextColumn<TableEntry> testCol = new TextColumn<TableEntry>(){
+		    @Override
+		      public String getValue(TableEntry entry) {
+		        return entry.cols.get(index);
+		      }
+		};
+	}
+	
+	private static List<TableEntry> WKErststimmen;
+	private static List<TableEntry> WKZweitstimmen;
+	private static List<TableEntry> bwMembers;
+	private static List<TableEntry> umandate;
 	
 	
 	
@@ -811,34 +891,17 @@ public class TestBW implements EntryPoint {
 		if (set.size() > 1) return -1;
 		return counters.get(0);
 	}
-	
-	// todo: clean this up
-	public List<TableEntry_3> extractRows(ArrayList<String> toBeParsed, int colLength){
 		
-		ArrayList<TableEntry_3> result = new ArrayList<TableEntry_3>();
+	public List<TableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
 		
-		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
-			ArrayList<String> temp = new ArrayList<String>();
-			for (int j = 0; j < colLength; j++){
-				temp.add(toBeParsed.get(i+j));
-			}
-			result.add(new TableEntry_3(temp));
-		}
-		
-		return result;
-	}
-	
-	
-	public List<TableEntry_2> extractRowsMem(ArrayList<String> toBeParsed, int colLength){
-		
-		ArrayList<TableEntry_2> result = new ArrayList<TableEntry_2>();
+		ArrayList<TableEntry> result = new ArrayList<TableEntry>();
 		
 		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
 			ArrayList<String> temp = new ArrayList<String>();
 			for (int j = 0; j < colLength; j++){
 				temp.add(toBeParsed.get(i+j));
 			}
-			result.add(new TableEntry_2(temp));
+			result.add(new TableEntry(temp));
 		}
 		
 		return result;

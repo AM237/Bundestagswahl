@@ -21,21 +21,7 @@
     <servlet-name>SetupStaticDBServiceImpl</servlet-name>
     <url-pattern>/testbw/setupStaticDB</url-pattern>
   </servlet-mapping>
-  
-  
- 
-  <servlet>
-    <servlet-name>AnalysisServiceImpl</servlet-name>
-    <servlet-class>testbw.server.AnalysisServiceImpl</servlet-class>
-  </servlet>
-
-  <servlet-mapping>
-    <servlet-name>AnalysisServiceImpl</servlet-name>
-    <url-pattern>/testbw/analysis</url-pattern>
-  </servlet-mapping>
-  
-  
-  
+    
   <servlet>
     <servlet-name>GeneratorServiceImpl</servlet-name>
     <servlet-class>testbw.server.GeneratorServiceImpl</servlet-class>
@@ -56,5 +42,51 @@
     <servlet-name>LoaderServiceImpl</servlet-name>
     <url-pattern>/testbw/loader</url-pattern>
   </servlet-mapping>
+  
+  
+  
+  <servlet>
+    <servlet-name>SeatDistributionServiceImpl</servlet-name>
+    <servlet-class>testbw.server.SeatDistributionServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>SeatDistributionServiceImpl</servlet-name>
+    <url-pattern>/testbw/distribution</url-pattern>
+  </servlet-mapping>
+  
+  
+  <servlet>
+    <servlet-name>WahlkreissiegerServiceImpl</servlet-name>
+    <servlet-class>testbw.server.WahlkreissiegerServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>WahlkreissiegerServiceImpl</servlet-name>
+    <url-pattern>/testbw/wahlkreissieger</url-pattern>
+  </servlet-mapping>
+
+
+  <servlet>
+    <servlet-name>GetMembersServiceImpl</servlet-name>
+    <servlet-class>testbw.server.GetMembersServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>GetMembersServiceImpl</servlet-name>
+    <url-pattern>/testbw/members</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>GetMandateServiceImpl</servlet-name>
+    <servlet-class>testbw.server.GetMandateServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>GetMandateServiceImpl</servlet-name>
+    <url-pattern>/testbw/mandate</url-pattern>
+  </servlet-mapping>
+
+
 
 </web-app>

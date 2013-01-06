@@ -132,9 +132,9 @@ public class DataAnalyzer {
 	/**
 	 * Get the winners for every Wahlkreis
 	 */
-	public ArrayList<String> getWahlkreissieger(String[] queryInput) throws SQLException, NumberFormatException {
+	public ArrayList<ArrayList<String>> getWahlkreissieger(String[] queryInput) throws SQLException, NumberFormatException {
 		
-		ArrayList<String> result = new ArrayList<String>();
+		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		
 		String jahrName = queryInput[0];
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  s1.wahlkreis, s1.kandidatennummer, s1.anzahl FROM erststimmen s1 , wahlkreis w WHERE s1.jahr = "
@@ -152,31 +152,32 @@ public class DataAnalyzer {
 				+ jahrName
 				+ " AND s2.wahlkreis = w.wahlkreisnummer)");
 		
+		
+		result.add(new ArrayList<String>());
+		result.add(new ArrayList<String>());
+		
 		// erststimmen
 		rs = st.executeQuery("SELECT * FROM erststimmengewinner;");
 		ResultSetMetaData meta = rs.getMetaData();
 		int anzFields = meta.getColumnCount();
 		while (rs.next()) {
 			for (int i = 0; i < anzFields; i++) {
-				result.add(rs.getString(i+1));
+				result.get(0).add(rs.getString(i+1));
 			}
 			// add delimiter
-			result.add("$$");
+			result.get(0).add("$$");
 		}
-		
-		// add delimiter
-		result.add("&&");
-		
+				
 		// zweitstimmen
 		rs = st.executeQuery("SELECT * FROM zweitstimmengewinner;");
 		ResultSetMetaData meta2 = rs.getMetaData();
 		int anzFields2 = meta2.getColumnCount();
 		while (rs.next()) {
 			for (int i = 0; i < anzFields2; i++) {
-				result.add(rs.getString(i+1));
+				result.get(1).add(rs.getString(i+1));
 			}
 			// add delimiter
-			result.add("$$");
+			result.get(1).add("$$");
 		}
 			
 		return result;
@@ -227,6 +228,8 @@ public class DataAnalyzer {
 
 		ArrayList<String> result = new ArrayList<String>();
 		
+		
+		
 		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangsmandate AS "
 				+ "SELECT pes.parteiname, pes.sitze - pzs.sitze AS ueberhangsmandate FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.sitze) > 0 ");
 
@@ -243,6 +246,63 @@ public class DataAnalyzer {
 		}
 
 		return result;
+	}
+	
+	/**
+	 * Return overview of the Wahlkreise
+	 */
+	
+	public ArrayList<String> getWahlkreisOverview(String[] queryInput) throws SQLException {
+		System.out.println("\n Q3: Wahlkreis�bersicht");
+
+		String jahrName = this.jahr;
+		try {
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS "
+					+ "SELECT sum(anzahl) FROM erststimmen WHERE jahr = "
+					+ jahrName + " AND wahlkreis = " + wahlkreis);
+
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS "
+					+ "SELECT (SELECT * FROM wahlbeteiligungabsolut) / (  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = "
+					+ jahrName
+					+ " AND wahlkreis = "
+					+ wahlkreis
+					+ " )::float ;");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS "
+					+ "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politiker AND d.kandidatennummer = (SELECT e.kandidatennummer FROM erststimmengewinner e ORDER BY RANDOM() LIMIT 1)");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS "
+					+ "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
+					+ jahrName
+					+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS "
+					+ "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsolut) as anteil FROM parteinenanteilabsolut pa ");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS "
+					+ "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
+					+ Integer.toString(Integer.parseInt(jahrName) - 4)
+					+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS "
+					+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		/*
+		printQueryResult(st, rs, "wahlbeteiligungabsolut");
+		printQueryResult(st, rs, "wahlbeteiligungrelativ");
+		printQueryResult(st, rs, "erststimmengewinnerkandidat");
+		printQueryResult(st, rs, "parteinenanteilabsolut");
+		printQueryResult(st, rs, "parteinenanteilrelativ");
+		printQueryResult(st, rs, "parteinenanteilabsolutvorjahr");
+		printQueryResult(st, rs, "parteinenanteilveraenderung");
+		 */
+		System.out.println("\nFinished");
+		
+		return null;
 	}
 }
 
