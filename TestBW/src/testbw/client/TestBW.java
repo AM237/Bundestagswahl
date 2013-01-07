@@ -32,6 +32,7 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
+import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
@@ -56,12 +57,11 @@ public class TestBW implements EntryPoint {
 	// GUI elements -----------------------------------------------------------
 	// ------------------------------------------------------------------------
 	
-	private HorizontalPanel mainHPanel = new HorizontalPanel();
+	private TabLayoutPanel tabPanel = new TabLayoutPanel(2.5, Unit.EM);
 	
 	// Project input section --------------------------------------------------
 	private DecoratorPanel projInputDec = new DecoratorPanel();
 	private VerticalPanel inputMainVPanel = new VerticalPanel();
-	private VerticalPanel inputInnerVPanel = new VerticalPanel();
 	private Label inputFieldsProjectLabel = new Label();
 	private VerticalPanel inputFieldsVPanelProject = new VerticalPanel();
 	private TextBox dbInputBox = new TextBox();
@@ -92,9 +92,6 @@ public class TestBW implements EntryPoint {
 	private VerticalPanel consoleOutputVPanel = new VerticalPanel();
 	private TextArea ta = new TextArea();
 	private Label taLabel = new Label();
-
-	// Query results section --------------------------------------------------
-	private TabLayoutPanel tabPanel = new TabLayoutPanel(2.5, Unit.EM);
 	
 	// Query result: seat distribution ----------------------------------------
 	private VerticalPanel distVPanel = new VerticalPanel();
@@ -144,27 +141,11 @@ public class TestBW implements EntryPoint {
 		// GUI elements -----------------------------------------------------------
 		// ------------------------------------------------------------------------
 		
-		// Root ----------------------------------------------------------------
-		RootPanel.get("setupDB").add(mainHPanel);
-		
-		// All inputs, query results ------------------------------------------
-		mainHPanel.setSpacing(50);
-		mainHPanel.setVerticalAlignment(HorizontalPanel.ALIGN_TOP);
-		mainHPanel.add(inputMainVPanel);
-		mainHPanel.add(tabPanel);
-	    tabPanel.setAnimationDuration(500);
-	    HTML homeText = new HTML("Analysis results will be shown in new tabs as they become ready.");
-	    tabPanel.add(homeText, "Start");
-	    tabPanel.setPixelSize(900, 700);
-	    tabPanel.setVisible(true);
-		
 		// Seat distribution --------------------------------------------------
 		distVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		distVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-		//distVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");	
+		distVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);	
 		
 		// Wahlkreis winners --------------------------------------------------
-		//wkHPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		wkHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		wkHPanel.setSpacing(50);
@@ -172,12 +153,10 @@ public class TestBW implements EntryPoint {
 		wkZweitTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		
 		// Bundestag members --------------------------------------------------
-		//membersTableVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
 		membersTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		membersTableVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
 		// Ueberhangsmandate --------------------------------------------------
-		//mandateTableVPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
 		mandateTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		mandateTableVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 
@@ -187,9 +166,10 @@ public class TestBW implements EntryPoint {
 		inputFieldsVPanelProject.add(dbInputBox);
 		inputFieldsVPanelProject.add(passwordBox);
 		projInputDec.add(inputFieldsVPanelProject);
+		inputMainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		inputMainVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		inputMainVPanel.setSpacing(30);
 		inputMainVPanel.add(projInputDec);
-		inputMainVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_LEFT);
-		inputInnerVPanel.setSpacing(30);		
 		inputFieldsProjectLabel.setText("Project Inputs");
 		inputFieldsQueryLabel.setText("Query Inputs");
 		serverName.setTitle("Enter Server name ... ");
@@ -206,8 +186,7 @@ public class TestBW implements EntryPoint {
 		queryInputDec.add(inputFieldsVPanelQuery);
 		inputFieldsHPanelQuery.add(yearInput);
 		inputFieldsHPanelQuery.add(wahlkreisInput);
-		inputMainVPanel.add(inputInnerVPanel);
-		inputInnerVPanel.add(queryInputDec);
+		inputMainVPanel.add(queryInputDec);
 		wahlkreisInput.setTitle("Give overview for which Wahlkreis (number)?");
 		yearInput.setWidth("100px");
 		wahlkreisInput.setWidth("100px");
@@ -221,7 +200,7 @@ public class TestBW implements EntryPoint {
 		buttonsHPanel.add(outputClear);
 		controlsVPanel.add(buttonsPanelLabel);
 		controlsVPanel.add(buttonsHPanel);
-		inputInnerVPanel.add(controlsVPanel);
+		inputMainVPanel.add(controlsVPanel);
 		controlsVPanel.setSpacing(5);
 		buttonsPanelLabel.setText("Controls");
 		
@@ -234,8 +213,19 @@ public class TestBW implements EntryPoint {
 		consoleOutputVPanel.setSpacing(5);
 		taLabel.setText("Console Output");
 		taLabel.setVisible(true);
-		ta.setWidth("370px");
+		ta.setWidth("500px");
 		ta.setHeight("300px");
+		
+		// Root ----------------------------------------------------------------
+		HorizontalPanel inputHolder = new HorizontalPanel();
+		inputHolder.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		inputHolder.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+		inputHolder.setSize(""+RootLayoutPanel.get().getOffsetWidth()+"px", ""+RootLayoutPanel.get().getOffsetHeight()+"px");
+		inputHolder.add(inputMainVPanel);
+		tabPanel.setAnimationDuration(500);
+		tabPanel.add(inputHolder, "Start");
+		RootLayoutPanel.get().add(tabPanel);
+		//RootPanel.get("setupDB").add(tabPanel);
 
 
 		

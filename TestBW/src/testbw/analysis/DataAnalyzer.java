@@ -5,6 +5,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class DataAnalyzer {
@@ -152,34 +154,15 @@ public class DataAnalyzer {
 				+ jahrName
 				+ " AND s2.wahlkreis = w.wahlkreisnummer)");
 		
+	
+		List<String> tableNames = Arrays.asList("erststimmengewinner", 
+												"zweitstimmengewinner");
 		
-		result.add(new ArrayList<String>());
-		result.add(new ArrayList<String>());
-		
-		// erststimmen
-		rs = st.executeQuery("SELECT * FROM erststimmengewinner;");
-		ResultSetMetaData meta = rs.getMetaData();
-		int anzFields = meta.getColumnCount();
-		while (rs.next()) {
-			for (int i = 0; i < anzFields; i++) {
-				result.get(0).add(rs.getString(i+1));
-			}
-			// add delimiter
-			result.get(0).add("$$");
+		for (int i = 0; i < tableNames.size(); i++){
+			result.add(new ArrayList<String>());
+			collectFromQuery(result, tableNames.get(i), i);			
 		}
-				
-		// zweitstimmen
-		rs = st.executeQuery("SELECT * FROM zweitstimmengewinner;");
-		ResultSetMetaData meta2 = rs.getMetaData();
-		int anzFields2 = meta2.getColumnCount();
-		while (rs.next()) {
-			for (int i = 0; i < anzFields2; i++) {
-				result.get(1).add(rs.getString(i+1));
-			}
-			// add delimiter
-			result.get(1).add("$$");
-		}
-			
+
 		return result;
 	}
 	
@@ -228,8 +211,6 @@ public class DataAnalyzer {
 
 		ArrayList<String> result = new ArrayList<String>();
 		
-		
-		
 		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangsmandate AS "
 				+ "SELECT pes.parteiname, pes.sitze - pzs.sitze AS ueberhangsmandate FROM erststimmenergebnis pes, zweitstimmenergebnis pzs WHERE pzs.parteiname = pes.parteiname AND (pes.sitze - pzs.sitze) > 0 ");
 
@@ -253,8 +234,7 @@ public class DataAnalyzer {
 	 */
 	
 	public ArrayList<String> getWahlkreisOverview(String[] queryInput) throws SQLException {
-		System.out.println("\n Q3: Wahlkreis�bersicht");
-
+		
 		String jahrName = this.jahr;
 		try {
 			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS "
@@ -300,9 +280,24 @@ public class DataAnalyzer {
 		printQueryResult(st, rs, "parteinenanteilabsolutvorjahr");
 		printQueryResult(st, rs, "parteinenanteilveraenderung");
 		 */
-		System.out.println("\nFinished");
 		
 		return null;
+	}
+	
+	// Get data from ResultSet into required table format
+	public void collectFromQuery(ArrayList<ArrayList<String>> result, 
+								 String tableName, int index) throws SQLException {
+		
+		rs = st.executeQuery("SELECT * FROM " + tableName+ ";");
+		ResultSetMetaData meta = rs.getMetaData();
+		int anzFields = meta.getColumnCount();
+		while (rs.next()) {
+			for (int i = 0; i < anzFields; i++) {
+				result.get(index).add(rs.getString(i+1));
+			}
+			// add delimiter
+			result.get(index).add("$$");
+		}
 	}
 }
 
