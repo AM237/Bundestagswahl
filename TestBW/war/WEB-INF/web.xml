@@ -12,6 +12,20 @@
   </welcome-file-list>
   
   <!-- Servlets -->
+  
+  
+  
+    
+  <servlet>
+    <servlet-name>BenchmarkServlet</servlet-name>
+    <servlet-class>testbw.servlet.BenchmarkServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>BenchmarkServlet</servlet-name>
+    <url-pattern>/testbw/benchmark</url-pattern>
+  </servlet-mapping>
+  
   <servlet>
     <servlet-name>SetupStaticDBServiceImpl</servlet-name>
     <servlet-class>testbw.server.SetupStaticDBServiceImpl</servlet-class>
