@@ -15,7 +15,7 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class GetMandateServiceImpl  extends RemoteServiceServlet implements GetMandateService {
 
 	// Get seat distribution
-	public ArrayList<String> getMandate(String[] projectInput, String[] queryInput) {
+	public ArrayList<ArrayList<String>> getMandate(String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
@@ -32,7 +32,7 @@ public class GetMandateServiceImpl  extends RemoteServiceServlet implements GetM
 
 		// Query
 		try { 
-			ArrayList<String> result = analyzer.getUeberhangsmandate(queryInput);
+			ArrayList<ArrayList<String>> result = analyzer.getUeberhangsmandate(queryInput);
 			st.close();
 			return result;
 		} catch (SQLException e) {

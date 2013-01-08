@@ -7,6 +7,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public interface GetMembersServiceAsync {
 
 	void getMembers(String[] projectInput, String[] queryInput,
-			AsyncCallback<ArrayList<String>> callback);
+			AsyncCallback<ArrayList<ArrayList<String>>> callback);
 
 }

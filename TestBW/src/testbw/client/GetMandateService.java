@@ -7,5 +7,5 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 @RemoteServiceRelativePath("mandate")
 public interface GetMandateService extends RemoteService {
 
-	ArrayList<String> getMandate(String[] projectInput, String[] queryInput);
+	ArrayList<ArrayList<String>> getMandate(String[] projectInput, String[] queryInput);
 }

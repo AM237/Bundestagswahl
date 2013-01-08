@@ -1,131 +1,130 @@
 /** Add css rules here for your application. */
-
-
 /** Example rules used by the template application (remove for your app) */
 h1 {
-  font-size: 2em;
-  font-weight: bold;
-  color: #777777;
-  margin: 40px 0px 70px;
-  
+	font-size: 2em;
+	font-weight: bold;
+	color: #777777;
+	margin: 40px 0px 70px;
 }
 
-
+/*
 .gwt-DecoratedTabBar {
-  background: #ccc;
-  padding-top: 6px;
+	background: #ccc !important;
+	padding-top: 6px !important;
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarFirst {
-  width: 5px;  /* first tab distance from the left */
+	width: 5px !important;
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarRest {
+	
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarItem {
-  border-collapse: collapse;
-  margin-left: 4px;
+	border-collapse: collapse !important;
+	margin-left: 4px !important;
 }
 
 .gwt-DecoratedTabBar .tabTopCenter {
-  padding: 0px;
-  background: #8E8E8E;
+	padding: 0px !important;
+	background: #8E8E8E !important;
 }
 
-.gwt-DecoratedTabBar .tabTopLeft,
-.gwt-DecoratedTabBar .tabTopRight {
-  padding: 0px;
-  zoom: 2;
+.gwt-DecoratedTabBar .tabTopLeft,.gwt-DecoratedTabBar .tabTopRight {
+	padding: 0px !important;
+	zoom: 1 !important;
 }
 
-.gwt-DecoratedTabBar .tabTopLeftInner,
-.gwt-DecoratedTabBar .tabTopRightInner {
-  width: 5px;
-  height: 5px;
+.gwt-DecoratedTabBar .tabTopLeftInner,.gwt-DecoratedTabBar .tabTopRightInner
+	{
+	width: 3px !important;
+	height: 3px !important;
 }
-/*
+
 .gwt-DecoratedTabBar .tabTopLeft {
-  background: url(images/circles.png) no-repeat 0px 0px;
-  -background: url(images/circles_ie6.png) no-repeat 0px 0px;
+	background: url(images/circles.png) no-repeat 0px 0px;
+	-background: url(images/circles_ie6.png) no-repeat 0px 0px;
 }
 
 .gwt-DecoratedTabBar .tabTopRight {
-  background: url(images/circles.png) no-repeat -3px 0px;
-  -background: url(images/circles_ie6.png) no-repeat -3px 0px;
-}
-*/
-.gwt-DecoratedTabBar .tabMiddleLeft,
-.gwt-DecoratedTabBar .tabMiddleRight {
-  width: 3px;
-  padding: 0px;
-  background: #8E8E8E;
+	background: url(images/circles.png) no-repeat -3px 0px;
+	-background: url(images/circles_ie6.png) no-repeat -3px 0px;
 }
 
-.gwt-DecoratedTabBar .tabMiddleLeftInner,
-.gwt-DecoratedTabBar .tabMiddleRightInner {
-  width: 2px;
-  height: 2px;
+.gwt-DecoratedTabBar .tabMiddleLeft,.gwt-DecoratedTabBar .tabMiddleRight
+	{
+	width: 3px !important;
+	padding: 0px !important;
+	background: #8E8E8E !important;
+}
+
+.gwt-DecoratedTabBar .tabMiddleLeftInner,.gwt-DecoratedTabBar .tabMiddleRightInner
+	{
+	width: 1px !important;
+	height: 1px !important;
 }
 
 .gwt-DecoratedTabBar .tabMiddleCenter {
-  padding: 0px 5px 4px 5px;
-  cursor: pointer;
-  cursor: hand;
-  color: #fff;
-  font-weight: normal;
-  text-align: center;
-  background: #8E8E8E;
+	padding: 0px 5px 4px 5px !important;
+	cursor: pointer !important;
+	cursor: hand !important;
+	color: #fff !important;
+	font-weight: normal !important;
+	text-align: center !important;
+	background: #8E8E8E !important;
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopCenter {
-  background:#fff;
+	background: #fff !important;
 }
-/*
+
 .gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopLeft {
-  background: url(images/circles.png) no-repeat -6px 0px;
-  -background: url(images/circles_ie6.png) no-repeat -6px 0px;
+	background: url(images/circles.png) no-repeat -6px 0px;
+	-background: url(images/circles_ie6.png) no-repeat -6px 0px;
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopRight {
-  background: url(images/circles.png) no-repeat -9px 0px;
-  -background: url(images/circles_ie6.png) no-repeat -9px 0px;
+	background: url(images/circles.png) no-repeat -9px 0px;
+	-background: url(images/circles_ie6.png) no-repeat -9px 0px;
 }
-*/
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleLeft,
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleRight {
-  background: #fff;
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleLeft,.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleRight
+	{
+	background: #fff !important;
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleCenter {
-  cursor: default;
-  background: #fff;
-  color:#333;
-  font-weight:bold;
+	cursor: default !important;
+	background: #fff !important;
+	color: #333 !important;
+	font-weight: bold !important;
 }
 
 .gwt-DecoratedTabBar .gwt-TabBarItem-disabled .tabMiddleCenter {
-  cursor: default;
-  color: #999999;
+	cursor: default !important;
+	color: #999999 !important;
 }
 
 html>body .gwt-DecoratedTabBar {
+	
 }
 
-* html .gwt-DecoratedTabBar .tabTopLeftInner,
-* html .gwt-DecoratedTabBar .tabTopRightInner {
-  width: 3px;
-  height: 3px;
-  overflow: hidden;
+* html .gwt-DecoratedTabBar .tabTopLeftInner,* html .gwt-DecoratedTabBar .tabTopRightInner
+	{
+	width: 3px !important;
+	height: 3px !important;
+	overflow: hidden !important;
 }
 
 .gwt-TabPanel {
+	
 }
 
 .gwt-TabPanelBottom {
-  border-color: #ccc;
-  border-style: solid;
-  border-width: 0px 1px 1px;
-  overflow: hidden;
-  padding: 6px;
-}
+	border-color: #ccc !important;
+	border-style: solid !important;
+	border-width: 0px 1px 1px !important;
+	overflow: hidden !important;
+	padding: 6px !important;
+}*/

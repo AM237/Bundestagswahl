@@ -15,7 +15,7 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class GetMembersServiceImpl  extends RemoteServiceServlet implements GetMembersService {
 
 	// Get seat distribution
-	public ArrayList<String> getMembers(String[] projectInput, String[] queryInput) {
+	public ArrayList<ArrayList<String>> getMembers(String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
@@ -32,7 +32,7 @@ public class GetMembersServiceImpl  extends RemoteServiceServlet implements GetM
 
 		// Query
 		try { 
-			ArrayList<String> result = analyzer.getMembers(queryInput);
+			ArrayList<ArrayList<String>> result = analyzer.getMembers(queryInput);
 			st.close();
 			return result;
 		} catch (SQLException e) {

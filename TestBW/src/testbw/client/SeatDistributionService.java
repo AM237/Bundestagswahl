@@ -7,5 +7,5 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 @RemoteServiceRelativePath("distribution")
 public interface SeatDistributionService extends RemoteService {
 
-	ArrayList<String> getSeatDistribution(String[] projectInput, String[] queryInput);
+	ArrayList<ArrayList<String>> getSeatDistribution(String[] projectInput, String[] queryInput);
 }

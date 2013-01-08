@@ -26,14 +26,13 @@ import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CellPanel;
 import com.google.gwt.user.client.ui.DecoratorPanel;
-import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
-import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -94,32 +93,19 @@ public class TestBW implements EntryPoint {
 	private Label taLabel = new Label();
 	
 	// Query result: seat distribution ----------------------------------------
-	private VerticalPanel distVPanel = new VerticalPanel();
-	private PieChart piechart;
-	private Label distResultLabel = new Label();
+	private HorizontalPanel distHPanel = new HorizontalPanel();
 	
 	// Query result: Wahlkreis winners ----------------------------------------
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
-	private VerticalPanel wkErstTableVPanel = new VerticalPanel();
-	private VerticalPanel wkZweitTableVPanel = new VerticalPanel();
-	private CellTable<TableEntry> wkErstTable = new CellTable<TableEntry>();
-	private CellTable<TableEntry> wkZweitTable = new CellTable<TableEntry>();
-	private SimplePager wkErstTablePager;
-	private SimplePager wkZweitTablePager;
-	private ListDataProvider<TableEntry> wkErstTableDataProvider = new ListDataProvider<TableEntry>();
-	private ListDataProvider<TableEntry> wkZweitTableDataProvider = new ListDataProvider<TableEntry>();
 	
-	// Query results: Bundestag members ---------------------------------------
-	private VerticalPanel membersTableVPanel = new VerticalPanel();
-	private CellTable<TableEntry> membersTable = new CellTable<TableEntry>();
-	private SimplePager membersPager;
-	private ListDataProvider<TableEntry> membersTableDataProvider = new ListDataProvider<TableEntry>();
+	// Query result: Bundestag members ---------------------------------------
+	private HorizontalPanel membersHPanel = new HorizontalPanel();
 	
-	// Query results: Ueberhangsmandate ---------------------------------------
-	private VerticalPanel mandateTableVPanel = new VerticalPanel();
-	private CellTable<TableEntry> mandateTable = new CellTable<TableEntry>();
-	private SimplePager mandatePager;
-	private ListDataProvider<TableEntry> mandateTableDataProvider = new ListDataProvider<TableEntry>();
+	// Query result: Ueberhangsmandate ---------------------------------------
+	private HorizontalPanel mandateHPanel = new HorizontalPanel();
+	
+	// Query result: Wahlkreis Overview --------------------------------------
+	private HorizontalPanel wkOverviewHPanel = new HorizontalPanel();
 	
 
 	// Services ---------------------------------------------------------------
@@ -131,6 +117,7 @@ public class TestBW implements EntryPoint {
 	private WahlkreissiegerServiceAsync wkSiegerSvc = GWT.create(WahlkreissiegerService.class);
 	private GetMembersServiceAsync getMembersSvc = GWT.create(GetMembersService.class);
 	private GetMandateServiceAsync getMandateSvc = GWT.create(GetMandateService.class);
+	private WahlkreisOverviewServiceAsync wkOverviewSvc = GWT.create(WahlkreisOverviewService.class);
 
 
 	/**
@@ -141,24 +128,22 @@ public class TestBW implements EntryPoint {
 		// GUI elements -----------------------------------------------------------
 		// ------------------------------------------------------------------------
 		
-		// Seat distribution --------------------------------------------------
-		distVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		distVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);	
-		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		wkHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		wkHPanel.setSpacing(50);
-		wkErstTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		wkZweitTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		
 		// Bundestag members --------------------------------------------------
-		membersTableVPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		membersTableVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		membersHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		membersHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
 		// Ueberhangsmandate --------------------------------------------------
-		mandateTableVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
-		mandateTableVPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		mandateHPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		mandateHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		
+		// Wahlkreis Overview -------------------------------------------------
+		wkOverviewHPanel.setSpacing(50);
+
 
 		// Projects input section ---------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
@@ -173,8 +158,11 @@ public class TestBW implements EntryPoint {
 		inputFieldsProjectLabel.setText("Project Inputs");
 		inputFieldsQueryLabel.setText("Query Inputs");
 		serverName.setTitle("Enter Server name ... ");
+		serverName.setText("Bundestagswahl");
+		dbInputBox.setText("user");
 		dbInputBox.setTitle("Enter database name ...");
 		passwordBox.setTitle("Enter password ...");
+		passwordBox.setText("1234");
 		serverName.setFocus(true);
 		serverName.setSize("380px", "15px");
 		dbInputBox.setSize("380px", "15px");
@@ -225,7 +213,7 @@ public class TestBW implements EntryPoint {
 		tabPanel.setAnimationDuration(500);
 		tabPanel.add(inputHolder, "Start");
 		RootLayoutPanel.get().add(tabPanel);
-		//RootPanel.get("setupDB").add(tabPanel);
+
 
 
 		
@@ -243,7 +231,8 @@ public class TestBW implements EntryPoint {
 		setupDBButton.addClickHandler(new ClickHandler() {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Setting up database ...");
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Setting up database ...");
 				setupDB();
 			}
 		});
@@ -252,7 +241,8 @@ public class TestBW implements EntryPoint {
 		generateButton.addClickHandler(new ClickHandler() {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Generating data ...");
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Generating data ...");
 				generateData();
 			}
 		});
@@ -262,7 +252,8 @@ public class TestBW implements EntryPoint {
 		loaderButton.addClickHandler(new ClickHandler() {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Loading data ...");
+				ta.setText(ta.getText() + "\n" + "-> "+
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Loading data ...");
 				loadData();
 			}
 		});
@@ -271,7 +262,8 @@ public class TestBW implements EntryPoint {
 		analysisButton.addClickHandler(new ClickHandler() {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Analyzing data ...");
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Analyzing data ...");
 				getAnalysis();
 			}
 		});
@@ -308,14 +300,14 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
 
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error setting up the database: " + caught.getMessage());
-				//serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error setting up the database: " + caught.getMessage());
 			}
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
-				//serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
 			}
 		};
 
@@ -386,13 +378,11 @@ public class TestBW implements EntryPoint {
 			public void onFailure(Throwable caught) {
 
 				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error loading data: " + caught.getMessage());
-				//serverMessageLabel.setVisible(true);
 			}
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
 				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
-				//serverMessageLabel.setVisible(true);
 			}
 		};
 
@@ -406,12 +396,8 @@ public class TestBW implements EntryPoint {
 	}
 
 
-
-	/**
-	 * Computes the distribution of seats in the Bundestag (based on Zweitstimmen).
-	 */
 	private void getAnalysis(){
-
+		
 		// Initialize the service proxies.
 		if (seatDistSvc == null) {
 			seatDistSvc = (SeatDistributionServiceAsync) GWT.create(SeatDistributionService.class);
@@ -437,6 +423,12 @@ public class TestBW implements EntryPoint {
 			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "mandate");
 		}
 		
+		if (wkOverviewSvc == null) {
+			wkOverviewSvc = (WahlkreisOverviewServiceAsync) GWT.create(WahlkreisOverviewService.class);
+			ServiceDefTarget target = (ServiceDefTarget) wkOverviewSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "wahlkreisoverview");
+		}
+		
 		
 		// Prepare parameters
 		String[] projectInput = new String[3];
@@ -454,53 +446,17 @@ public class TestBW implements EntryPoint {
 		((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
 		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
+		((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
 	}
 			
 	// Setup callback objects -------------------------------------------------
 	// ------------------------------------------------------------------------
 	
-	// initialize
-	public AsyncCallback<Integer> setupInitializeCallback(){
-		
-		AsyncCallback<Integer> callback = new AsyncCallback<Integer>() {
-
-			@SuppressWarnings("deprecation")
-			public void onFailure(Throwable caught) {
-				ta.setText(ta.getText() + "\n" + "-> " + 
-						DateTimeFormat.getFullTimeFormat().format(new Date()) +
-						": Error while initializing analyzer: " + caught.getMessage());
-			}
-
-			@SuppressWarnings("deprecation")
-			public void onSuccess(Integer i) {	}
-		};
-		
-		return callback;
-	}
-	
-	// close
-	public AsyncCallback<Integer> setupCloseCallback(){
-		
-		AsyncCallback<Integer> callback = new AsyncCallback<Integer>() {
-
-			@SuppressWarnings("deprecation")
-			public void onFailure(Throwable caught) {
-				ta.setText(ta.getText() + "\n" + "-> " + 
-						DateTimeFormat.getFullTimeFormat().format(new Date()) +
-						": Error while closing analyzer: " + caught.getMessage());
-			}
-
-			@SuppressWarnings("deprecation")
-			public void onSuccess(Integer i) {	}
-		};
-		
-		return callback;
-	}
 	
 	// seat distribution
-	public AsyncCallback< ArrayList<String> > setupSeatDistCallback(){
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupSeatDistCallback(){
 
-		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
 
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
@@ -510,25 +466,40 @@ public class TestBW implements EntryPoint {
 			}
 
 			@SuppressWarnings("deprecation")
-			public void onSuccess(ArrayList<String> s) {
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
 
 				ta.setText(ta.getText() + "\n" + "-> " + 
-						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Seat distribtion analysis complete.");
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Seat distribution analysis complete.");
 
-				// Seat distribution ------------------------------------------
-				distVPanel.clear();
-				piechart = new PieChart(createTable(s), createOptions());
-				distVPanel.add(distResultLabel);
-				distVPanel.add(piechart);
-				HorizontalPanel distTabPanel = new HorizontalPanel();
-				distTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-				distTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-				distTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-				distTabPanel.add(distVPanel);
-				tabPanel.add(distTabPanel, "Sitzverteilung");
-				tabPanel.setVisible(true);
-
+				HorizontalPanel htabPanel = new HorizontalPanel();
+				htabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+				htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+				htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				
+				for (int i = 0; i < s.size(); i++){
+					
+					ArrayList<String> currentTable = s.get(i);
+					
+					int colLength;
+					if (currentTable.size() == 0){
+						currentTable.add("(Empty Table)");
+						colLength = 1;
+					} else {
+						colLength = getDelimLength(currentTable, "$$");
+					}
+					
+					List<TableEntry> formatted = extractRows(currentTable, colLength);
+					
+					
+					PieChart piechart = new PieChart(createTableForPiechart(formatted, colLength), createOptions());
+					distHPanel.add(piechart);
+				}
+				
+				htabPanel.add(distHPanel);
+				tabPanel.add(distHPanel, "Verteilung");
 			}
+			
+			
 		};
 
 		return callback;
@@ -553,64 +524,7 @@ public class TestBW implements EntryPoint {
 				ta.setText(ta.getText() + "\n" + "-> " + 
 						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreissieger analysis complete.");
 				
-				ArrayList<String> erststimmen = s.get(0);
-				ArrayList<String> zweitstimmen = s.get(1);
-
-				int erstColLength = getDelimLength(erststimmen, "$$");
-				int zweitColLength = getDelimLength(zweitstimmen, "$$");
-
-				// Get data in table format
-				WKErststimmen = extractRows(erststimmen, erstColLength);
-				WKZweitstimmen = extractRows(zweitstimmen, zweitColLength);
-
-				// Add columns
-				wkErstTable.addColumn((new TextColumnWrapper(0)).testCol, "Wahlkreis");
-				wkErstTable.addColumn((new TextColumnWrapper(1)).testCol, "Kandidatennummer");
-				wkErstTable.addColumn((new TextColumnWrapper(2)).testCol, "Anzahl");
-
-				wkZweitTable.addColumn((new TextColumnWrapper(0)).testCol, "Wahlkreis");
-				wkZweitTable.addColumn((new TextColumnWrapper(1)).testCol, "Partei");
-				wkZweitTable.addColumn((new TextColumnWrapper(2)).testCol, "Anzahl");		    
-
-				// Create pagers to control the tables.
-				SimplePager.Resources pagerResourcesErstTable = GWT.create(SimplePager.Resources.class);
-				SimplePager.Resources pagerResourcesZweitTable = GWT.create(SimplePager.Resources.class);
-				wkErstTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesErstTable, true, 3, true);
-				wkZweitTablePager = new SimplePager(TextLocation.CENTER, pagerResourcesZweitTable, true, 3, true);
-				wkErstTablePager.setDisplay(wkErstTable);
-				wkZweitTablePager.setDisplay(wkZweitTable);
-
-				// Set the total row count. This isn't strictly necessary, but it affects
-				// paging calculations, so its good habit to keep the row count up to date.
-				wkErstTable.setRowCount(WKErststimmen.size(), true);
-				wkZweitTable.setRowCount(WKZweitstimmen.size(), true);
-
-				// Load data
-				wkErstTableDataProvider.addDataDisplay(wkErstTable);
-				wkErstTableDataProvider.setList(WKErststimmen);
-				wkZweitTableDataProvider.addDataDisplay(wkZweitTable);
-				wkZweitTableDataProvider.setList(WKZweitstimmen);
-
-				// Add table to UI
-				wkErstTableVPanel.clear();
-				wkZweitTableVPanel.clear();
-				wkHPanel.clear();
-				wkErstTable.setTitle("Wahlkreissieger " + dropList.get(yearInput.getSelectedIndex()) + ": Kandidaten");
-				wkZweitTable.setTitle("Wahlkreissieger " + dropList.get(yearInput.getSelectedIndex()) + ": Parteien");
-				wkErstTableVPanel.add(wkErstTable);
-				wkErstTablePager.setPageSize(15);
-				wkZweitTablePager.setPageSize(15);
-				wkErstTableVPanel.add(wkErstTablePager);
-				wkZweitTableVPanel.add(wkZweitTable);
-				wkZweitTableVPanel.add(wkZweitTablePager);
-				wkHPanel.add(wkErstTableVPanel);
-				wkHPanel.add(wkZweitTableVPanel);
-				HorizontalPanel wkTabPanel = new HorizontalPanel();
-				wkTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-				wkTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-				wkTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-				wkTabPanel.add(wkHPanel);
-				tabPanel.add(wkTabPanel, "Wahlkreissieger");
+				setupUITables(s, "Wahlkreissieger", (CellPanel)wkHPanel);
 			}
 		};
 
@@ -618,9 +532,9 @@ public class TestBW implements EntryPoint {
 	}
 
 	// members
-	public AsyncCallback< ArrayList<String> > setupMembersCallback(){
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupMembersCallback(){
 
-		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
 
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
@@ -630,43 +544,12 @@ public class TestBW implements EntryPoint {
 			}
 
 			@SuppressWarnings("deprecation")
-			public void onSuccess(ArrayList<String> s) {
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
 
 				ta.setText(ta.getText() + "\n" + "-> " +
 						 DateTimeFormat.getFullTimeFormat().format(new Date()) +": Bundestag members analysis complete.");
 
-			    int membersColLength = getDelimLength(s, "$$");
-			    
-			    // Get data in table format
-				bwMembers = extractRows(s, membersColLength);
-		
-			    // Add the columns.
-			    membersTable.addColumn((new TextColumnWrapper(1).testCol), "Kandidat");
-			    membersTable.addColumn((new TextColumnWrapper(1).testCol), "Partei");
-			    
-			    // Create pagers to control the table.
-			    SimplePager.Resources pagerResourcesMembersTable = GWT.create(SimplePager.Resources.class);
-			    membersPager = new SimplePager(TextLocation.CENTER, pagerResourcesMembersTable, true, 3, true);
-			    membersPager.setDisplay(membersTable);
-			    
-			    // Set row count
-			    membersTable.setRowCount(bwMembers.size(), true);
-			    
-			    // Load data
-				membersTableDataProvider.addDataDisplay(membersTable);
-				membersTableDataProvider.setList(bwMembers);
-				
-				// Add table to UI
-				membersTableVPanel.clear();
-				membersTable.setTitle("Bundestagmitglieder " + dropList.get(yearInput.getSelectedIndex()));
-				membersTableVPanel.add(membersTable);
-				membersTableVPanel.add(membersPager);
-				HorizontalPanel membersTabPanel = new HorizontalPanel();
-				membersTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-				membersTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-				membersTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-				membersTabPanel.add(membersTableVPanel);
-				tabPanel.add(membersTabPanel, "Bundestagsmitglieder");
+				setupUITables(s, "Bundestagsmitglieder", (CellPanel)membersHPanel);
 			}
 		};
 
@@ -674,9 +557,9 @@ public class TestBW implements EntryPoint {
 	}
 	
 	// ueberhangsmandate
-	public AsyncCallback< ArrayList<String> > setupMandateCallback(){
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupMandateCallback(){
 		
-		AsyncCallback< ArrayList<String> > callback = new AsyncCallback< ArrayList<String> >() {
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
 
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
@@ -686,57 +569,88 @@ public class TestBW implements EntryPoint {
 			}
 
 			@SuppressWarnings("deprecation")
-			public void onSuccess(ArrayList<String> s) {
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
 				
 				ta.setText(ta.getText() + "\n" + "-> " +
 						 DateTimeFormat.getFullTimeFormat().format(new Date()) +": Ueberhangsmandate analysis complete.");
-
-				// todo: fix this
-				int umandateColLength;
-				if (s.size()==0){
-					s.add(" ");
-					s.add(" ");
-					umandateColLength = 2;
-				} else {
-					umandateColLength = getDelimLength(s, "$$");
-				}
-			    
-			    // Get data in table format
-				umandate = extractRows(s, umandateColLength);
-							    
-			    // Add the columns.
-			    mandateTable.addColumn((new TextColumnWrapper(1).testCol), "Partei");
-			    mandateTable.addColumn((new TextColumnWrapper(1).testCol), "Ueberhangsmandate");
-			    
-			    // Create pagers to control the table.
-			    SimplePager.Resources pagerResourcesMandateTable = GWT.create(SimplePager.Resources.class);
-			    mandatePager = new SimplePager(TextLocation.CENTER, pagerResourcesMandateTable, true, 3, true);
-			    mandatePager.setDisplay(mandateTable);
-			    
-			    // Set row count
-			    mandateTable.setRowCount(umandate.size(), true);
-			    
-			    // Load data
-				mandateTableDataProvider.addDataDisplay(mandateTable);
-				mandateTableDataProvider.setList(umandate);
 				
-				// Add table to UI
-				mandateTableVPanel.clear();
-				mandateTable.setTitle("Ueberhangsmandate " + dropList.get(yearInput.getSelectedIndex()));
-				mandateTableVPanel.add(mandateTable);
-				mandateTableVPanel.add(mandatePager);
-				HorizontalPanel mandateTabPanel = new HorizontalPanel();
-				mandateTabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-				mandateTabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-				mandateTabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-				mandateTabPanel.add(mandateTableVPanel);
-				tabPanel.add(mandateTabPanel, "Ueberhangsmandate");
+				setupUITables(s, "Ueberhangsmandate", (CellPanel)mandateHPanel);
 			}
 		};
 
 		return callback;
 	}
 
+	// wahlkreis overview
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupWKOverviewCallback(){
+
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting the Wahlkreis overview: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreis overview complete.");
+
+				setupUITables(s, "Wahlkreisuebersicht", (CellPanel)wkOverviewHPanel);
+			}
+		};
+
+		return callback;
+	}
+	
+	
+	public void setupUITables(ArrayList<ArrayList<String>> s, String tabName, CellPanel layoutPanel){
+		
+		HorizontalPanel htabPanel = new HorizontalPanel();
+		htabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
+		htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		
+		for (int i = 0; i < s.size(); i++){
+			
+			ArrayList<String> currentTable = s.get(i);
+			int colLength;
+			if (currentTable.size() == 0){
+				currentTable.add("(Empty Table)");
+				colLength = 1;
+			} else {
+				colLength = getDelimLength(currentTable, "$$");
+			}
+			
+			List<TableEntry> formatted = extractRows(currentTable, colLength);
+			CellTable<TableEntry> table = new CellTable<TableEntry>();
+			
+			for (int j=0; j < colLength; j++){
+				table.addColumn((new TextColumnWrapper(j)).col, "Column " + j);
+			}
+			
+			SimplePager.Resources pagerResources = GWT.create(SimplePager.Resources.class);
+			SimplePager pager = new SimplePager(TextLocation.CENTER, pagerResources, true, 3, true);
+			pager.setDisplay(table);
+			
+			table.setRowCount(formatted.size(), true);
+			
+			ListDataProvider<TableEntry> dataProvider = new ListDataProvider<TableEntry>();
+			dataProvider.addDataDisplay(table);
+			dataProvider.setList(formatted);
+			
+			// Add to UI
+			layoutPanel.add(table);
+		}
+	
+		htabPanel.add(layoutPanel);	
+		tabPanel.add(htabPanel, tabName);
+		
+	}
+	
 	
 	
 	// Other methods / static classes -----------------------------------------
@@ -750,9 +664,9 @@ public class TestBW implements EntryPoint {
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
-        options.setHeight(800);
-        options.setWidth(800);
-        options.setLegend(LegendPosition.LEFT);
+        options.setHeight(RootLayoutPanel.get().getOffsetHeight());
+        options.setWidth(RootLayoutPanel.get().getOffsetWidth());
+        options.setLegend(LegendPosition.RIGHT);
         options.setLineWidth(5);
         options.setTitle("Sitzverteilung " + dropList.get(yearInput.getSelectedIndex()));
 		options.set3D(true);
@@ -762,7 +676,7 @@ public class TestBW implements EntryPoint {
 	/**
 	 * Create data source to feed to pie chart.
 	 */
-	private AbstractDataTable createTable(List<String> fromServer) {
+	private AbstractDataTable createTableForPiechart(List<TableEntry> fromServer, int skip) {
 
 		DataTable dataTable = DataTable.create();
 
@@ -770,24 +684,21 @@ public class TestBW implements EntryPoint {
 		dataTable.addColumn(ColumnType.NUMBER, "Anteil"); 
 		dataTable.addRows(fromServer.size());
 
-		for (int i = 0; i < fromServer.size(); i=i+2)
+		for (int i = 0; i < fromServer.size(); i++)
 		{
-			dataTable.setValue(i, 0, fromServer.get(i));
-			dataTable.setValue(i, 1, new Double (fromServer.get(i+1)).doubleValue());
+			TableEntry current = fromServer.get(i);
+			dataTable.setValue(i, 0, current.cols.get(0));
+			dataTable.setValue(i, 1, new Double (current.cols.get(1)).doubleValue());
 		}
 
 		return dataTable;
 	}
 
-
 	
-	
-
-
-	// Tables info --------------------------------------------------------	
+	// Cell Tables info --------------------------------------------------------	
 	
 	/**
-	 * A class representing a row of a table
+	 * A class representing a row of a cell table
 	 */
 	public static class TableEntry {
 		private final ArrayList<String> cols;
@@ -808,7 +719,7 @@ public class TestBW implements EntryPoint {
 			this.index = index;
 		}
 		
-		TextColumn<TableEntry> testCol = new TextColumn<TableEntry>(){
+		TextColumn<TableEntry> col = new TextColumn<TableEntry>(){
 		    @Override
 		      public String getValue(TableEntry entry) {
 		        return entry.cols.get(index);
@@ -816,46 +727,7 @@ public class TestBW implements EntryPoint {
 		};
 	}
 	
-	private static List<TableEntry> WKErststimmen;
-	private static List<TableEntry> WKZweitstimmen;
-	private static List<TableEntry> bwMembers;
-	private static List<TableEntry> umandate;
-	
-	
-	
-	// Parser -----------------------------------------------------------------
-	// ------------------------------------------------------------------------
 
-	/**
-	 * Parse string returned from server for analysis.
-	 * Splits an ArrayList<String> along the given delimiter,
-	 * result is an ArrayList of Lists
-	 * @param s - input list
-	 * @param delim - delimiter string
-	 * @return see above
-	 */
-	private ArrayList<ArrayList<String>> parse(ArrayList<String> s, String delim){
-		
-		int counter = 0;
-		ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
-		
-		List<String> temp = s;
-		while(temp.indexOf(delim) != -1){
-			list.add(new ArrayList<String>());
-			temp = temp.subList(temp.indexOf(delim)+1, temp.size());
-		}
-		list.add(new ArrayList<String>());
-		
-		for (int i = 0; i < s.size(); i++){
-			if (s.get(i).equals(delim)) {
-				counter++;
-				continue;
-			}
-			list.get(counter).add(s.get(i));
-		}
-		return list;
-	}
-	
 	/**
 	 * Returns the length of the lists of strings between the given delimiter
 	 * @param s - input list
