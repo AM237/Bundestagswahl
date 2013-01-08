@@ -1,4 +1,4 @@
-package testbw.servlet;
+package testbw.benchmark;
 
 import java.io.IOException;
 import java.io.PrintWriter;
