@@ -128,6 +128,11 @@ public class TestBW implements EntryPoint {
 		// GUI elements -----------------------------------------------------------
 		// ------------------------------------------------------------------------
 		
+		// Seat distribution --------------------------------------------------
+		distHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		distHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		
+		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		wkHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
@@ -476,22 +481,17 @@ public class TestBW implements EntryPoint {
 				htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 				htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 				
-				for (int i = 0; i < s.size(); i++){
+				for (int i = 0; i < s.size(); i=i+2){
 					
-					ArrayList<String> currentTable = s.get(i);
-					
-					int colLength;
-					if (currentTable.size() == 0){
-						currentTable.add("(Empty Table)");
-						colLength = 1;
-					} else {
-						colLength = getDelimLength(currentTable, "$$");
-					}
+					ArrayList<String> currentHeader = s.get(i);
+					ArrayList<String> currentTable = s.get(i+1);
+
+					int colLength = currentHeader.size()-1;
 					
 					List<TableEntry> formatted = extractRows(currentTable, colLength);
 					
 					
-					PieChart piechart = new PieChart(createTableForPiechart(formatted, colLength), createOptions());
+					PieChart piechart = new PieChart(createTableForPiechart(formatted, currentHeader), createOptions());
 					distHPanel.add(piechart);
 				}
 				
@@ -614,22 +614,22 @@ public class TestBW implements EntryPoint {
 		htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
-		for (int i = 0; i < s.size(); i++){
+		for (int i = 0; i < s.size(); i=i+2){
 			
-			ArrayList<String> currentTable = s.get(i);
-			int colLength;
-			if (currentTable.size() == 0){
-				currentTable.add("(Empty Table)");
-				colLength = 1;
-			} else {
-				colLength = getDelimLength(currentTable, "$$");
-			}
+			ArrayList<String> currentHeader = s.get(i);
+			ArrayList<String> currentTable = s.get(i+1);
+
+			// first element is table name
+			int colLength = currentHeader.size()-1;
 			
 			List<TableEntry> formatted = extractRows(currentTable, colLength);
 			CellTable<TableEntry> table = new CellTable<TableEntry>();
+			VerticalPanel vPanel = new VerticalPanel();
+			vPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+			vPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 			
 			for (int j=0; j < colLength; j++){
-				table.addColumn((new TextColumnWrapper(j)).col, "Column " + j);
+				table.addColumn((new TextColumnWrapper(j)).col, currentHeader.get(j+1));
 			}
 			
 			SimplePager.Resources pagerResources = GWT.create(SimplePager.Resources.class);
@@ -643,7 +643,9 @@ public class TestBW implements EntryPoint {
 			dataProvider.setList(formatted);
 			
 			// Add to UI
-			layoutPanel.add(table);
+			vPanel.add(table);
+			vPanel.add(pager);
+			layoutPanel.add(vPanel);
 		}
 	
 		htabPanel.add(layoutPanel);	
@@ -664,11 +666,11 @@ public class TestBW implements EntryPoint {
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
-        options.setHeight(RootLayoutPanel.get().getOffsetHeight());
-        options.setWidth(RootLayoutPanel.get().getOffsetWidth());
+        options.setHeight(RootLayoutPanel.get().getOffsetHeight()/2);
+        options.setWidth(RootLayoutPanel.get().getOffsetWidth()/2);
         options.setLegend(LegendPosition.RIGHT);
         options.setLineWidth(5);
-        options.setTitle("Sitzverteilung " + dropList.get(yearInput.getSelectedIndex()));
+        //options.setTitle("Sitzverteilung " + dropList.get(yearInput.getSelectedIndex()));
 		options.set3D(true);
 		return options;
 	}
@@ -676,12 +678,12 @@ public class TestBW implements EntryPoint {
 	/**
 	 * Create data source to feed to pie chart.
 	 */
-	private AbstractDataTable createTableForPiechart(List<TableEntry> fromServer, int skip) {
+	private AbstractDataTable createTableForPiechart(List<TableEntry> fromServer, ArrayList<String> header) {
 
 		DataTable dataTable = DataTable.create();
 
-		dataTable.addColumn(ColumnType.STRING, "Partei");
-		dataTable.addColumn(ColumnType.NUMBER, "Anteil"); 
+		dataTable.addColumn(ColumnType.STRING, header.get(1));
+		dataTable.addColumn(ColumnType.NUMBER, header.get(2)); 
 		dataTable.addRows(fromServer.size());
 
 		for (int i = 0; i < fromServer.size(); i++)

@@ -71,10 +71,15 @@ public class DataAnalyzer {
 				"WITH sitzzuweisung AS ( " + 
 				"	SELECT * FROM itrergebnisse " + 
 				"	ORDER BY anzahl DESC " +
-				"  LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '"+jahr+"')) " +
-				"SELECT partei as parteiname, COUNT(*) as sitze " +
-				"FROM sitzzuweisung " +
-				"GROUP BY partei); ");
+				"   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '"+jahr+"')), " +
+				
+				"unfiltered AS ( " +
+				"	SELECT partei AS parteiname, COUNT(*) AS sitze " +
+				"	FROM sitzzuweisung " +
+				"	GROUP BY partei) " +
+				
+				"SELECT * FROM unfiltered " +
+				"WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered));");
 
 
 		//-- Auswertungsanfrage: Endergebnisse (Erststimmen)
@@ -113,19 +118,33 @@ public class DataAnalyzer {
 				"	FROM erststimmenergebnis  " +
 				"  union all " +
 				" 	SELECT * " +
-				" 	FROM zweitstimmenergebnis" +
-				"   WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM zweitstimmenergebnis))" +	
-				"SELECT parteiname, (sum(sitze) * 100 / (SELECT sum(sitze) FROM verteilung)::float8) AS anteil " +
+				" 	FROM zweitstimmenergebnis)" +
+
+				"SELECT parteiname, sum(sitze)::float8 AS anteil " +
 				"FROM verteilung " +
 				"GROUP BY parteiname)");
 
+		// Table meta info
 		List<String> tableNames = Arrays.asList(
+				"zweitstimmenergebnis",
 				"gesamtverteilung"
 				);
+		
+		List<List<String>> colNames = Arrays.asList(
+				Arrays.asList("Parteiname", "Sitze"),
+				Arrays.asList("Parteiname", "Sitze")
+		);
 
 		for (int i = 0; i < tableNames.size(); i++){
-			result.add(new ArrayList<String>());
-			collectFromQuery(result, tableNames.get(i), i);			
+			
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++){
+				header.add(colNames.get(i).get(j));
+			}
+			
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));			
 		}
 
 		return result;
@@ -158,9 +177,21 @@ public class DataAnalyzer {
 		List<String> tableNames = Arrays.asList("erststimmengewinner", 
 												"zweitstimmengewinner");
 		
+		List<List<String>> colNames = Arrays.asList(
+				Arrays.asList("Wahlkreis", "Kandidatennummer", "Anzahl"),
+				Arrays.asList("Wahlkreis", "Partei", "Anzahl")
+		);
+		
 		for (int i = 0; i < tableNames.size(); i++){
-			result.add(new ArrayList<String>());
-			collectFromQuery(result, tableNames.get(i), i);			
+			
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++){
+				header.add(colNames.get(i).get(j));
+			}
+			
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));			
 		}
 
 		return result;
@@ -193,11 +224,24 @@ public class DataAnalyzer {
 		List<String> tableNames = Arrays.asList(
 				"partei"
 				);
+		
+		List<List<String>> colNames = Arrays.asList(
+				Arrays.asList("Partei", "Name")
+		);
 
+		
 		for (int i = 0; i < tableNames.size(); i++){
-			result.add(new ArrayList<String>());
-			collectFromQuery(result, tableNames.get(i), i);			
+			
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++){
+				header.add(colNames.get(i).get(j));
+			}
+			
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));			
 		}
+		
 		
 		return result;
 	}
@@ -216,11 +260,22 @@ public class DataAnalyzer {
 		
 		List<String> tableNames = Arrays.asList(
 				"ueberhangsmandate"
-				);
+		);
+		
+		List<List<String>> colNames = Arrays.asList(
+				Arrays.asList("Parteiname", "Mandate")
+		);
 
 		for (int i = 0; i < tableNames.size(); i++){
-			result.add(new ArrayList<String>());
-			collectFromQuery(result, tableNames.get(i), i);			
+			
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++){
+				header.add(colNames.get(i).get(j));
+			}
+			
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));			
 		}
 
 		return result;
@@ -293,10 +348,27 @@ public class DataAnalyzer {
 				"parteinenanteilabsolutvorjahr",
 				"parteinenanteilveraenderung"
 				);
+		
+		List<List<String>> colNames = Arrays.asList(
+				Arrays.asList("Partei", "Name"),
+				Arrays.asList("Partei", "Name"),
+				Arrays.asList("Partei", "Name"),
+				Arrays.asList("Partei", "Name"),
+				Arrays.asList("Partei", "Name"),
+				Arrays.asList("Partei", "Name"),
+				Arrays.asList("Partei", "Name")
+		);
 
 		for (int i = 0; i < tableNames.size(); i++){
-			result.add(new ArrayList<String>());
-			collectFromQuery(result, tableNames.get(i), i);			
+			
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++){
+				header.add(colNames.get(i).get(j));
+			}
+			
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));			
 		}
 		
 		return result;
@@ -304,17 +376,18 @@ public class DataAnalyzer {
 	
 	// Get data from ResultSet into required table format
 	public void collectFromQuery(ArrayList<ArrayList<String>> result, 
-								 String tableName, int index) throws SQLException {
+								 String tableName) throws SQLException {
 		
+		result.add(new ArrayList<String>());
 		rs = st.executeQuery("SELECT * FROM " + tableName+ ";");
 		ResultSetMetaData meta = rs.getMetaData();
 		int anzFields = meta.getColumnCount();
 		while (rs.next()) {
 			for (int i = 0; i < anzFields; i++) {
-				result.get(index).add(rs.getString(i+1));
+				result.get(result.size()-1).add(rs.getString(i+1));
 			}
 			// add delimiter
-			result.get(index).add("$$");
+			result.get(result.size()-1).add("$$");
 		}
 	}
 }
