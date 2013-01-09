@@ -12,27 +12,25 @@ import testbw.util.DBManager;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 @SuppressWarnings("serial")
-public class SeatDistributionServiceImpl  extends RemoteServiceServlet implements SeatDistributionService {
+public class SeatDistributionServiceImpl extends RemoteServiceServlet implements
+		SeatDistributionService {
 
 	// Get seat distribution
-	public ArrayList<ArrayList<String>> getSeatDistribution(String[] projectInput, String[] queryInput) {
+	public ArrayList<ArrayList<String>> getSeatDistribution(
+			String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
-		try {
-			manager.connect();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+		manager.connect();
+
 		Statement st = manager.getStatement();
 		ResultSet rs = null;
 		DataAnalyzer analyzer = new DataAnalyzer(st, rs);
 
 		// Query
-		try { 
-			ArrayList<ArrayList<String>> result = analyzer.getSeatDistribution(queryInput);
+		try {
+			ArrayList<ArrayList<String>> result = analyzer
+					.getSeatDistribution(queryInput);
 			st.close();
 			return result;
 		} catch (SQLException e) {

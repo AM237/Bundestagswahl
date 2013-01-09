@@ -15,26 +15,19 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 @SuppressWarnings("serial")
 public class SetupStaticDBServiceImpl extends RemoteServiceServlet implements
 		SetupStaticDBService {
-	
+
 	@Override
 	public String setupStaticDB(String[] properties) {
-			
+
 		// Datenbankverbindung ------------------------------------------------
 		DBManager manager = new DBManager(properties);
-		try {
-			manager.connect();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return "Setup unsuccessful. Problem setting up connection to database.";
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			return "Setup unsuccessful. Check JDBC Driver declaration on server side.";
-		}
+		manager.connect();
+
 		Connection conn = manager.getConnection();
 		Statement st = manager.getStatement();
-		
+
 		BWSetupDatabase setup = new BWSetupDatabase(st, manager);
-		
+
 		try { // Setup database -----------------------------------------------
 			setup.setupDatabase();
 		} catch (FileNotFoundException e) {
@@ -45,12 +38,13 @@ public class SetupStaticDBServiceImpl extends RemoteServiceServlet implements
 			return "Setup unsuccessful, error opening or reading input files.";
 		} catch (SQLException e) {
 			e.printStackTrace();
-			if (e.getMessage().contains("violates unique constraint \"pg_type_typname_nsp_index\""))
+			if (e.getMessage().contains(
+					"violates unique constraint \"pg_type_typname_nsp_index\""))
 				return "Index constraint violation encountered, please wait ...";
-			else return "Problem with SQL setup queries";
+			else
+				return "Problem with SQL setup queries";
 		}
-		
-		
+
 		try { // Close DB connection ------------------------------------------
 			st.close();
 			conn.close();
@@ -58,8 +52,7 @@ public class SetupStaticDBServiceImpl extends RemoteServiceServlet implements
 			e.printStackTrace();
 			return "Problem closing connection to database (setup).";
 		}
-		
-		
+
 		return "Setup successful.";
 	}
 }

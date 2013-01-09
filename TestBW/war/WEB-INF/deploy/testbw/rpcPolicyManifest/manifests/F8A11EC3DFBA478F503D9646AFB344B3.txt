@@ -1,0 +1,2 @@
+serviceClass: testbw.client.WahlkreissiegerService
+path: 521FA372AC58C0F448B532BF362F9DE8.gwt.rpc

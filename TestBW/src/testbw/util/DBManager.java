@@ -1,6 +1,11 @@
 package testbw.util;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class DBManager {
 
@@ -9,16 +14,22 @@ public class DBManager {
 	private Statement st;
 
 	// Konstruktor
-	public DBManager(String[] properties){
-		this.connectUrl = "jdbc:postgresql://localhost/" +
-				properties[0] + "?user="+properties[1]+"&password="+properties[2];		
+	public DBManager(String[] properties) {
+		this.connectUrl = "jdbc:postgresql://localhost/" + properties[0]
+				+ "?user=" + properties[1] + "&password=" + properties[2];
 	}
 
 	// Datenbankverbindung aufbauen
-	public void connect() throws ClassNotFoundException, SQLException {
-		Class.forName("org.postgresql.Driver");
-		conn = DriverManager.getConnection(connectUrl);
-		st = conn.createStatement();
+	public void connect() {
+		try {
+			Class.forName("org.postgresql.Driver");
+			conn = DriverManager.getConnection(connectUrl);
+			st = conn.createStatement();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// Gibt das erste Ergebnistupel der Abfrage zurueck
@@ -39,7 +50,7 @@ public class DBManager {
 	// Gibt Ausgabe einer Query als Tabelle in der Konsole zurueck
 	public static void printQueryResult(Statement st, ResultSet rs, String table)
 			throws SQLException {
-		//String returnString = "";
+		// String returnString = "";
 		rs = st.executeQuery("SELECT * FROM " + table + " ;");
 		System.out.println(" ");
 		System.out.println("------------------------------");
@@ -62,6 +73,11 @@ public class DBManager {
 	}
 
 	// Get-Methoden
-	public Connection getConnection() { return conn; }
-	public Statement getStatement() { return st; }
+	public Connection getConnection() {
+		return conn;
+	}
+
+	public Statement getStatement() {
+		return st;
+	}
 }

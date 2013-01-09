@@ -1,0 +1,2 @@
+serviceClass: testbw.client.SeatDistributionService
+path: EA8A3BD14DCB1161F9505A5D7DB83275.gwt.rpc
