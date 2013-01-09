@@ -98,14 +98,20 @@ public class TestBW implements EntryPoint {
 	// Query result: Wahlkreis winners ----------------------------------------
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
 	
-	// Query result: Bundestag members ---------------------------------------
+	// Query result: Bundestag members ----------------------------------------
 	private HorizontalPanel membersHPanel = new HorizontalPanel();
 	
-	// Query result: Ueberhangsmandate ---------------------------------------
+	// Query result: Ueberhangsmandate ----------------------------------------
 	private HorizontalPanel mandateHPanel = new HorizontalPanel();
 	
-	// Query result: Wahlkreis Overview --------------------------------------
+	// Query result: Wahlkreis Overview ---------------------------------------
 	private HorizontalPanel wkOverviewHPanel = new HorizontalPanel();
+	
+	// Query result: Knappster Sieger Overview --------------------------------
+	private HorizontalPanel knappsterSiegerHPanel = new HorizontalPanel();
+	
+	// Query result: Wahlkreis Overview (Erststimmen )-------------------------
+	private HorizontalPanel wkOverviewErststimmenHPanel = new HorizontalPanel();
 	
 
 	// Services ---------------------------------------------------------------
@@ -118,8 +124,10 @@ public class TestBW implements EntryPoint {
 	private GetMembersServiceAsync getMembersSvc = GWT.create(GetMembersService.class);
 	private GetMandateServiceAsync getMandateSvc = GWT.create(GetMandateService.class);
 	private WahlkreisOverviewServiceAsync wkOverviewSvc = GWT.create(WahlkreisOverviewService.class);
-
-
+	private GetKnappsterSiegerServiceAsync knappsterSiegerSvc = GWT.create(GetKnappsterSiegerService.class);
+	private WKOverviewErststimmenServiceAsync wkOverviewErststimmenSvc = GWT.create(WKOverviewErststimmenService.class);
+	
+	
 	/**
 	 * Entry point method.
 	 */
@@ -132,7 +140,6 @@ public class TestBW implements EntryPoint {
 		distHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		distHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
-		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		wkHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
@@ -141,14 +148,27 @@ public class TestBW implements EntryPoint {
 		// Bundestag members --------------------------------------------------
 		membersHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		membersHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		membersHPanel.setSpacing(50);
 		
 		// Ueberhangsmandate --------------------------------------------------
 		mandateHPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		mandateHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		mandateHPanel.setSpacing(50);
 		
 		// Wahlkreis Overview -------------------------------------------------
+		wkOverviewHPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		wkOverviewHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		wkOverviewHPanel.setSpacing(50);
-
+		
+		// Knappster Sieger Overview ------------------------------------------
+		knappsterSiegerHPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		knappsterSiegerHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		knappsterSiegerHPanel.setSpacing(50);
+		
+		// Wahlkreis Overview (Erststimmen) -----------------------------------
+		wkOverviewErststimmenHPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		wkOverviewErststimmenHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		wkOverviewErststimmenHPanel.setSpacing(50);
 
 		// Projects input section ---------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
@@ -434,6 +454,18 @@ public class TestBW implements EntryPoint {
 			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "wahlkreisoverview");
 		}
 		
+		if (knappsterSiegerSvc == null) {
+			knappsterSiegerSvc = (GetKnappsterSiegerServiceAsync) GWT.create(GetKnappsterSiegerService.class);
+			ServiceDefTarget target = (ServiceDefTarget) knappsterSiegerSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "knappsterSieger");
+		}
+		
+		if (wkOverviewErststimmenSvc == null) {
+			wkOverviewErststimmenSvc = (WKOverviewErststimmenServiceAsync) GWT.create(WKOverviewErststimmenService.class);
+			ServiceDefTarget target = (ServiceDefTarget) wkOverviewErststimmenSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "wkOverviewErststimmen");
+		}
+		
 		
 		// Prepare parameters
 		String[] projectInput = new String[3];
@@ -452,6 +484,8 @@ public class TestBW implements EntryPoint {
 		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
 		((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
+		((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
+		((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
 	}
 			
 	// Setup callback objects -------------------------------------------------
@@ -606,6 +640,56 @@ public class TestBW implements EntryPoint {
 		return callback;
 	}
 	
+	
+	// knappsterSieger
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupKnappsterSiegerCallback(){
+
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting the knappster Sieger: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Knappster Sieger analysis complete.");
+
+				setupUITables(s, "Knappster Sieger", (CellPanel)knappsterSiegerHPanel);
+			}
+		};
+
+		return callback;
+	}
+	
+	// WK overview erststimmen
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupWkOverviewErststimmenCallback(){
+
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting the Wahlkreis overview (Erststimmen): " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreis overview (Erststimmen) complete.");
+
+				setupUITables(s, "Wahlkreisuebersicht (Erststimmen)", (CellPanel)wkOverviewErststimmenHPanel);
+			}
+		};
+
+		return callback;
+	}
 	
 	public void setupUITables(ArrayList<ArrayList<String>> s, String tabName, CellPanel layoutPanel){
 		

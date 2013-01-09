@@ -110,7 +110,27 @@
     <servlet-name>WahlkreisOverviewServiceImpl</servlet-name>
     <url-pattern>/testbw/wahlkreisoverview</url-pattern>
   </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>GetKnappsterSiegerServiceImpl</servlet-name>
+    <servlet-class>testbw.server.GetKnappsterSiegerServiceImpl</servlet-class>
+  </servlet>
 
+  <servlet-mapping>
+    <servlet-name>GetKnappsterSiegerServiceImpl</servlet-name>
+    <url-pattern>/testbw/knappsterSieger</url-pattern>
+  </servlet-mapping>
+
+
+  <servlet>
+    <servlet-name>WKOverviewErststimmenServiceImpl</servlet-name>
+    <servlet-class>testbw.server.WKOverviewErststimmenServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>WKOverviewErststimmenServiceImpl</servlet-name>
+    <url-pattern>/testbw/wkoverviewerststimmen</url-pattern>
+  </servlet-mapping>
 
 
 </web-app>
