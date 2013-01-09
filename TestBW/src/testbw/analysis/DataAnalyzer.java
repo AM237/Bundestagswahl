@@ -126,8 +126,8 @@ public class DataAnalyzer {
 
 		// Table meta info
 		List<String> tableNames = Arrays.asList(
-				"zweitstimmenergebnis",
-				"gesamtverteilung"
+				"erststimmenergebnis",
+				"zweitstimmenergebnis"
 				);
 		
 		List<List<String>> colNames = Arrays.asList(

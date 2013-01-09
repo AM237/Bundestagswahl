@@ -491,7 +491,7 @@ public class TestBW implements EntryPoint {
 					List<TableEntry> formatted = extractRows(currentTable, colLength);
 					
 					
-					PieChart piechart = new PieChart(createTableForPiechart(formatted, currentHeader), createOptions());
+					PieChart piechart = new PieChart(createTableForPiechart(formatted, currentHeader), createOptions(currentHeader.get(0)));
 					distHPanel.add(piechart);
 				}
 				
@@ -662,7 +662,7 @@ public class TestBW implements EntryPoint {
 	/**
 	 * Options for pie chart.
 	 */
-	private PieOptions createOptions() {
+	private PieOptions createOptions(String title) {
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
@@ -670,7 +670,7 @@ public class TestBW implements EntryPoint {
         options.setWidth(RootLayoutPanel.get().getOffsetWidth()/2);
         options.setLegend(LegendPosition.RIGHT);
         options.setLineWidth(5);
-        //options.setTitle("Sitzverteilung " + dropList.get(yearInput.getSelectedIndex()));
+        options.setTitle(title);
 		options.set3D(true);
 		return options;
 	}
@@ -729,32 +729,6 @@ public class TestBW implements EntryPoint {
 		};
 	}
 	
-
-	/**
-	 * Returns the length of the lists of strings between the given delimiter
-	 * @param s - input list
-	 * @param delim - delimiter string
-	 * @return -1 if length inconsistent
-	 */
-	private int getDelimLength(ArrayList<String> s, String delim){
-		
-		ArrayList<Integer> counters = new ArrayList<Integer>();
-		
-		int counter = 0;
-		for (int i = 0; i < s.size(); i++){
-			if (!s.get(i).equals(delim)){
-				counter++;
-			} else {
-				counters.add(new Integer(counter));
-				counter = 0;
-				continue;
-			}
-		}
-		
-		HashSet<Integer> set = new HashSet<Integer>(counters);
-		if (set.size() > 1) return -1;
-		return counters.get(0);
-	}
 		
 	public List<TableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
 		
