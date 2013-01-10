@@ -237,6 +237,7 @@ public class TestBW implements EntryPoint {
 		inputHolder.add(inputMainVPanel);
 		tabPanel.setAnimationDuration(500);
 		tabPanel.add(inputHolder, "Start");
+		//tabPanel.setStyleName("gwt-TabPanel");
 		RootLayoutPanel.get().add(tabPanel);
 
 

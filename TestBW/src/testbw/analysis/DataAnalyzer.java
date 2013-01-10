@@ -74,10 +74,14 @@ public class DataAnalyzer {
 				"unfiltered AS ( " +
 				"	SELECT partei AS parteiname, COUNT(*) AS sitze " +
 				"	FROM sitzzuweisung " +
-				"	GROUP BY partei) " +
+				"	GROUP BY partei), " +
 				
-				"SELECT * FROM unfiltered " +
-				"WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered));");
+				"filtered AS ( " +
+					"SELECT * FROM unfiltered " +
+					"WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) " + 
+				
+				"SELECT parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze " +
+				"FROM filtered);");
 
 
 		//-- Auswertungsanfrage: Endergebnisse (Erststimmen)
