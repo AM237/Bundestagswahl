@@ -9,6 +9,7 @@ import testbw.client.SetupStaticDBServiceAsync;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 // GWT GUI API
@@ -93,6 +94,7 @@ public class TestBW implements EntryPoint {
 	
 	// Query result: seat distribution ----------------------------------------
 	private HorizontalPanel distHPanel = new HorizontalPanel();
+	private HashMap colorMap = new HashMap<String, String>();
 	
 	// Query result: Wahlkreis winners ----------------------------------------
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
@@ -141,6 +143,15 @@ public class TestBW implements EntryPoint {
 		// Seat distribution --------------------------------------------------
 		distHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		distHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		
+		// TODO: where to put this info?
+		colorMap.put("CD", "slateblue");
+		colorMap.put("CS", "skyblue");
+		colorMap.put("SP", "crimson");
+		colorMap.put("DI", "plum");
+		colorMap.put("GR", "mediumseagreen");
+		colorMap.put("FD", "gold");
+		colorMap.put("PI", "orange");
 		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
@@ -530,9 +541,9 @@ public class TestBW implements EntryPoint {
 					int colLength = currentHeader.size()-1;
 					
 					List<TableEntry> formatted = extractRows(currentTable, colLength);
-					
-					
-					PieChart piechart = new PieChart(createTableForPiechart(formatted, currentHeader), createOptions(currentHeader.get(0)));
+				
+					PieChart piechart = new PieChart(createTableForPiechart(formatted, currentHeader), 
+													 createOptions(currentHeader.get(0), formatted));
 					distHPanel.add(piechart);
 				}
 				
@@ -762,13 +773,21 @@ public class TestBW implements EntryPoint {
 	/**
 	 * Options for pie chart.
 	 */
-	private PieOptions createOptions(String title) {
+	private PieOptions createOptions(String title, List<TableEntry> formatted) {
+		
+		List<String> colors =  new ArrayList<String>();
+		for (int i = 0; i < formatted.size(); i++){
+			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)));
+		}
+	    String[] c = new String[colors.size()];
+	    
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
         options.setHeight(RootLayoutPanel.get().getOffsetHeight()/2);
         options.setWidth(RootLayoutPanel.get().getOffsetWidth()/2);
         options.setLegend(LegendPosition.RIGHT);
+        options.setColors(colors.toArray(c));
         options.setLineWidth(5);
         options.setTitle(title);
 		options.set3D(true);
@@ -792,7 +811,7 @@ public class TestBW implements EntryPoint {
 			dataTable.setValue(i, 0, current.cols.get(0));
 			dataTable.setValue(i, 1, new Double (current.cols.get(1)).doubleValue());
 		}
-
+		
 		return dataTable;
 	}
 
