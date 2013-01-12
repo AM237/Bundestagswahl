@@ -84,163 +84,10 @@ public class DataAnalyzer {
 				"FROM filtered);");
 		
 		
-		// Vorbereitung Erststimmenauswertung + Ueberhangsmandate
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteserststimmen AS ( " + 
-				"  SELECT wahlkreis, max(anzahl) AS max " + 
-				"  FROM erststimmen " +
-				"  WHERE jahr = '"+jahr+"' " +
-				"  GROUP BY wahlkreis);");
-
-		
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS ( " +
-					 "SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " +
-					 "FROM maxvoteserststimmen m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '"+jahr+"') e " +
-					 "ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
-
-		
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS ( " +
-					 "SELECT wahlkreis, max, min(kandnum) AS kandnum " +
-					 "FROM maxvoteskand " +
-					 "GROUP BY wahlkreis, max);");
-		
-		
-		// Ueberhangsmandate
-		st.executeUpdate("CREATE OR REPLACE VIEW wkgewonnenerststimmen AS ( " +
-				
-				// in wahlkreis x won party y
-				"WITH parteigewinner AS ( " +
-				"	SELECT m.wahlkreis AS wahlkreis, d.partei AS partei " +
-				"	FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"+jahr+"') d " +
-				"	ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis), " +
-				
-				// in bundesland z, wahlkreis x won party y
-				"blgewinner AS ( " +
-				"	SELECT w.bundesland AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei " + 
-				"	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w ON p.wahlkreis = w.wahlkreisnummer) " +
-				
-				"SELECT bundesland, partei, COUNT(*) AS mandate " + 
-				"FROM blgewinner " +
-				"GROUP BY bundesland, partei);");
-		
-		st.executeUpdate("CREATE OR REPLACE VIEW wkgewonnenzweitstimmen AS ( " +
-		
-				/*
-				// Ergaenzung wk with bl info
-				"WITH wkbundesland AS ( " +
-				"	SELECT w.bundesland AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " +
-				"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w " +
-				"	ON z.wahlkreis = w.wahlkreisnummer), " +
-				
-				// anzahl stimmen pro bundesland
-				"bundeslanduebersicht AS ( " +
-				"	SELECT bundesland, SUM(anzahl) AS anzahl " +
-				"	FROM wkbundesland " + 
-				"	GROUP BY bundesland), " +
-				
-				// anzahl wk pro bundesland
-				"wkprobundesland AS ( " +
-				"	SELECT bundesland, COUNT(*) AS wkcount " +
-				"	FROM wahlkreis " + 
-				"	WHERE jahr = '"+jahr+"' " +
-				"	GROUP BY bundesland), " +
-				
-				// anzahl stimmen pro partei und bundesland
-				"blparteiuebersicht AS ( " +
-				"	SELECT w.bundesland AS bundesland, w.partei AS partei, SUM(w.anzahl)::numeric AS anzahl " + /// SUM(b.anzahl)::float8 " +//(SUM(anzahl)::float8 / (SELECT anzahl FROM bundeslanduebersicht b WHERE bundesland = b.bundesland)::float8) " +//* 2 * (SELECT wkcount FROM wkprobundesland w WHERE w.bundesland = bundesland) " +
-				"	FROM wkbundesland w JOIN bundeslanduebersicht b " +
-				"	ON b.bundesland = w.bundesland " +
-				"	GROUP BY w.bundesland, w.partei), " +
-				
-				"anteilblpartei AS ( " +
-				"	SELECT b.bundesland AS bundesland, b.partei AS partei, (2 * w.wkcount * (b.anzahl::numeric / u.anzahl::numeric)) AS mandate" +
-				"	FROM blparteiuebersicht b, bundeslanduebersicht u, wkprobundesland w " +
-				"	WHERE b.bundesland = u.bundesland AND b.bundesland = w.bundesland) " +
-				
-				*/
-				
-		
-				// anzahl verfuegbare sitze pro bundesland
-				"WITH sitzeprobundesland AS ( " +
-				"	SELECT bundesland, (2 * COUNT(*)) AS sitze " +
-				"	FROM wahlkreis " + 
-				"	WHERE jahr = '"+jahr+"' " +
-				"	GROUP BY bundesland), " +
-				
-				// iteratoren 1, 3, 5, ... max(sitze) fuer alle BL
-				"iterators AS ( " +
-				"	SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprobundesland), 2) AS iterator ), " +
-								
-				// iteratoren reduziert pro BL -> after ranking
-				"bliterators AS ( " +
-				" 	SELECT * " +
-				"	FROM bundesland b, iterators i " +
-				"	WHERE i.iterator <= (SELECT sitze FROM sitzeprobundesland WHERE bundesland = b.bundeslandnummer)), " +
-				
-				
-				//Ergaenzung wk with bl info
-				"wkbundesland AS ( " +
-				"	SELECT w.bundesland AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " +
-				"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w " +
-				"	ON z.wahlkreis = w.wahlkreisnummer), " +
-				
-				// anzahl stimmen pro partei und bundesland
-				"blparteiuebersicht AS ( " +
-				"	SELECT w.bundesland AS bundesland, w.partei AS partei, SUM(w.anzahl)::numeric AS anzahl " +
-				"	FROM wkbundesland w " +
-				"	GROUP BY w.bundesland, w.partei), " +
-				
-				// tree: bl -> iterator -> partei builds to result for iterator
-				"bliteratorpartei AS ( " +
-				"	SELECT b.bundeslandnummer AS bundesland, p.partei AS partei, (p.anzahl::numeric / b.iterator::numeric) + RANDOM() AS itrergebnis " +
-				"	FROM bliterators b JOIN blparteiuebersicht p " +
-				"	ON b.bundeslandnummer = p.bundesland), " +
-				
-				"rankings AS ( " +
-				"	SELECT * " +
-				"	FROM bliteratorpartei " +
-				"	ORDER BY bundesland ASC, itrergebnis DESC), " +
-				
-				"filtered AS ( " +
-				"	SELECT * " +
-				"	FROM rankings r1 " +
-				"	WHERE " +
-				"		(SELECT COUNT(*) FROM rankings r2 " +
-				"		WHERE r1.bundesland = r2.bundesland " +
-				"		AND r2.itrergebnis > r1.itrergebnis) " +
-				
-				"		< (SELECT sitze FROM sitzeprobundesland WHERE bundesland = r1.bundesland)) " +
-			
-				"SELECT bundesland, partei, COUNT(*) as mandate " +
-				"FROM filtered " +
-				"GROUP BY bundesland, partei); ");
-				
-				
-				
-		
-		st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( " +
-				"WITH ungrouped AS (" +
-				"		SELECT bundesland, partei, mandate::numeric " +
-				"		FROM wkgewonnenerststimmen " +
-				"		UNION ALL " +
-				"		SELECT bundesland, partei, -1 * mandate AS mandate " +
-				"		FROM wkgewonnenzweitstimmen), " + 
-				
-				
-				"grouped AS ( " +
-				"	SELECT bundesland, partei, SUM(mandate) AS mandate " +
-				"	FROM ungrouped " +
-				"	GROUP BY bundesland, partei " +
-				"	HAVING COUNT(*) = 2) " + 
-				
-				
-				"SELECT * FROM grouped " +
-				"WHERE mandate > 0);");
-
-
 		//-- Auswertungsanfrage: Endergebnisse (Erststimmen)
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS (" +
 				
-				/*
+				
 				"WITH maxvotes AS ( " + 
 				"  SELECT wahlkreis, max(anzahl) AS max " + 
 				"  FROM erststimmen " +
@@ -256,10 +103,10 @@ public class DataAnalyzer {
 					 "SELECT wahlkreis, max, min(kandnum) AS kandnum " +
 					 "FROM maxvoteskand " +
 					 "GROUP BY wahlkreis, max), " +
-				 */
+				 
 					 
 				 
-				"WITH parteinsitze AS ( " +
+				"parteinsitze AS ( " +
 					 "SELECT partei, count(*) AS sitze " +
 					 "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"+jahr+"') d " +
 					 "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " +
@@ -427,6 +274,194 @@ public class DataAnalyzer {
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahr = queryInput[0];
 		
+		
+		// Vorbereitung Erststimmenauswertung + Ueberhangsmandate
+				st.executeUpdate("CREATE OR REPLACE VIEW maxvoteserststimmen AS ( " + 
+						"  SELECT wahlkreis, max(anzahl) AS max " + 
+						"  FROM erststimmen " +
+						"  WHERE jahr = '"+jahr+"' " +
+						"  GROUP BY wahlkreis);");
+
+				
+				st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS ( " +
+							 "SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " +
+							 "FROM maxvoteserststimmen m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '"+jahr+"') e " +
+							 "ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
+
+				
+				st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS ( " +
+							 "SELECT wahlkreis, max, min(kandnum) AS kandnum " +
+							 "FROM maxvoteskand " +
+							 "GROUP BY wahlkreis, max);");
+				
+				
+				// Ueberhangsmandate
+				st.executeUpdate("CREATE OR REPLACE VIEW wkgewonnenerststimmen AS ( " +
+						
+						// in wahlkreis x won party y
+						"WITH parteigewinner AS ( " +
+						"	SELECT m.wahlkreis AS wahlkreis, d.partei AS partei " +
+						"	FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"+jahr+"') d " +
+						"	ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis), " +
+						
+						// in bundesland z, wahlkreis x won party y
+						"blgewinner AS ( " +
+						"	SELECT b.name AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei " + 
+						"	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) " +
+						
+						"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate " + 
+						"FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " +
+						"GROUP BY b.bundesland, p.name);");
+				
+				
+				
+				st.executeUpdate("CREATE OR REPLACE VIEW wkgewonnenzweitstimmen AS ( " +
+			
+						
+						// parteien aus dem zweitstimmenergebnis
+						"WITH ergebnisparteien AS ( " +
+						"	SELECT z.parteiname, p.parteinummer " +
+						"	FROM zweitstimmenergebnis z JOIN partei p " +
+						"	ON z.parteiname = p.name), " +
+						
+						
+						// iteratoren 1, 3, 5, ... max(sitze) fuer alle parteien im BT
+						"iterators AS ( " +
+						"	SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM zweitstimmenergebnis), 2) AS iterator ), " +
+						
+						
+						// iteratoren reduziert pro Partei
+						"parteiiterators AS ( " +
+						" 	SELECT * " +
+						"	FROM ergebnisparteien e, iterators i " +
+						"	WHERE i.iterator <= 2 * (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = e.parteiname)), " +
+						
+						
+						//Ergaenzung wk with bl info
+						"wkbundesland AS ( " +
+						"	SELECT b.name AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " +
+						"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w  " +
+						"	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer), " +
+						
+						
+						// anzahl stimmen pro "finalisten" partei und bundesland
+						"parteibluebersicht AS ( " +
+						"	SELECT w.partei AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " +
+						"	FROM wkbundesland w " +
+						"   WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteien) " +
+						"	GROUP BY w.partei, w.bundesland), " +
+						//"   ORDER BY w.partei, w.bundesland), " +
+						
+						
+						// tree: partei x iterator x bundesland builds to result for iterator
+						"parteiiteratorbl AS ( " +
+						"	SELECT p1.parteiname AS parteiname, p1.parteinummer AS parteinummer, p2.bundesland AS bundesland, (p2.anzahl::numeric / p1.iterator::numeric) + RANDOM() AS itrergebnis " +
+						"	FROM parteiiterators p1 JOIN parteibluebersicht p2 " +
+						"	ON p1.parteinummer = p2.partei " +
+						"   ORDER BY partei ASC, itrergebnis DESC), " +
+						
+						
+						// auswahl bundeslaender mit groessten zwischenergebnissen
+						"filtered AS ( " +
+						"	SELECT * " +
+						"	FROM parteiiteratorbl p1 " +
+						"	WHERE " +
+						"		(SELECT COUNT(*) FROM parteiiteratorbl p2 " +
+						"		WHERE p1.parteinummer = p2.parteinummer " +
+						"		AND p2.itrergebnis > p1.itrergebnis) " +
+						
+						"		< (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = p1.parteiname)) " +
+						
+						
+						// aggregation
+						"SELECT parteiname, bundesland, COUNT(*) as mandate " +
+						"FROM filtered " +
+						"GROUP BY parteiname, parteinummer, bundesland); "
+						
+						
+						
+						
+						
+						/*
+						// anzahl verfuegbare sitze pro bundesland
+						"WITH sitzeprobundesland AS ( " +
+						"	SELECT bundesland, (2 * COUNT(*)) AS sitze " +
+						"	FROM wahlkreis " + 
+						"	WHERE jahr = '"+jahr+"' " +
+						"	GROUP BY bundesland), " +
+						
+						// iteratoren 1, 3, 5, ... max(sitze) fuer alle BL
+						"iterators AS ( " +
+						"	SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprobundesland), 2) AS iterator ), " +
+										
+						// iteratoren reduziert pro BL
+						"bliterators AS ( " +
+						" 	SELECT * " +
+						"	FROM bundesland b, iterators i " +
+						"	WHERE i.iterator <= 2 * (SELECT sitze FROM sitzeprobundesland WHERE bundesland = b.bundeslandnummer)), " +
+						
+						
+						//Ergaenzung wk with bl info
+						"wkbundesland AS ( " +
+						"	SELECT w.bundesland AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " +
+						"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w " +
+						"	ON z.wahlkreis = w.wahlkreisnummer), " +
+						
+						// anzahl stimmen pro partei und bundesland
+						"blparteiuebersicht AS ( " +
+						"	SELECT w.bundesland AS bundesland, w.partei AS partei, SUM(w.anzahl)::numeric AS anzahl " +
+						"	FROM wkbundesland w " +
+						"	GROUP BY w.bundesland, w.partei), " +
+						
+						// tree: bl -> iterator -> partei builds to result for iterator
+						"bliteratorpartei AS ( " +
+						"	SELECT b.bundeslandnummer AS bundesland, p.partei AS partei, (p.anzahl::numeric / b.iterator::numeric) + RANDOM() AS itrergebnis " +
+						"	FROM bliterators b JOIN blparteiuebersicht p " +
+						"	ON b.bundeslandnummer = p.bundesland), " +
+						
+						"rankings AS ( " +
+						"	SELECT * " +
+						"	FROM bliteratorpartei " +
+						"	ORDER BY bundesland ASC, itrergebnis DESC), " +
+						
+						"filtered AS ( " +
+						"	SELECT * " +
+						"	FROM rankings r1 " +
+						"	WHERE " +
+						"		(SELECT COUNT(*) FROM rankings r2 " +
+						"		WHERE r1.bundesland = r2.bundesland " +
+						"		AND r2.itrergebnis > r1.itrergebnis) " +
+						
+						"		< (SELECT sitze FROM sitzeprobundesland WHERE bundesland = r1.bundesland)) " +
+					
+						"SELECT bundesland, partei, COUNT(*) as mandate " +
+						"FROM filtered " +
+						"GROUP BY bundesland, partei); "*/
+						
+						);
+						
+				
+				st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( " +
+						"WITH ungrouped AS (" +
+						"		SELECT bundesland, parteiname, mandate::numeric " +
+						"		FROM wkgewonnenerststimmen " +
+						"		UNION ALL " +
+						"		SELECT bundesland, parteiname, -1 * mandate AS mandate " +
+						"		FROM wkgewonnenzweitstimmen), " + 
+						
+						
+						"grouped AS ( " +
+						"	SELECT bundesland, parteiname, SUM(mandate) AS mandate " +
+						"	FROM ungrouped " +
+						"	GROUP BY bundesland, parteiname " +
+						"	HAVING COUNT(*) = 2) " + 
+						
+						
+						"SELECT * FROM grouped " +
+						"WHERE mandate > 0" +
+						"ORDER BY parteiname);");
+				
+				
 		
 		List<String> tableNames = Arrays.asList(
 				"umandate"

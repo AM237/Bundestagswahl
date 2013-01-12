@@ -126,6 +126,9 @@ public class TestBW implements EntryPoint {
 	private GetKnappsterSiegerServiceAsync knappsterSiegerSvc = GWT.create(GetKnappsterSiegerService.class);
 	private WKOverviewErststimmenServiceAsync wkOverviewErststimmenSvc = GWT.create(WKOverviewErststimmenService.class);
 	
+	String[] projectInput = new String[3];
+	String[] queryInput = new String[2];
+	
 	
 	/**
 	 * Entry point method.
@@ -240,7 +243,7 @@ public class TestBW implements EntryPoint {
 		RootLayoutPanel.get().add(tabPanel);
 
 
-
+		
 		
 		// Handles ------------------------------------------------------------
 		// --------------------------------------------------------------------
@@ -468,8 +471,8 @@ public class TestBW implements EntryPoint {
 		
 		
 		// Prepare parameters
-		String[] projectInput = new String[3];
-		String[] queryInput = new String[2];
+		//String[] projectInput = new String[3];
+		//String[] queryInput = new String[2];
 		projectInput[0] = serverName.getText();
 		projectInput[1] = dbInputBox.getText();
 		projectInput[2] = passwordBox.getText();
@@ -480,12 +483,15 @@ public class TestBW implements EntryPoint {
 		// Setup all required callback objects and 
 		// make the call to each respective service.
 		((SeatDistributionServiceAsync) seatDistSvc).getSeatDistribution(projectInput, queryInput, setupSeatDistCallback());
+		
+		
+		/*
 		((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
 		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
 		((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
 		((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
-		((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
+		((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());*/
 	}
 			
 	// Setup callback objects -------------------------------------------------
@@ -494,7 +500,7 @@ public class TestBW implements EntryPoint {
 	
 	// seat distribution
 	public AsyncCallback< ArrayList<ArrayList<String>> > setupSeatDistCallback(){
-
+		
 		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
 
 			@SuppressWarnings("deprecation")
@@ -502,6 +508,7 @@ public class TestBW implements EntryPoint {
 				ta.setText(ta.getText() + "\n" + "-> " + 
 						DateTimeFormat.getFullTimeFormat().format(new Date()) +
 						": Error while getting seat distribution: " + caught.getMessage());
+				
 			}
 
 			@SuppressWarnings("deprecation")
@@ -531,6 +538,14 @@ public class TestBW implements EntryPoint {
 				
 				htabPanel.add(distHPanel);
 				tabPanel.add(distHPanel, "Verteilung");
+				
+				// TODO: fix this crap
+				((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
+				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
+				((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
+				((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
+				((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
+				((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
 			}
 			
 			
@@ -559,6 +574,7 @@ public class TestBW implements EntryPoint {
 						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreissieger analysis complete.");
 				
 				setupUITables(s, "Wahlkreissieger", (CellPanel)wkHPanel);
+				
 			}
 		};
 
