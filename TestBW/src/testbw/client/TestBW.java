@@ -15,6 +15,7 @@ import java.util.List;
 // GWT GUI API
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JsArrayInteger;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -46,9 +47,13 @@ import com.google.gwt.visualization.client.LegendPosition;
 import com.google.gwt.visualization.client.VisualizationUtils;
 import com.google.gwt.visualization.client.DataTable;
 import com.google.gwt.visualization.client.AbstractDataTable.ColumnType;
+import com.google.gwt.visualization.client.events.OnMouseOverHandler;
 import com.google.gwt.visualization.client.visualizations.corechart.CoreChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart.PieOptions;
+import com.google.gwt.visualization.client.visualizations.GeoMap;
+import com.google.gwt.visualization.client.visualizations.GeoMap.Options;
+
 
 
 public class TestBW implements EntryPoint {
@@ -93,8 +98,8 @@ public class TestBW implements EntryPoint {
 	private Label taLabel = new Label();
 	
 	// Query result: seat distribution ----------------------------------------
-	private HorizontalPanel distHPanel = new HorizontalPanel();
-	private HashMap colorMap = new HashMap<String, String>();
+	private VerticalPanel distPanel = new VerticalPanel();
+	private HashMap<String, Color> colorMap = new HashMap<String, Color>();
 	
 	// Query result: Wahlkreis winners ----------------------------------------
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
@@ -141,17 +146,18 @@ public class TestBW implements EntryPoint {
 		// ------------------------------------------------------------------------
 		
 		// Seat distribution --------------------------------------------------
-		distHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		distHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		distPanel.setSize(""+ RootLayoutPanel.get().getOffsetWidth()+"px", ""+ RootLayoutPanel.get().getOffsetHeight()+"px");
+		distPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		distPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
 		// TODO: where to put this info?
-		colorMap.put("CD", "slateblue");
-		colorMap.put("CS", "skyblue");
-		colorMap.put("SP", "crimson");
-		colorMap.put("DI", "plum");
-		colorMap.put("GR", "mediumseagreen");
-		colorMap.put("FD", "gold");
-		colorMap.put("PI", "orange");
+		colorMap.put("CS", new Color("skyblue", Arrays.asList(0x00c0ff, 0x00a0ff, 0x0080ff, 0x0060ff, 0x0040ff, 0x0020ff, 0x0000ff)));
+		colorMap.put("CD", new Color("slateblue", Arrays.asList(0x1e174c, 0x362988, 0x4f3cc4, 0x6a5acd, 0x8578d6, 0xa096df, 0xd7d2f1, 0xf2f1fb)));
+		colorMap.put("SP", new Color("crimson", Arrays.asList(0x6B0000, 0xBA0000, 0xDB0000, 0xFE2020, 0xFE3939, 0xFE8484, 0xFE8484)));
+		colorMap.put("DI", new Color("plum", Arrays.asList(0xff4565, 0xff5e7a, 0xff788f, 0xff91a4, 0xffabb9, 0xffc4ce, 0xffdee3)));
+		colorMap.put("GR", new Color("mediumseagreen", Arrays.asList(0x1b5233, 0x21653f, 0x28784b, 0x2e8b57, 0x349e63, 0x3bb16f, 0x44c17b)));
+		colorMap.put("FD", new Color("gold", Arrays.asList(0x625300, 0xb39700, 0xccac00, 0xe6c200, 0xffd700, 0xffe34e, 0xfff09d)));
+		colorMap.put("PI", new Color("orange", Arrays.asList(0x892f00, 0xb13c00, 0xd84a00, 0xff5700, 0xff7127, 0xff8b4e, 0xffa576)));
 		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
@@ -239,7 +245,7 @@ public class TestBW implements EntryPoint {
 		consoleOutputVPanel.setSpacing(5);
 		taLabel.setText("Console Output");
 		taLabel.setVisible(true);
-		ta.setWidth("500px");
+		ta.setWidth(RootLayoutPanel.get().getOffsetWidth()/2+"px");
 		ta.setHeight("300px");
 		
 		// Root ----------------------------------------------------------------
@@ -306,6 +312,8 @@ public class TestBW implements EntryPoint {
 				getAnalysis();
 			}
 		});
+
+		
 		
 		// Load visualization API ---------------------------------------------
 		// --------------------------------------------------------------------
@@ -319,6 +327,7 @@ public class TestBW implements EntryPoint {
 		// Load the visualization api, passing the onLoadCallback to be called
 		// when loading is done.
 		VisualizationUtils.loadVisualizationApi(onLoadCallback, CoreChart.PACKAGE);
+		VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoMap.PACKAGE);
 	}
 
 
@@ -533,22 +542,124 @@ public class TestBW implements EntryPoint {
 				htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 				htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 				
-				for (int i = 0; i < s.size(); i=i+2){
+				for (int i = 0; i < s.size(); i=i+4){
 					
-					ArrayList<String> currentHeader = s.get(i);
-					ArrayList<String> currentTable = s.get(i+1);
-
-					int colLength = currentHeader.size()-1;
+					final ArrayList<String> currentHeader = s.get(i);
+					final ArrayList<String> currentTable = s.get(i+1);
 					
-					List<TableEntry> formatted = extractRows(currentTable, colLength);
+					final ArrayList<String> currentMapHeader = s.get(i+2);
+					final ArrayList<String> currentMapTable = s.get(i+3);
 				
-					PieChart piechart = new PieChart(createTableForPiechart(formatted, currentHeader), 
+					
+					final List<TableEntry> formatted = extractRows(currentTable, currentHeader.size()-1);
+					final List<TableEntry> formattedMap = extractRows(currentMapTable, currentMapHeader.size()-1);
+				
+					final AbstractDataTable pieChartData = createTableForPiechart(formatted, currentHeader);
+					final PieChart piechart = new PieChart(pieChartData,
 													 createOptions(currentHeader.get(0), formatted));
-					distHPanel.add(piechart);
+					
+					
+					// GeoMaps
+					DataTable dataTable = DataTable.create();
+					dataTable.addColumn(ColumnType.STRING, "Bundesland");
+					dataTable.addColumn(ColumnType.NUMBER, "Votes");
+					dataTable.addRows(1);
+					
+					final Options options = Options.create();
+				    options.setDataMode(GeoMap.DataMode.REGIONS);
+				    options.setRegion("DE");
+				    options.setHeight(RootLayoutPanel.get().getOffsetHeight()/3);
+				    options.setWidth(RootLayoutPanel.get().getOffsetWidth()/3);
+				    options.setShowLegend(true);
+					
+					
+					final GeoMap gmap = new GeoMap(dataTable, options);
+					gmap.setVisible(true);
+				    
+
+					piechart.addOnMouseOverHandler(new OnMouseOverHandler() {
+						@SuppressWarnings("deprecation")
+						public void onMouseOverEvent(OnMouseOverEvent event) {
+							
+							int parteiCol = -1;
+							for (int i = 1; i < currentMapHeader.size(); i++){
+								if (currentMapHeader.get(i).toUpperCase().contains("PARTEI")){
+									parteiCol = i;
+									break;
+								}
+							}
+							
+	
+							
+							List<TableEntry> filtered = new ArrayList<TableEntry>();
+							String filterString = pieChartData.getValueString(event.getRow(), 0);
+							
+						
+							
+							for (int i = 0; i < formattedMap.size(); i++){
+								String cur = formattedMap.get(i).cols.get(parteiCol-1).toUpperCase(); 
+	
+								
+								//System.out.println(cur  + "   " + filterString);
+								
+								if (cur.equals(filterString.toUpperCase())){
+									filtered.add(formattedMap.get(i));
+								}
+							}
+							
+							ArrayList<String> filteredHeader = new ArrayList<String>();
+							filteredHeader.add(currentMapHeader.get(0));
+							for (int i = 1; i < currentMapHeader.size(); i++){
+								if (i == parteiCol) continue;
+								filteredHeader.add(currentMapHeader.get(i));
+							}
+							
+							//for (int i = 0; i < filteredHeader.size(); i++)
+								//System.out.println(filteredHeader.get(i));
+							
+							
+							JsArrayInteger cArray = (JsArrayInteger) JsArrayInteger.createArray();
+							List<Integer> colors = colorMap.get(filterString.substring(0, 2).toUpperCase()).hex;
+							for (int i = colors.size()-1; i >= 0; i--){
+								cArray.push(colors.get(i));
+							}
+							
+							
+							options.setColors(cArray);
+							GeoMap map = new GeoMap(createTableForMapchart(filtered, filteredHeader), options);
+							
+							HorizontalPanel panel = new HorizontalPanel();
+							panel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+							panel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+							//panel.setSpacing(20);
+							panel.add(piechart);
+							panel.add(map);
+							
+							
+						
+							
+							distPanel.remove(0);
+							distPanel.add(panel);
+						
+							
+							
+						}
+
+					});
+					
+					
+					HorizontalPanel panel = new HorizontalPanel();
+					panel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+					panel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+					//panel.setSpacing(20);
+					panel.add(piechart);
+					panel.add(gmap);
+					
+					distPanel.add(panel);
 				}
 				
-				htabPanel.add(distHPanel);
-				tabPanel.add(distHPanel, "Verteilung");
+				htabPanel.add(distPanel);
+				tabPanel.add(distPanel, "Verteilung");
 				
 				// TODO: fix this crap
 				((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
@@ -777,20 +888,21 @@ public class TestBW implements EntryPoint {
 		
 		List<String> colors =  new ArrayList<String>();
 		for (int i = 0; i < formatted.size(); i++){
-			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)));
+			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)).name);
 		}
 	    String[] c = new String[colors.size()];
 	    
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
-        options.setHeight(RootLayoutPanel.get().getOffsetHeight()/2);
-        options.setWidth(RootLayoutPanel.get().getOffsetWidth()/2);
+        options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()/2));
+        options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()/2));
         options.setLegend(LegendPosition.RIGHT);
         options.setColors(colors.toArray(c));
         options.setLineWidth(5);
         options.setTitle(title);
 		options.set3D(true);
+		
 		return options;
 	}
 
@@ -810,6 +922,41 @@ public class TestBW implements EntryPoint {
 			TableEntry current = fromServer.get(i);
 			dataTable.setValue(i, 0, current.cols.get(0));
 			dataTable.setValue(i, 1, new Double (current.cols.get(1)).doubleValue());
+		}
+		
+		return dataTable;
+	}
+	
+	
+	// TODO: merge createTable?
+	private AbstractDataTable createTableForMapchart(List<TableEntry> fromServer, ArrayList<String> header) {
+
+		DataTable dataTable = DataTable.create();
+
+		dataTable.addColumn(ColumnType.STRING, header.get(1));
+		dataTable.addColumn(ColumnType.NUMBER, header.get(2)); 
+		dataTable.addRows(fromServer.size());
+
+		//System.out.println("fromServer size: " + fromServer.size());
+		
+		/*
+		System.out.println("0: " + fromServer.get(0).cols.get(1) + ", 1: " + fromServer.get(0).cols.get(2));
+		
+		for (int i = 0; i < fromServer.size(); i++)
+		{
+			System.out.println(fromServer.get(i).cols.get(1) + "  " + fromServer.get(i).cols.get(2));
+			
+		}
+		
+		System.out.println();
+			*/
+			
+		
+		for (int i = 0; i < fromServer.size(); i++)
+		{
+			TableEntry current = fromServer.get(i);
+			dataTable.setValue(i, 0, "DE-"+current.cols.get(1));
+			dataTable.setValue(i, 1, new Double (current.cols.get(2)).doubleValue());
 		}
 		
 		return dataTable;
@@ -846,6 +993,20 @@ public class TestBW implements EntryPoint {
 		        return entry.cols.get(index);
 		      }
 		};
+	}
+	
+	public class Color {
+		String name;
+		List<Integer> hex;
+		
+		Color(String name){
+			this.name = name;
+		}
+		
+		Color(String name, List<Integer> hex){
+			this.name = name;
+			this.hex = hex;
+		}
 	}
 	
 		

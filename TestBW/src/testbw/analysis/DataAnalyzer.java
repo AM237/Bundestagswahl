@@ -134,7 +134,8 @@ public class DataAnalyzer {
 				"FROM parteinsitze pn join partei p " + 
 				"ON pn.partei = p.parteinummer);");
 
-
+		// Gesamtverteilung = zweitstimmenergebnis + ueberhangsmandate -> siehe ueberhangsmandate
+		/*
 		//-- Auswertung der Gesamtverteilung (Sitze -> Partei)
 		st.executeUpdate("CREATE OR REPLACE VIEW gesamtverteilung AS (" +
 				"WITH verteilung AS ( " + 
@@ -147,16 +148,60 @@ public class DataAnalyzer {
 				"SELECT parteiname, sum(sitze)::float8 AS anteil " +
 				"FROM verteilung " +
 				"GROUP BY parteiname)");
-
+		 */
+		
+		// parteien aus dem zweitstimmenergebnis
+		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienzweitstimmen AS ( " +
+		"	SELECT z.parteiname, p.parteinummer " +
+		"	FROM zweitstimmenergebnis z JOIN partei p " +
+		"	ON z.parteiname = p.name); ");
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienerststimmen AS ( " +
+		"	SELECT e.parteiname, p.parteinummer " +
+		"	FROM erststimmenergebnis e JOIN partei p " +
+		"	ON e.parteiname = p.name); ");
+		
+		//Ergaenzung wk with bl info
+		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslandzweitstimmen AS ( " +
+		"	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " +
+		"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w  " +
+		"	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslanderststimmen AS ( " +
+		"	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl " +
+		"	FROM  (SELECT * FROM erststimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w  " +
+		"	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
+		
+		// anzahl stimmen pro "finalisten" partei/kandidaten und bundesland
+		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichtzweitstimmen AS ( " +
+		"	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " +
+		"	FROM wkbundeslandzweitstimmen w JOIN partei p ON w.partei = p.parteinummer " +
+		"   WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) " +
+		"	GROUP BY p.name, w.bundesland);");
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( " +
+		"	SELECT d.partei AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " +
+		"	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '"+jahr+"') d " +
+		"	ON w.kandidatennummer = d.kandidatennummer " +
+		"   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) " +
+		"	GROUP BY d.partei, w.bundesland);");
+		
+		
+		
+		
 		// Table meta info
 		List<String> tableNames = Arrays.asList(
-				"erststimmenergebnis",
-				"zweitstimmenergebnis"
+				"zweitstimmenergebnis",
+				"parteibluebersichtzweitstimmen"
+				//"erststimmenergebnis",
+				//"parteibluebersichterststimmen"
 				);
 		
 		List<List<String>> colNames = Arrays.asList(
 				Arrays.asList("Parteiname", "Sitze"),
-				Arrays.asList("Parteiname", "Sitze")
+				Arrays.asList("Parteiname", "Bundesland", "Stimmen")
+				//Arrays.asList("Parteiname", "Sitze"),
+				//Arrays.asList("Parteiname", "Bundesland", "Stimmen")
 		);
 
 		for (int i = 0; i < tableNames.size(); i++){
