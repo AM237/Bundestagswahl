@@ -3,19 +3,21 @@ package testbw.client;
 // Project dependencies
 import testbw.client.SetupStaticDBService;
 import testbw.client.SetupStaticDBServiceAsync;
-//import testbw.util.Parser;
 
 // Java API
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 // GWT GUI API
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArrayInteger;
+import com.google.gwt.core.client.JsArrayString;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -26,8 +28,10 @@ import com.google.gwt.user.cellview.client.SimplePager.TextLocation;
 import com.google.gwt.user.cellview.client.TextColumn;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
+import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CellPanel;
+import com.google.gwt.user.client.ui.DeckPanel;
 import com.google.gwt.user.client.ui.DecoratorPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
@@ -51,10 +55,23 @@ import com.google.gwt.visualization.client.events.OnMouseOverHandler;
 import com.google.gwt.visualization.client.visualizations.corechart.CoreChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart.PieOptions;
-import com.google.gwt.visualization.client.visualizations.GeoMap;
-import com.google.gwt.visualization.client.visualizations.GeoMap.Options;
+//import com.google.gwt.visualization.client.visualizations.GeoMap;
+//import com.google.gwt.visualization.client.visualizations.GeoMap.Options;
+//import com.googlecode.gwt.charts.client.geochart.GeoChart;
+//import com.googlecode.gwt.charts.client.geochart.GeoChartOptions;
 
 
+
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArray;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.visualization.client.AbstractDataTable;
+import com.google.gwt.visualization.client.CommonChartOptions;
+import com.google.gwt.visualization.client.Selectable;
+import com.google.gwt.visualization.client.Selection;
+import com.google.gwt.visualization.client.events.SelectHandler;
+import com.google.gwt.visualization.client.visualizations.Visualization;
+import com.googlecode.gwt.charts.client.geochart.GeoChartOptions;
 
 public class TestBW implements EntryPoint {
 	
@@ -71,6 +88,7 @@ public class TestBW implements EntryPoint {
 	private TextBox dbInputBox = new TextBox();
 	private TextBox serverName = new TextBox();
 	private TextBox passwordBox = new PasswordTextBox();
+	
 	
 	// Query parameter input section ------------------------------------------
 	private DecoratorPanel queryInputDec = new DecoratorPanel();
@@ -98,7 +116,7 @@ public class TestBW implements EntryPoint {
 	private Label taLabel = new Label();
 	
 	// Query result: seat distribution ----------------------------------------
-	private VerticalPanel distPanel = new VerticalPanel();
+	private AbsolutePanel distPanel = new AbsolutePanel();
 	private HashMap<String, Color> colorMap = new HashMap<String, Color>();
 	
 	// Query result: Wahlkreis winners ----------------------------------------
@@ -147,8 +165,8 @@ public class TestBW implements EntryPoint {
 		
 		// Seat distribution --------------------------------------------------
 		distPanel.setSize(""+ RootLayoutPanel.get().getOffsetWidth()+"px", ""+ RootLayoutPanel.get().getOffsetHeight()+"px");
-		distPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		distPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		//distPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		//distPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
 		// TODO: where to put this info?
 		colorMap.put("CS", new Color("skyblue", Arrays.asList(0x00c0ff, 0x00a0ff, 0x0080ff, 0x0060ff, 0x0040ff, 0x0020ff, 0x0000ff)));
@@ -327,7 +345,8 @@ public class TestBW implements EntryPoint {
 		// Load the visualization api, passing the onLoadCallback to be called
 		// when loading is done.
 		VisualizationUtils.loadVisualizationApi(onLoadCallback, CoreChart.PACKAGE);
-		VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoMap.PACKAGE);
+		//VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoMap.PACKAGE);
+		VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoChart.PACKAGE);
 	}
 
 
@@ -537,18 +556,57 @@ public class TestBW implements EntryPoint {
 				ta.setText(ta.getText() + "\n" + "-> " + 
 						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Seat distribution analysis complete.");
 
-				HorizontalPanel htabPanel = new HorizontalPanel();
+				/*
+				LayoutPanel htabPanel = new LayoutPanel();
 				htabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-				htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-				htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				//htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+				//htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);*/
 				
-				for (int i = 0; i < s.size(); i=i+4){
+				
+				final DeckPanel dpanel = new DeckPanel();
+				
+				DataTable dt = DataTable.create();
+				dt.addColumn(ColumnType.STRING, "Bundesland");
+				dt.addColumn(ColumnType.NUMBER, "Votes");
+				dt.addRows(1);
+				
+				/*
+				final Options opts = Options.create();
+			    opts.setDataMode(GeoMap.DataMode.REGIONS);
+			    opts.setRegion("DE");
+			    opts.setHeight(RootLayoutPanel.get().getOffsetHeight()/1);
+			    opts.setWidth(RootLayoutPanel.get().getOffsetWidth()/1);
+			    opts.setShowLegend(true);
+			    
+			    final GeoMap gmap = new GeoMap(dt, opts);;
+				gmap.setVisible(true);
 					
-					final ArrayList<String> currentHeader = s.get(i);
-					final ArrayList<String> currentTable = s.get(i+1);
+				dpanel.add(gmap);
+
+				*/
+				
+				//final GeoChartOptions opts = GeoChartOptions.create();
+				final GeoChart.Options opts = GeoChart.Options.create();
+				//opts.setDatalessRegionColor("grey");
+				//opts.setEnableRegionInteractivity(true);
+				opts.setRegion("DE");
+				opts.setLegend(LegendPosition.RIGHT);
+				
+				opts.setResolution(GeoChart.RESOLUTION.PROVINCES);
+			    opts.setHeight(RootLayoutPanel.get().getOffsetHeight());
+			    opts.setWidth(RootLayoutPanel.get().getOffsetWidth());
+				
+			    final GeoChart gmap = new GeoChart(dt, opts);
+				
+				distPanel.add(gmap, 0, 0);
+				
+				//for (int i = 0; i < s.size(); i=i+4){
 					
-					final ArrayList<String> currentMapHeader = s.get(i+2);
-					final ArrayList<String> currentMapTable = s.get(i+3);
+					
+					final ArrayList<String> currentHeader = s.get(0);
+					final ArrayList<String> currentTable = s.get(1);
+					final ArrayList<String> currentMapHeader = s.get(2);
+					final ArrayList<String> currentMapTable = s.get(3);
 				
 					
 					final List<TableEntry> formatted = extractRows(currentTable, currentHeader.size()-1);
@@ -559,106 +617,118 @@ public class TestBW implements EntryPoint {
 													 createOptions(currentHeader.get(0), formatted));
 					
 					
-					// GeoMaps
-					DataTable dataTable = DataTable.create();
-					dataTable.addColumn(ColumnType.STRING, "Bundesland");
-					dataTable.addColumn(ColumnType.NUMBER, "Votes");
-					dataTable.addRows(1);
 					
+					//////////////////////////////////////////////////////////////
+					/*
 					final Options options = Options.create();
 				    options.setDataMode(GeoMap.DataMode.REGIONS);
 				    options.setRegion("DE");
-				    options.setHeight(RootLayoutPanel.get().getOffsetHeight()/3);
-				    options.setWidth(RootLayoutPanel.get().getOffsetWidth()/3);
-				    options.setShowLegend(true);
+				    options.setHeight(RootLayoutPanel.get().getOffsetHeight()/1);
+				    options.setWidth(RootLayoutPanel.get().getOffsetWidth()/1);
+				    options.setShowLegend(true);*/
 					
+					final HashMap<String, Integer> tablesMap= new HashMap<String, Integer>();
 					
-					final GeoMap gmap = new GeoMap(dataTable, options);
-					gmap.setVisible(true);
-				    
+					int parteiCol = -1;
+					for (int j = 1; j < currentMapHeader.size(); j++){
+						if (currentMapHeader.get(j).toUpperCase().contains("PARTEI")){
+							parteiCol = j;
+							break;
+						}
+					}
+					
+					HashSet<String> names = new HashSet<String>();
+					for (int j = 0; j < formattedMap.size(); j++){
+						String name = formattedMap.get(j).cols.get(parteiCol-1);
+						if (!names.contains(name))
+							names.add(name);
+					}
+					
+					ArrayList<String> filteredHeader = new ArrayList<String>();
+					filteredHeader.add(currentMapHeader.get(0));
+					for (int j = 1; j < currentMapHeader.size(); j++){
+						if (j == parteiCol) continue;
+						filteredHeader.add(currentMapHeader.get(j));
+					}
+					
+					Iterator it = names.iterator();
+					while(it.hasNext()){
+						
+						String filterString = ((String) it.next()).toUpperCase();
+						
+						List<TableEntry> filtered = new ArrayList<TableEntry>();
+						for (int j = 0; j < formattedMap.size(); j++){
+							String cur = formattedMap.get(j).cols.get(parteiCol-1).toUpperCase(); 
+							
+							if (cur.equals(filterString.toUpperCase())){
+								filtered.add(formattedMap.get(j));
+							}
+						}
+						
+						JsArrayInteger cArray = (JsArrayInteger) JsArrayInteger.createArray();
+						//JsArrayString cArray = (JsArrayString) JsArrayString.createArray();
+						List<Integer> colors = colorMap.get(filterString.substring(0, 2).toUpperCase()).hex;
+						for (int j = colors.size()-1; j >= 0; j--){
+							cArray.push(colors.get(j));
+						}
+						
+						/*
+						Options options = Options.create();
+					    options.setDataMode(GeoMap.DataMode.REGIONS);
+					    options.setRegion("DE");
+					    
+					    options.setHeight(RootLayoutPanel.get().getOffsetHeight()/1);
+					    options.setWidth(RootLayoutPanel.get().getOffsetWidth()/1);
+					    options.setShowLegend(true);
+			
+						options.setColors(cArray);*/
+						
+						GeoChart.Options options = GeoChart.Options.create();
+						//opts.setDatalessRegionColor("grey");
+						//opts.setEnableRegionInteractivity(true);
+						options.setLegend(LegendPosition.TOP);
+						options.setRegion("DE");
+						options.setResolution(GeoChart.RESOLUTION.PROVINCES);
+					    options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()));
+					    options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
+					    //options.setColors(colors);
+						
+						//dpanel.add(new GeoMap(createTableForMapchart(filtered, filteredHeader), options));
+					    
+					    dpanel.add(new GeoChart(createTableForMapchart(filtered, filteredHeader), options));
+						tablesMap.put(filterString.toUpperCase(), dpanel.getWidgetCount()-1);
+					}
 
+					///////////////////////////////////////////////////////////////
+
+				
+					
+					dpanel.setVisible(false);
+					HorizontalPanel hpanel = new HorizontalPanel();
+					hpanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+					hpanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+					hpanel.add(dpanel);
+					
+					distPanel.add(dpanel, 0, 0);
+					distPanel.add(piechart, 0, 0);
+					
 					piechart.addOnMouseOverHandler(new OnMouseOverHandler() {
 						@SuppressWarnings("deprecation")
 						public void onMouseOverEvent(OnMouseOverEvent event) {
-							
-							int parteiCol = -1;
-							for (int i = 1; i < currentMapHeader.size(); i++){
-								if (currentMapHeader.get(i).toUpperCase().contains("PARTEI")){
-									parteiCol = i;
-									break;
-								}
-							}
-							
-	
-							
-							List<TableEntry> filtered = new ArrayList<TableEntry>();
-							String filterString = pieChartData.getValueString(event.getRow(), 0);
-							
 						
-							
-							for (int i = 0; i < formattedMap.size(); i++){
-								String cur = formattedMap.get(i).cols.get(parteiCol-1).toUpperCase(); 
-	
-								
-								//System.out.println(cur  + "   " + filterString);
-								
-								if (cur.equals(filterString.toUpperCase())){
-									filtered.add(formattedMap.get(i));
-								}
-							}
-							
-							ArrayList<String> filteredHeader = new ArrayList<String>();
-							filteredHeader.add(currentMapHeader.get(0));
-							for (int i = 1; i < currentMapHeader.size(); i++){
-								if (i == parteiCol) continue;
-								filteredHeader.add(currentMapHeader.get(i));
-							}
-							
-							//for (int i = 0; i < filteredHeader.size(); i++)
-								//System.out.println(filteredHeader.get(i));
-							
-							
-							JsArrayInteger cArray = (JsArrayInteger) JsArrayInteger.createArray();
-							List<Integer> colors = colorMap.get(filterString.substring(0, 2).toUpperCase()).hex;
-							for (int i = colors.size()-1; i >= 0; i--){
-								cArray.push(colors.get(i));
-							}
-							
-							
-							options.setColors(cArray);
-							GeoMap map = new GeoMap(createTableForMapchart(filtered, filteredHeader), options);
-							
-							HorizontalPanel panel = new HorizontalPanel();
-							panel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-							panel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
-							//panel.setSpacing(20);
-							panel.add(piechart);
-							panel.add(map);
-							
-							
-						
-							
-							distPanel.remove(0);
-							distPanel.add(panel);
-						
-							
-							
+							dpanel.setVisible(true);
+							String selected = pieChartData.getValueString(event.getRow(), 0);
+							dpanel.showWidget(tablesMap.get(selected.toUpperCase()));				
 						}
-
 					});
-					
-					
-					HorizontalPanel panel = new HorizontalPanel();
-					panel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-					panel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
-					//panel.setSpacing(20);
-					panel.add(piechart);
-					panel.add(gmap);
-					
-					distPanel.add(panel);
-				}
+				//}
 				
-				htabPanel.add(distPanel);
+				
+				
+				//distPanel.add(hGrid);
+				//htabPanel.add(distPanel);
+				//htabPanel.add(distPanel);
+				//htabPanel.add(distPanel, 0, 0);
 				tabPanel.add(distPanel, "Verteilung");
 				
 				// TODO: fix this crap
@@ -895,10 +965,11 @@ public class TestBW implements EntryPoint {
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
-        options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()/2));
-        options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()/2));
+        options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()/2.5));
+        options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()/2.5));
         options.setLegend(LegendPosition.RIGHT);
         options.setColors(colors.toArray(c));
+        options.setBackgroundColor("transparent");
         options.setLineWidth(5);
         options.setTitle(title);
 		options.set3D(true);
@@ -936,21 +1007,6 @@ public class TestBW implements EntryPoint {
 		dataTable.addColumn(ColumnType.STRING, header.get(1));
 		dataTable.addColumn(ColumnType.NUMBER, header.get(2)); 
 		dataTable.addRows(fromServer.size());
-
-		//System.out.println("fromServer size: " + fromServer.size());
-		
-		/*
-		System.out.println("0: " + fromServer.get(0).cols.get(1) + ", 1: " + fromServer.get(0).cols.get(2));
-		
-		for (int i = 0; i < fromServer.size(); i++)
-		{
-			System.out.println(fromServer.get(i).cols.get(1) + "  " + fromServer.get(i).cols.get(2));
-			
-		}
-		
-		System.out.println();
-			*/
-			
 		
 		for (int i = 0; i < fromServer.size(); i++)
 		{
@@ -1024,4 +1080,68 @@ public class TestBW implements EntryPoint {
 		
 		return result;
 	}
+	
+	
+	
+	
+	
+	
+	
+
+public static class GeoChart extends Visualization<GeoChart.Options> implements Selectable {
+
+	public static final String PACKAGE = "geochart";
+	
+	public enum RESOLUTION {
+		COUNTRIES,PROVINCES,METROS;
+	}
+	
+	
+	public static class Options extends CommonChartOptions {
+		public static Options create() {
+			return JavaScriptObject.createObject().cast();
+		}
+		
+		protected Options()  {}
+		
+		public final void setRegion(String region)  {
+			this.set("region",region);
+		}
+		
+		public final void setResolution(RESOLUTION resolution) {
+			this.set("resolution",resolution.toString().toLowerCase());
+		}
+	}
+	
+	public GeoChart() {
+		super();
+	}
+	
+	public GeoChart(AbstractDataTable data,Options options) {
+		super(data,options);
+	}
+	
+	@Override
+	public void addSelectHandler(SelectHandler handler) {
+		Selection.addSelectHandler(this, handler);
+	}
+
+	@Override
+	public JsArray<Selection> getSelections() {
+		return Selection.getSelections(this);
+	}
+
+	@Override
+	public void setSelections(JsArray<Selection> sel) {
+		Selection.setSelections(this, sel);
+	}
+
+	@Override
+	protected native JavaScriptObject createJso(Element parent) /*-{
+		return new $wnd.google.visualization.GeoChart(parent);
+	}-*/;
+	
 }
+
+}
+
