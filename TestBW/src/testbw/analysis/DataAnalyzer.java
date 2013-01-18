@@ -180,11 +180,11 @@ public class DataAnalyzer {
 		"	GROUP BY p.name, w.bundesland);");
 		
 		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( " +
-		"	SELECT d.partei AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " +
+		"	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " +
 		"	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '"+jahr+"') d " +
-		"	ON w.kandidatennummer = d.kandidatennummer " +
+		"	ON w.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer" +
 		"   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) " +
-		"	GROUP BY d.partei, w.bundesland);");
+		"	GROUP BY p.name, w.bundesland);");
 		
 		
 		
@@ -192,16 +192,16 @@ public class DataAnalyzer {
 		// Table meta info
 		List<String> tableNames = Arrays.asList(
 				"zweitstimmenergebnis",
-				"parteibluebersichtzweitstimmen"
-				//"erststimmenergebnis",
-				//"parteibluebersichterststimmen"
+				"parteibluebersichtzweitstimmen",
+				"erststimmenergebnis",
+				"parteibluebersichterststimmen"
 				);
 		
 		List<List<String>> colNames = Arrays.asList(
 				Arrays.asList("Parteiname", "Sitze"),
+				Arrays.asList("Parteiname", "Bundesland", "Stimmen"),
+				Arrays.asList("Parteiname", "Sitze"),
 				Arrays.asList("Parteiname", "Bundesland", "Stimmen")
-				//Arrays.asList("Parteiname", "Sitze"),
-				//Arrays.asList("Parteiname", "Bundesland", "Stimmen")
 		);
 
 		for (int i = 0; i < tableNames.size(); i++){

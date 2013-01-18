@@ -523,8 +523,8 @@ public class TestBW implements EntryPoint {
 		((SeatDistributionServiceAsync) seatDistSvc).getSeatDistribution(projectInput, queryInput, setupSeatDistCallback());
 		
 		
-		/*
-		((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
+		
+		/*((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
 		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
 		((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
@@ -553,52 +553,54 @@ public class TestBW implements EntryPoint {
 			public void onSuccess(ArrayList<ArrayList<String>> s) {
 
 				ta.setText(ta.getText() + "\n" + "-> " + 
-						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Seat distribution analysis complete.");
-
-				/*
-				LayoutPanel htabPanel = new LayoutPanel();
-				htabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-				//htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-				//htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);*/
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Seat distribution analysis complete.");				
 				
-				
+				// Hold all map widgets in this panel
 				final DeckPanel dpanel = new DeckPanel();
 				dpanel.setSize(RootLayoutPanel.get().getOffsetWidth()+"px", RootLayoutPanel.get().getOffsetHeight()+"px");
 				
+				// Hold all piechart widgets in this panel
+				VerticalPanel pcharts= new VerticalPanel();
+				pcharts.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+				pcharts.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				
+				// Dummy (empty) start GeoChart
 				DataTable dt = DataTable.create();
 				dt.addColumn(ColumnType.STRING, "Bundesland");
 				dt.addColumn(ColumnType.NUMBER, "Votes");
 				dt.addRows(1);
-				
 				final GeoChart.Options opts = GeoChart.Options.create();
 				opts.setRegion("DE");
 				opts.setResolution(GeoChart.RESOLUTION.PROVINCES);
 			    opts.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
 			    opts.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
 			    opts.keepAspectRatio(false);
-				
 			    final GeoChart gmap = new GeoChart(dt, opts);
 				
 				distPanel.add(gmap, 0, 0);
 				
-				//for (int i = 0; i < s.size(); i=i+4){
+				// Loop over all incoming table sections (1 section per piechart)
+				for (int i = 0; i < s.size(); i=i+4){
 					
+					final int index = i;
 					
-					final ArrayList<String> currentHeader = s.get(0);
-					final ArrayList<String> currentTable = s.get(1);
-					final ArrayList<String> currentMapHeader = s.get(2);
-					final ArrayList<String> currentMapTable = s.get(3);
+					// Get infos for current section
+					final ArrayList<String> currentHeader = s.get(i);
+					final ArrayList<String> currentTable = s.get(i+1);
+					final ArrayList<String> currentMapHeader = s.get(i+2);
+					final ArrayList<String> currentMapTable = s.get(i+3);
 				
-					
+					// Format data
 					final List<TableEntry> formatted = extractRows(currentTable, currentHeader.size()-1);
 					final List<TableEntry> formattedMap = extractRows(currentMapTable, currentMapHeader.size()-1);
 				
+					// Build pie chart
 					final AbstractDataTable pieChartData = createTableForPiechart(formatted, currentHeader);
 					final PieChart piechart = new PieChart(pieChartData,
 													 createOptions(currentHeader.get(0), formatted));
 					
 					
-					
+					// Build Geo charts
 					//////////////////////////////////////////////////////////////
 					
 					final HashMap<String, Integer> tablesMap= new HashMap<String, Integer>();
@@ -629,7 +631,7 @@ public class TestBW implements EntryPoint {
 					while(it.hasNext()){
 						
 						String filterString = ((String) it.next()).toUpperCase();
-						
+					
 						List<TableEntry> filtered = new ArrayList<TableEntry>();
 						for (int j = 0; j < formattedMap.size(); j++){
 							String cur = formattedMap.get(j).cols.get(parteiCol-1).toUpperCase(); 
@@ -639,55 +641,42 @@ public class TestBW implements EntryPoint {
 							}
 						}
 						
-						JsArrayInteger cArray = (JsArrayInteger) JsArrayInteger.createArray();
-						//JsArrayString cArray = (JsArrayString) JsArrayString.createArray();
-						List<Integer> colors = colorMap.get(filterString.substring(0, 2).toUpperCase()).hex;
-						for (int j = colors.size()-1; j >= 0; j--){
-							cArray.push(colors.get(j));
-						}
 						
 						GeoChart.Options options = GeoChart.Options.create();					
 						options.setRegion("DE");
-			
 						options.setResolution(GeoChart.RESOLUTION.PROVINCES);
 					    options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
 					    options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
 					    options.keepAspectRatio(false);
-					    //options.setColors(colors);
+					    options.setColors(colorMap.get(filterString.substring(0, 2).toUpperCase()).name);	
 					    
-						//dpanel.add(new GeoMap(createTableForMapchart(filtered, filteredHeader), options));
-					    
+					    // Add new Geo chart to collection of available geo charts
 					    dpanel.add(new GeoChart(createTableForMapchart(filtered, filteredHeader), options));
-						tablesMap.put(filterString.toUpperCase(), dpanel.getWidgetCount()-1);
+						tablesMap.put(filterString.toUpperCase()+"$$"+i, dpanel.getWidgetCount()-1);
 					}
 
+					// End build Geo charts
 					///////////////////////////////////////////////////////////////
+					
+					// Store piechart in collection
+					pcharts.add(piechart);
 
-				
-					
-					dpanel.setVisible(false);				
-					distPanel.add(dpanel, 0, 0);
-					
-					distPanel.add(piechart, 0, 0);
-
-					
+					// Handler for mouse over event on current piechart
 					piechart.addOnMouseOverHandler(new OnMouseOverHandler() {
 						@SuppressWarnings("deprecation")
 						public void onMouseOverEvent(OnMouseOverEvent event) {
 						
 							dpanel.setVisible(true);
-							String selected = pieChartData.getValueString(event.getRow(), 0);
+							String selected = pieChartData.getValueString(event.getRow(), 0)+"$$"+index;
 							dpanel.showWidget(tablesMap.get(selected.toUpperCase()));				
 						}
 					});
-				//}
+				}
 				
-				
-				
-				//distPanel.add(hGrid);
-				//htabPanel.add(distPanel);
-				//htabPanel.add(distPanel);
-				//htabPanel.add(distPanel, 0, 0);
+				// Build distribution panel
+				dpanel.setVisible(false);				
+				distPanel.add(dpanel, 0, 0);
+				distPanel.add(pcharts, 0, 0);
 				tabPanel.add(distPanel, "Verteilung");
 				
 				// TODO: fix this crap
@@ -698,8 +687,6 @@ public class TestBW implements EntryPoint {
 				((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
 				((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
 			}
-			
-			
 		};
 
 		return callback;
