@@ -65,13 +65,12 @@ import com.google.gwt.visualization.client.visualizations.corechart.PieChart.Pie
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.Element;
-import com.google.gwt.visualization.client.AbstractDataTable;
 import com.google.gwt.visualization.client.CommonChartOptions;
 import com.google.gwt.visualization.client.Selectable;
 import com.google.gwt.visualization.client.Selection;
 import com.google.gwt.visualization.client.events.SelectHandler;
 import com.google.gwt.visualization.client.visualizations.Visualization;
-import com.googlecode.gwt.charts.client.geochart.GeoChartOptions;
+
 
 public class TestBW implements EntryPoint {
 	
@@ -564,37 +563,19 @@ public class TestBW implements EntryPoint {
 				
 				
 				final DeckPanel dpanel = new DeckPanel();
+				dpanel.setSize(RootLayoutPanel.get().getOffsetWidth()+"px", RootLayoutPanel.get().getOffsetHeight()+"px");
 				
 				DataTable dt = DataTable.create();
 				dt.addColumn(ColumnType.STRING, "Bundesland");
 				dt.addColumn(ColumnType.NUMBER, "Votes");
 				dt.addRows(1);
 				
-				/*
-				final Options opts = Options.create();
-			    opts.setDataMode(GeoMap.DataMode.REGIONS);
-			    opts.setRegion("DE");
-			    opts.setHeight(RootLayoutPanel.get().getOffsetHeight()/1);
-			    opts.setWidth(RootLayoutPanel.get().getOffsetWidth()/1);
-			    opts.setShowLegend(true);
-			    
-			    final GeoMap gmap = new GeoMap(dt, opts);;
-				gmap.setVisible(true);
-					
-				dpanel.add(gmap);
-
-				*/
-				
-				//final GeoChartOptions opts = GeoChartOptions.create();
 				final GeoChart.Options opts = GeoChart.Options.create();
-				//opts.setDatalessRegionColor("grey");
-				//opts.setEnableRegionInteractivity(true);
 				opts.setRegion("DE");
-				opts.setLegend(LegendPosition.RIGHT);
-				
 				opts.setResolution(GeoChart.RESOLUTION.PROVINCES);
-			    opts.setHeight(RootLayoutPanel.get().getOffsetHeight());
-			    opts.setWidth(RootLayoutPanel.get().getOffsetWidth());
+			    opts.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
+			    opts.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
+			    opts.keepAspectRatio(false);
 				
 			    final GeoChart gmap = new GeoChart(dt, opts);
 				
@@ -619,13 +600,6 @@ public class TestBW implements EntryPoint {
 					
 					
 					//////////////////////////////////////////////////////////////
-					/*
-					final Options options = Options.create();
-				    options.setDataMode(GeoMap.DataMode.REGIONS);
-				    options.setRegion("DE");
-				    options.setHeight(RootLayoutPanel.get().getOffsetHeight()/1);
-				    options.setWidth(RootLayoutPanel.get().getOffsetWidth()/1);
-				    options.setShowLegend(true);*/
 					
 					final HashMap<String, Integer> tablesMap= new HashMap<String, Integer>();
 					
@@ -672,27 +646,15 @@ public class TestBW implements EntryPoint {
 							cArray.push(colors.get(j));
 						}
 						
-						/*
-						Options options = Options.create();
-					    options.setDataMode(GeoMap.DataMode.REGIONS);
-					    options.setRegion("DE");
-					    
-					    options.setHeight(RootLayoutPanel.get().getOffsetHeight()/1);
-					    options.setWidth(RootLayoutPanel.get().getOffsetWidth()/1);
-					    options.setShowLegend(true);
-			
-						options.setColors(cArray);*/
-						
-						GeoChart.Options options = GeoChart.Options.create();
-						//opts.setDatalessRegionColor("grey");
-						//opts.setEnableRegionInteractivity(true);
-						options.setLegend(LegendPosition.TOP);
+						GeoChart.Options options = GeoChart.Options.create();					
 						options.setRegion("DE");
+			
 						options.setResolution(GeoChart.RESOLUTION.PROVINCES);
-					    options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()));
+					    options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
 					    options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
+					    options.keepAspectRatio(false);
 					    //options.setColors(colors);
-						
+					    
 						//dpanel.add(new GeoMap(createTableForMapchart(filtered, filteredHeader), options));
 					    
 					    dpanel.add(new GeoChart(createTableForMapchart(filtered, filteredHeader), options));
@@ -703,14 +665,11 @@ public class TestBW implements EntryPoint {
 
 				
 					
-					dpanel.setVisible(false);
-					HorizontalPanel hpanel = new HorizontalPanel();
-					hpanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-					hpanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
-					hpanel.add(dpanel);
-					
+					dpanel.setVisible(false);				
 					distPanel.add(dpanel, 0, 0);
+					
 					distPanel.add(piechart, 0, 0);
+
 					
 					piechart.addOnMouseOverHandler(new OnMouseOverHandler() {
 						@SuppressWarnings("deprecation")
@@ -1110,6 +1069,10 @@ public static class GeoChart extends Visualization<GeoChart.Options> implements 
 		
 		public final void setResolution(RESOLUTION resolution) {
 			this.set("resolution",resolution.toString().toLowerCase());
+		}
+		
+		public final void keepAspectRatio(boolean b) {
+			this.set("keepAspectRatio", b);
 		}
 	}
 	
