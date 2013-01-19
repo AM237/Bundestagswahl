@@ -125,3 +125,8 @@ html>body .gwt-DecoratedTabBar {
   overflow: hidden;
   padding: 6px;
 }
+
+
+#map_canvas path {
+stroke-width:10; /* control the countries borders width */
+}

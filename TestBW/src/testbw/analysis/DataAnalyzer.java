@@ -378,7 +378,6 @@ public class DataAnalyzer {
 						"GROUP BY b.bundesland, p.name);");
 				
 				
-				
 				st.executeUpdate("CREATE OR REPLACE VIEW ueberhangzweitstimmen AS ( " +
 			
 						
@@ -401,20 +400,12 @@ public class DataAnalyzer {
 						"	WHERE i.iterator <= 2 * (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = e.parteiname)), " +
 						
 						
-						//Ergaenzung wk with bl info
-						"wkbundesland AS ( " +
-						"	SELECT b.name AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " +
-						"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w  " +
-						"	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer), " +
-						
-						
-						// anzahl stimmen pro "finalisten" partei und bundesland
+						//anzahl stimmen pro "finalisten" partei und bundesland
 						"parteibluebersicht AS ( " +
-						"	SELECT w.partei AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " +
-						"	FROM wkbundesland w " +
-						"   WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteien) " +
-						"	GROUP BY w.partei, w.bundesland), " +
-						//"   ORDER BY w.partei, w.bundesland), " +
+						"	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl " +
+						"	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"+jahr+"' AND partei IN (SELECT parteinummer FROM ergebnisparteien)) z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"+jahr+"') w  " +
+						"	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer " +
+						"	GROUP BY z.partei, b.name), " +
 						
 						
 						// tree: partei x iterator x bundesland builds to result for iterator
@@ -423,8 +414,9 @@ public class DataAnalyzer {
 						"	FROM parteiiterators p1 JOIN parteibluebersicht p2 " +
 						"	ON p1.parteinummer = p2.partei " +
 						"   ORDER BY partei ASC, itrergebnis DESC), " +
+			
 						
-						
+						/*
 						// auswahl bundeslaender mit groessten zwischenergebnissen
 						"filtered AS ( " +
 						"	SELECT * " +
@@ -441,30 +433,35 @@ public class DataAnalyzer {
 						"SELECT parteiname, bundesland, COUNT(*) as mandate " +
 						"FROM filtered " +
 						"GROUP BY parteiname, parteinummer, bundesland); "
+						*/
 						
+					
+						"partitionen AS ( " +
+						"	SELECT p.parteiname AS parteiname, p.bundesland AS bundesland, p.itrergebnis AS itrergebnis, ROW_NUMBER() OVER (PARTITION BY p.parteiname ORDER BY p.itrergebnis DESC) AS rn " +
+						"	FROM parteiiteratorbl p), " +
+						
+						"filter AS ( " +
+						"	SELECT * FROM partitionen p " +
+						"	WHERE p.rn <= (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = p.parteiname)) " +
+						
+						"SELECT f.parteiname AS parteiname, f.bundesland AS bundesland, COUNT(*) as mandate " +
+						"FROM filter f " +
+						"GROUP BY f.parteiname, f.bundesland);"
 						
 						);
-						
+				
 				
 				st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( " +
-						"WITH ungrouped AS (" +
-						"		SELECT bundesland, parteiname, mandate::numeric " +
-						"		FROM ueberhangerststimmen " +
-						"		UNION ALL " +
-						"		SELECT bundesland, parteiname, -1 * mandate AS mandate " +
-						"		FROM ueberhangzweitstimmen), " + 
+				
+						"WITH unfiltered AS ( " +
+						"	SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate " +
+						"	FROM ueberhangerststimmen e JOIN ueberhangzweitstimmen z " +
+						"	ON e.bundesland = z.bundesland AND e.parteiname = z.parteiname) " +
 						
-						
-						"grouped AS ( " +
-						"	SELECT bundesland, parteiname, SUM(mandate) AS mandate " +
-						"	FROM ungrouped " +
-						"	GROUP BY bundesland, parteiname " +
-						"	HAVING COUNT(*) = 2) " + 
-						
-						
-						"SELECT * FROM grouped " +
-						"WHERE mandate > 0" +
-						"ORDER BY parteiname);");
+						"SELECT * FROM unfiltered " +
+						"WHERE mandate > 0);"
+					
+				);
 				
 				
 		

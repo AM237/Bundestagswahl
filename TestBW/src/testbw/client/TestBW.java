@@ -168,13 +168,13 @@ public class TestBW implements EntryPoint {
 		//distPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
 		// TODO: where to put this info?
-		colorMap.put("CS", new Color("skyblue", Arrays.asList(0x00c0ff, 0x00a0ff, 0x0080ff, 0x0060ff, 0x0040ff, 0x0020ff, 0x0000ff)));
-		colorMap.put("CD", new Color("slateblue", Arrays.asList(0x1e174c, 0x362988, 0x4f3cc4, 0x6a5acd, 0x8578d6, 0xa096df, 0xd7d2f1, 0xf2f1fb)));
-		colorMap.put("SP", new Color("crimson", Arrays.asList(0x6B0000, 0xBA0000, 0xDB0000, 0xFE2020, 0xFE3939, 0xFE8484, 0xFE8484)));
-		colorMap.put("DI", new Color("plum", Arrays.asList(0xff4565, 0xff5e7a, 0xff788f, 0xff91a4, 0xffabb9, 0xffc4ce, 0xffdee3)));
-		colorMap.put("GR", new Color("mediumseagreen", Arrays.asList(0x1b5233, 0x21653f, 0x28784b, 0x2e8b57, 0x349e63, 0x3bb16f, 0x44c17b)));
-		colorMap.put("FD", new Color("gold", Arrays.asList(0x625300, 0xb39700, 0xccac00, 0xe6c200, 0xffd700, 0xffe34e, 0xfff09d)));
-		colorMap.put("PI", new Color("orange", Arrays.asList(0x892f00, 0xb13c00, 0xd84a00, 0xff5700, 0xff7127, 0xff8b4e, 0xffa576)));
+		colorMap.put("CS", new Color("skyblue", "#6CA5BC", Arrays.asList(0x00c0ff, 0x00a0ff, 0x0080ff, 0x0060ff, 0x0040ff, 0x0020ff, 0x0000ff)));
+		colorMap.put("CD", new Color("slateblue", "#4A3F90", Arrays.asList(0x1e174c, 0x362988, 0x4f3cc4, 0x6a5acd, 0x8578d6, 0xa096df, 0xd7d2f1, 0xf2f1fb)));
+		colorMap.put("SP", new Color("crimson", "#9A0E2A", Arrays.asList(0x6B0000, 0xBA0000, 0xDB0000, 0xFE2020, 0xFE3939, 0xFE8484, 0xFE8484)));
+		colorMap.put("DI", new Color("plum", "#9B709B", Arrays.asList(0xff4565, 0xff5e7a, 0xff788f, 0xff91a4, 0xffabb9, 0xffc4ce, 0xffdee3)));
+		colorMap.put("GR", new Color("mediumseagreen", "#246B44", Arrays.asList(0x1b5233, 0x21653f, 0x28784b, 0x2e8b57, 0x349e63, 0x3bb16f, 0x44c17b)));
+		colorMap.put("FD", new Color("gold", "#CCAC00", Arrays.asList(0x625300, 0xb39700, 0xccac00, 0xe6c200, 0xffd700, 0xffe34e, 0xfff09d)));
+		colorMap.put("PI", new Color("orange", "#CC8400", Arrays.asList(0x892f00, 0xb13c00, 0xd84a00, 0xff5700, 0xff7127, 0xff8b4e, 0xffa576)));
 		
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
@@ -644,14 +644,17 @@ public class TestBW implements EntryPoint {
 						
 						GeoChart.Options options = GeoChart.Options.create();					
 						options.setRegion("DE");
+
 						options.setResolution(GeoChart.RESOLUTION.PROVINCES);
 					    options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
 					    options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
 					    options.keepAspectRatio(false);
-					    options.setColors(colorMap.get(filterString.substring(0, 2).toUpperCase()).name);	
+					    options.setColors(colorMap.get(filterString.substring(0, 2).toUpperCase()).name2);	
 					    
 					    // Add new Geo chart to collection of available geo charts
-					    dpanel.add(new GeoChart(createTableForMapchart(filtered, filteredHeader), options));
+					    GeoChart chart = new GeoChart(createTableForMapchart(filtered, filteredHeader), options);
+					    chart.setStyleName("#map_canvas");
+					    dpanel.add(chart);
 						tablesMap.put(filterString.toUpperCase()+"$$"+i, dpanel.getWidgetCount()-1);
 					}
 
@@ -904,15 +907,15 @@ public class TestBW implements EntryPoint {
 		
 		List<String> colors =  new ArrayList<String>();
 		for (int i = 0; i < formatted.size(); i++){
-			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)).name);
+			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)).name1);
 		}
 	    String[] c = new String[colors.size()];
 	    
 		PieOptions options = PieOptions.create();
         ChartArea chartArea = ChartArea.create();
         options.setChartArea(chartArea);
-        options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()/2.5));
-        options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()/2.5));
+        options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()/3));
+        options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()/3));
         options.setLegend(LegendPosition.RIGHT);
         options.setColors(colors.toArray(c));
         options.setBackgroundColor("transparent");
@@ -998,15 +1001,18 @@ public class TestBW implements EntryPoint {
 	}
 	
 	public class Color {
-		String name;
+		String name1;
+		String name2;
 		List<Integer> hex;
 		
-		Color(String name){
-			this.name = name;
+		Color(String name1, String name2){
+			this.name1 = name1;
+			this.name2 = name2;
 		}
 		
-		Color(String name, List<Integer> hex){
-			this.name = name;
+		Color(String name1,  String name2, List<Integer> hex){
+			this.name1 = name1;
+			this.name2 = name2;
 			this.hex = hex;
 		}
 	}
