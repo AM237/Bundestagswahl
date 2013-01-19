@@ -582,7 +582,6 @@ public class DataAnalyzer {
 		return result;
 	}
 	
-	
 	/**
 	 * Knappster Sieger
 	 */
@@ -754,9 +753,61 @@ public class DataAnalyzer {
 		return result;
 	}
 	
+	/**
+	 * Request vote forms (tables)
+	 */
+	public ArrayList<ArrayList<String>> requestVote(String[] queryInput) throws SQLException {
+		
+		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
+		String jahrName = queryInput[0];
+		String wahlkreisNr = queryInput[1];
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmeliste AS ( " +
+				"SELECT p.name AS kandidatenname, t.name AS parteiname " +
+				"FROM " +
+				"	(SELECT * FROM direktkandidat WHERE jahr = "+jahrName+" AND wahlkreis = "+ wahlkreisNr +") d " +
+				"	JOIN politiker p ON p.politikernummer = d.politiker " +
+				"   JOIN partei t ON d.partei = t.parteinummer);");
+		
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmeliste AS ( " +
+				"SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname " +
+				"FROM " +
+				"	(SELECT listenplatz, partei, politiker, bundesland " +
+				"    FROM listenkandidat WHERE jahr = "+jahrName+") l " +
+				"	JOIN politiker p ON p.politikernummer = l.politiker " +
+				"	JOIN (SELECT * FROM wahlkreis WHERE jahr = "+jahrName+") w ON w.bundesland = l.bundesland " +
+				"	JOIN partei t ON t.parteinummer = l.partei " +
+				"WHERE wahlkreisnummer = "+ wahlkreisNr + " " + 
+				"ORDER BY l.listenplatz);");	
+	
+		List<String> tableNames = Arrays.asList("erststimmeliste", 
+												"zweitstimmeliste");
+
+		List<List<String>> colNames = Arrays.asList(
+				Arrays.asList("Kandidatenname", "Partei"),
+				Arrays.asList("Listenplatz", "Parteiname", "Kandidatenname")
+		);
+		
+		
+		for (int i = 0; i < tableNames.size(); i++){
+			
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++){
+				header.add(colNames.get(i).get(j));
+			}
+			
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));			
+		}
+
+		return result;
+	}
+	
+	
 	
 	// Get data from ResultSet into required table format
-	public void collectFromQuery(ArrayList<ArrayList<String>> result, 
+	private void collectFromQuery(ArrayList<ArrayList<String>> result, 
 								 String tableName) throws SQLException {
 		
 		result.add(new ArrayList<String>());

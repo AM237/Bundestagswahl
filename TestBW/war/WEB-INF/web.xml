@@ -131,6 +131,17 @@
     <servlet-name>WKOverviewErststimmenServiceImpl</servlet-name>
     <url-pattern>/testbw/wkoverviewerststimmen</url-pattern>
   </servlet-mapping>
+  
+  
+  <servlet>
+    <servlet-name>RequestVoteServiceImpl</servlet-name>
+    <servlet-class>testbw.server.RequestVoteServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>RequestVoteServiceImpl</servlet-name>
+    <url-pattern>/testbw/requestVote</url-pattern>
+  </servlet-mapping>
 
 
 </web-app>

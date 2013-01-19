@@ -16,8 +16,6 @@ import java.util.List;
 // GWT GUI API
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.JsArrayInteger;
-import com.google.gwt.core.client.JsArrayString;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -55,22 +53,14 @@ import com.google.gwt.visualization.client.events.OnMouseOverHandler;
 import com.google.gwt.visualization.client.visualizations.corechart.CoreChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart.PieOptions;
-//import com.google.gwt.visualization.client.visualizations.GeoMap;
-//import com.google.gwt.visualization.client.visualizations.GeoMap.Options;
-//import com.googlecode.gwt.charts.client.geochart.GeoChart;
-//import com.googlecode.gwt.charts.client.geochart.GeoChartOptions;
-
-
-
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
-import com.google.gwt.dom.client.Element;
 import com.google.gwt.visualization.client.CommonChartOptions;
 import com.google.gwt.visualization.client.Selectable;
 import com.google.gwt.visualization.client.Selection;
 import com.google.gwt.visualization.client.events.SelectHandler;
 import com.google.gwt.visualization.client.visualizations.Visualization;
-
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArray;
+import com.google.gwt.dom.client.Element;
 
 public class TestBW implements EntryPoint {
 	
@@ -96,6 +86,7 @@ public class TestBW implements EntryPoint {
 	private Label inputFieldsQueryLabel = new Label();
 	private ListBox yearInput = new ListBox(false);
 	private TextBox wahlkreisInput = new TextBox();
+	private TextBox wahlkreisVote = new TextBox();
 	private List<String> dropList = Arrays.asList("2005", "2009", "2013");
 	
 	// Controls section -------------------------------------------------------
@@ -107,6 +98,7 @@ public class TestBW implements EntryPoint {
 	private Button generateButton = new Button("Generate");
 	private Button loaderButton = new Button("Load");
 	private Button analysisButton = new Button("Analyze");
+	private Button requestVoteButton = new Button("Request Vote Form");
 	private Button outputClear = new Button("Clear");
 	
 	// Output text (console) area ---------------------------------------------
@@ -136,6 +128,9 @@ public class TestBW implements EntryPoint {
 	// Query result: Wahlkreis Overview (Erststimmen )-------------------------
 	private HorizontalPanel wkOverviewErststimmenHPanel = new HorizontalPanel();
 	
+	// Submit vote panel ------------------------------------------------------
+	private HorizontalPanel submitVotePanel = new HorizontalPanel();
+	
 
 	// Services ---------------------------------------------------------------
 	// ------------------------------------------------------------------------
@@ -149,6 +144,7 @@ public class TestBW implements EntryPoint {
 	private WahlkreisOverviewServiceAsync wkOverviewSvc = GWT.create(WahlkreisOverviewService.class);
 	private GetKnappsterSiegerServiceAsync knappsterSiegerSvc = GWT.create(GetKnappsterSiegerService.class);
 	private WKOverviewErststimmenServiceAsync wkOverviewErststimmenSvc = GWT.create(WKOverviewErststimmenService.class);
+	private RequestVoteServiceAsync requestVoteSvc = GWT.create(RequestVoteService.class);
 	
 	String[] projectInput = new String[3];
 	String[] queryInput = new String[2];
@@ -159,14 +155,6 @@ public class TestBW implements EntryPoint {
 	 */
 	public void onModuleLoad() {
 		
-		// GUI elements -----------------------------------------------------------
-		// ------------------------------------------------------------------------
-		
-		// Seat distribution --------------------------------------------------
-		distPanel.setSize(""+ RootLayoutPanel.get().getOffsetWidth()+"px", ""+ RootLayoutPanel.get().getOffsetHeight()+"px");
-		//distPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		//distPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-		
 		// TODO: where to put this info?
 		colorMap.put("CS", new Color("skyblue", "#6CA5BC", Arrays.asList(0x00c0ff, 0x00a0ff, 0x0080ff, 0x0060ff, 0x0040ff, 0x0020ff, 0x0000ff)));
 		colorMap.put("CD", new Color("slateblue", "#4A3F90", Arrays.asList(0x1e174c, 0x362988, 0x4f3cc4, 0x6a5acd, 0x8578d6, 0xa096df, 0xd7d2f1, 0xf2f1fb)));
@@ -176,6 +164,15 @@ public class TestBW implements EntryPoint {
 		colorMap.put("FD", new Color("gold", "#CCAC00", Arrays.asList(0x625300, 0xb39700, 0xccac00, 0xe6c200, 0xffd700, 0xffe34e, 0xfff09d)));
 		colorMap.put("PI", new Color("orange", "#CC8400", Arrays.asList(0x892f00, 0xb13c00, 0xd84a00, 0xff5700, 0xff7127, 0xff8b4e, 0xffa576)));
 		
+		
+		// GUI elements -----------------------------------------------------------
+		// ------------------------------------------------------------------------
+		
+		// Seat distribution --------------------------------------------------
+		distPanel.setSize(""+ RootLayoutPanel.get().getOffsetWidth()+"px", ""+ RootLayoutPanel.get().getOffsetHeight()+"px");
+		//distPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		//distPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+				
 		// Wahlkreis winners --------------------------------------------------
 		wkHPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		wkHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
@@ -205,6 +202,11 @@ public class TestBW implements EntryPoint {
 		wkOverviewErststimmenHPanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		wkOverviewErststimmenHPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		wkOverviewErststimmenHPanel.setSpacing(50);
+		
+		// Voting form --------------------------------------------------------
+		submitVotePanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
+		submitVotePanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		submitVotePanel.setSpacing(80);
 
 		// Projects input section ---------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
@@ -235,10 +237,13 @@ public class TestBW implements EntryPoint {
 		queryInputDec.add(inputFieldsVPanelQuery);
 		inputFieldsHPanelQuery.add(yearInput);
 		inputFieldsHPanelQuery.add(wahlkreisInput);
+		inputFieldsHPanelQuery.add(wahlkreisVote);
 		inputMainVPanel.add(queryInputDec);
 		wahlkreisInput.setTitle("Give overview for which Wahlkreis (number)?");
+		wahlkreisVote.setTitle("Vote in which Wahlkreis (number)?");
 		yearInput.setWidth("100px");
 		wahlkreisInput.setWidth("100px");
+		wahlkreisVote.setWidth("100px");
 		for (int i = 0; i < dropList.size(); i++) yearInput.addItem(dropList.get(i));
 		
 		// Controls section ---------------------------------------------------
@@ -246,6 +251,7 @@ public class TestBW implements EntryPoint {
 		buttonsHPanel.add(generateButton);
 		buttonsHPanel.add(loaderButton);
 		buttonsHPanel.add(analysisButton);
+		buttonsHPanel.add(requestVoteButton);
 		buttonsHPanel.add(outputClear);
 		controlsVPanel.add(buttonsPanelLabel);
 		controlsVPanel.add(buttonsHPanel);
@@ -329,8 +335,19 @@ public class TestBW implements EntryPoint {
 				getAnalysis();
 			}
 		});
-
 		
+		
+		// listen for mouse events on the request vote form button.
+		requestVoteButton.addClickHandler(new ClickHandler() {
+			@SuppressWarnings("deprecation")
+			public void onClick(ClickEvent event) {
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Requesting vote form ...");
+				requestVoteForm();
+			}
+		});
+		
+				
 		
 		// Load visualization API ---------------------------------------------
 		// --------------------------------------------------------------------
@@ -344,7 +361,6 @@ public class TestBW implements EntryPoint {
 		// Load the visualization api, passing the onLoadCallback to be called
 		// when loading is done.
 		VisualizationUtils.loadVisualizationApi(onLoadCallback, CoreChart.PACKAGE);
-		//VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoMap.PACKAGE);
 		VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoChart.PACKAGE);
 	}
 
@@ -367,7 +383,8 @@ public class TestBW implements EntryPoint {
 			public void onFailure(Throwable caught) {
 
 				ta.setText(ta.getText() + "\n" + "-> "+ 
-						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error setting up the database: " + caught.getMessage());
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error setting up the database: " + caught.getMessage());
 			}
 
 			@SuppressWarnings("deprecation")
@@ -384,7 +401,6 @@ public class TestBW implements EntryPoint {
 		input[2] = passwordBox.getText();
 
 		((SetupStaticDBServiceAsync) setupSvc).setupStaticDB(input, callback);
-
 	}
 	
 	/**
@@ -404,15 +420,16 @@ public class TestBW implements EntryPoint {
 		AsyncCallback<String> callback = new AsyncCallback<String>() {
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
-
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error generating data: " + caught.getMessage());
-				//serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": " +
+						"Error generating data: " + caught.getMessage());
 			}
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
-				//serverMessageLabel.setVisible(true);
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
+				
 			}
 		};
 
@@ -443,12 +460,15 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
 
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": Error loading data: " + caught.getMessage());
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error loading data: " + caught.getMessage());
 			}
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(String s) {
-				ta.setText(ta.getText() + "\n" + "-> "+ DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": " + s);
 			}
 		};
 
@@ -462,6 +482,9 @@ public class TestBW implements EntryPoint {
 	}
 
 
+	/**
+	 * Analyzes the data in the database according to the analysis services provided (see above)
+	 */
 	private void getAnalysis(){
 		
 		// Initialize the service proxies.
@@ -509,8 +532,6 @@ public class TestBW implements EntryPoint {
 		
 		
 		// Prepare parameters
-		//String[] projectInput = new String[3];
-		//String[] queryInput = new String[2];
 		projectInput[0] = serverName.getText();
 		projectInput[1] = dbInputBox.getText();
 		projectInput[2] = passwordBox.getText();
@@ -520,21 +541,42 @@ public class TestBW implements EntryPoint {
 		
 		// Setup all required callback objects and 
 		// make the call to each respective service.
+		// All other services require this one to finish first, so delay their
+		// asynchronous calls to the callback for this service. 
 		((SeatDistributionServiceAsync) seatDistSvc).getSeatDistribution(projectInput, queryInput, setupSeatDistCallback());
-		
-		
-		
-		/*((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
-		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
-		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
-		((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
-		((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
-		((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());*/
 	}
 			
+	/**
+	 * Request a vote form and binds it to the UI
+	 */
+	private void requestVoteForm(){
+		
+		// Initialize the service proxy.
+		if (requestVoteSvc == null) {
+			requestVoteSvc = (RequestVoteServiceAsync) GWT.create(RequestVoteService.class);
+			ServiceDefTarget target = (ServiceDefTarget) requestVoteSvc;
+			target.setServiceEntryPoint(GWT.getModuleBaseURL() + "requestVote");
+		}
+		
+		// TODO: manage inputs
+		
+		// Make the call to the loadData service.
+		String[] input = new String[3];
+		String[] query = new String[3];
+		input[0] = serverName.getText();
+		input[1] = dbInputBox.getText();
+		input[2] = passwordBox.getText();
+		query[0] = dropList.get(yearInput.getSelectedIndex());
+		query[1] = wahlkreisVote.getText();
+		
+		// Request voting form.
+		((RequestVoteServiceAsync) requestVoteSvc).requestVote(input, query, setupRequestVoteCallback());
+		
+	}
+	
+	
 	// Setup callback objects -------------------------------------------------
 	// ------------------------------------------------------------------------
-	
 	
 	// seat distribution
 	public AsyncCallback< ArrayList<ArrayList<String>> > setupSeatDistCallback(){
@@ -565,17 +607,17 @@ public class TestBW implements EntryPoint {
 				pcharts.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 				
 				// Dummy (empty) start GeoChart
+				GeoChart.Options opts = GeoChart.Options.create();
 				DataTable dt = DataTable.create();
 				dt.addColumn(ColumnType.STRING, "Bundesland");
 				dt.addColumn(ColumnType.NUMBER, "Votes");
 				dt.addRows(1);
-				final GeoChart.Options opts = GeoChart.Options.create();
 				opts.setRegion("DE");
 				opts.setResolution(GeoChart.RESOLUTION.PROVINCES);
 			    opts.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
 			    opts.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
 			    opts.keepAspectRatio(false);
-			    final GeoChart gmap = new GeoChart(dt, opts);
+			    GeoChart gmap = new GeoChart(dt, opts);
 				
 				distPanel.add(gmap, 0, 0);
 				
@@ -600,7 +642,7 @@ public class TestBW implements EntryPoint {
 													 createOptions(currentHeader.get(0), formatted));
 					
 					
-					// Build Geo charts
+					// Build Geo chart
 					//////////////////////////////////////////////////////////////
 					
 					final HashMap<String, Integer> tablesMap= new HashMap<String, Integer>();
@@ -627,7 +669,7 @@ public class TestBW implements EntryPoint {
 						filteredHeader.add(currentMapHeader.get(j));
 					}
 					
-					Iterator it = names.iterator();
+					Iterator<String> it = names.iterator();
 					while(it.hasNext()){
 						
 						String filterString = ((String) it.next()).toUpperCase();
@@ -644,12 +686,11 @@ public class TestBW implements EntryPoint {
 						
 						GeoChart.Options options = GeoChart.Options.create();					
 						options.setRegion("DE");
-
 						options.setResolution(GeoChart.RESOLUTION.PROVINCES);
 					    options.setHeight((int)(RootLayoutPanel.get().getOffsetHeight()*0.95));
 					    options.setWidth((int)(RootLayoutPanel.get().getOffsetWidth()));
 					    options.keepAspectRatio(false);
-					    options.setColors(colorMap.get(filterString.substring(0, 2).toUpperCase()).name2);	
+					    options.setColors(colorMap.get(filterString.substring(0, 2).toUpperCase()).alt);	
 					    
 					    // Add new Geo chart to collection of available geo charts
 					    GeoChart chart = new GeoChart(createTableForMapchart(filtered, filteredHeader), options);
@@ -661,14 +702,14 @@ public class TestBW implements EntryPoint {
 					// End build Geo charts
 					///////////////////////////////////////////////////////////////
 					
+					
+					
 					// Store piechart in collection
 					pcharts.add(piechart);
 
 					// Handler for mouse over event on current piechart
 					piechart.addOnMouseOverHandler(new OnMouseOverHandler() {
-						@SuppressWarnings("deprecation")
 						public void onMouseOverEvent(OnMouseOverEvent event) {
-						
 							dpanel.setVisible(true);
 							String selected = pieChartData.getValueString(event.getRow(), 0)+"$$"+index;
 							dpanel.showWidget(tablesMap.get(selected.toUpperCase()));				
@@ -682,7 +723,7 @@ public class TestBW implements EntryPoint {
 				distPanel.add(pcharts, 0, 0);
 				tabPanel.add(distPanel, "Verteilung");
 				
-				// TODO: fix this crap
+				// Call all dependent services
 				((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
 				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 				((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
@@ -715,7 +756,6 @@ public class TestBW implements EntryPoint {
 						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreissieger analysis complete.");
 				
 				setupUITables(s, "Wahlkreissieger", (CellPanel)wkHPanel);
-				
 			}
 		};
 
@@ -797,7 +837,6 @@ public class TestBW implements EntryPoint {
 		return callback;
 	}
 	
-	
 	// knappsterSieger
 	public AsyncCallback< ArrayList<ArrayList<String>> > setupKnappsterSiegerCallback(){
 
@@ -848,6 +887,40 @@ public class TestBW implements EntryPoint {
 		return callback;
 	}
 	
+	// Request voting form
+	public AsyncCallback< ArrayList<ArrayList<String>> > setupRequestVoteCallback(){
+		
+		AsyncCallback< ArrayList<ArrayList<String>> > callback = new AsyncCallback< ArrayList<ArrayList<String>> >() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while getting voting form: " + caught.getMessage() + ". " +
+								"Has the data been generated and uploaded to the database?");
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(ArrayList<ArrayList<String>> s) {
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Voting form now available.");
+
+				setupUITables(s, "Stimmzettel", (CellPanel)submitVotePanel);
+			}
+		};
+
+		return callback;
+	}
+	
+	
+	/**
+	 * Takes an incoming table collection representation as list of string lists
+	 * and couples them to the graphic interface
+	 * @param s - table collection representation
+	 * @param tabName - Name of the tab to which the resulting tables should be coupled
+	 * @param layoutPanel - the "root" layout panel of the tab.
+	 */
 	public void setupUITables(ArrayList<ArrayList<String>> s, String tabName, CellPanel layoutPanel){
 		
 		HorizontalPanel htabPanel = new HorizontalPanel();
@@ -889,6 +962,7 @@ public class TestBW implements EntryPoint {
 			layoutPanel.add(vPanel);
 		}
 	
+		// TODO : replace already existing tab if possible
 		htabPanel.add(layoutPanel);	
 		tabPanel.add(htabPanel, tabName);
 		
@@ -896,18 +970,22 @@ public class TestBW implements EntryPoint {
 	
 	
 	
-	// Other methods / static classes -----------------------------------------
+	// Helper methods and classes -----------------------------------------
 	// ------------------------------------------------------------------------
 
 	// Seat distribution ------------------------------------------------------
+	
 	/**
-	 * Options for pie chart.
+	 * Returns options object for a pie chart.
+	 * @param title - title the Piechart should have
+	 * @param formatted - the data to be modelled.
+	 * @return PieOptions object.
 	 */
 	private PieOptions createOptions(String title, List<TableEntry> formatted) {
 		
 		List<String> colors =  new ArrayList<String>();
 		for (int i = 0; i < formatted.size(); i++){
-			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)).name1);
+			colors.add((String)colorMap.get(formatted.get(i).cols.get(0).toUpperCase().substring(0, 2)).name);
 		}
 	    String[] c = new String[colors.size()];
 	    
@@ -926,8 +1004,14 @@ public class TestBW implements EntryPoint {
 		return options;
 	}
 
+	
+	// TODO: merge createTable?
+	
 	/**
 	 * Create data source to feed to pie chart.
+	 * @param fromServer - formatted data.
+	 * @param header- header info such as table name, column names
+	 * @return DataTable object.
 	 */
 	private AbstractDataTable createTableForPiechart(List<TableEntry> fromServer, ArrayList<String> header) {
 
@@ -948,7 +1032,12 @@ public class TestBW implements EntryPoint {
 	}
 	
 	
-	// TODO: merge createTable?
+	/**
+	 * Create data source to feed to geo chart.
+	 * @param fromServer - formatted data.
+	 * @param header- header info such as table name, column names
+	 * @return DataTable object.
+	 */
 	private AbstractDataTable createTableForMapchart(List<TableEntry> fromServer, ArrayList<String> header) {
 
 		DataTable dataTable = DataTable.create();
@@ -967,11 +1056,10 @@ public class TestBW implements EntryPoint {
 		return dataTable;
 	}
 
-	
-	// Cell Tables info --------------------------------------------------------	
-	
+		
 	/**
-	 * A class representing a row of a cell table
+	 * A class representing a row of a cell table.
+	 * A row is modeled as a list of strings.
 	 */
 	public static class TableEntry {
 		private final ArrayList<String> cols;
@@ -982,8 +1070,8 @@ public class TestBW implements EntryPoint {
 	}
 	
 	/**
-	 *Wrapper for the TextColumn class, extend provided info by a column
-	 *number of interest ( = index)
+	 * Wrapper for the TextColumn class, extend provided info by a column
+	 * number of interest ( = index)
 	 */
 	public class TextColumnWrapper {
 		private int index = -1;
@@ -1000,28 +1088,39 @@ public class TestBW implements EntryPoint {
 		};
 	}
 	
+	
+	
+	/**
+	 * A color class used to model a color using a main name, an alternative,
+	 * and a list of shades in hexademical encoding.
+	 */
 	public class Color {
-		String name1;
-		String name2;
+		String name;
+		String alt;
 		List<Integer> hex;
 		
-		Color(String name1, String name2){
-			this.name1 = name1;
-			this.name2 = name2;
+		Color(String name, String alt){
+			this.name = name;
+			this.alt = alt;
 		}
 		
-		Color(String name1,  String name2, List<Integer> hex){
-			this.name1 = name1;
-			this.name2 = name2;
+		Color(String name,  String alt, List<Integer> hex){
+			this.name = name;
+			this.alt = alt;
 			this.hex = hex;
 		}
 	}
 	
-		
+	/**
+	 * Converts a table from ArrayList<String> format to ArrayList<TableEntry>
+	 * @param toBeParsed - input table
+	 * @param colLength - the number of columns in the original table.
+	 * @return formatted table.
+	 */
 	public List<TableEntry> extractRows(ArrayList<String> toBeParsed, int colLength){
-		
+
 		ArrayList<TableEntry> result = new ArrayList<TableEntry>();
-		
+
 		for (int i = 0; i < toBeParsed.size(); i=i+colLength+1){
 			ArrayList<String> temp = new ArrayList<String>();
 			for (int j = 0; j < colLength; j++){
@@ -1029,75 +1128,70 @@ public class TestBW implements EntryPoint {
 			}
 			result.add(new TableEntry(temp));
 		}
-		
+
 		return result;
 	}
-	
-	
-	
-	
-	
-	
-	
 
-public static class GeoChart extends Visualization<GeoChart.Options> implements Selectable {
 
-	public static final String PACKAGE = "geochart";
-	
-	public enum RESOLUTION {
-		COUNTRIES,PROVINCES,METROS;
-	}
-	
-	
-	public static class Options extends CommonChartOptions {
-		public static Options create() {
-			return JavaScriptObject.createObject().cast();
+	/**
+	 * Wrapper class providing the GeoChart visualization widget.
+	 */
+	public static class GeoChart extends Visualization<GeoChart.Options> implements Selectable {
+
+		public static final String PACKAGE = "geochart";
+
+		public enum RESOLUTION {
+			COUNTRIES,PROVINCES,METROS;
 		}
-		
-		protected Options()  {}
-		
-		public final void setRegion(String region)  {
-			this.set("region",region);
-		}
-		
-		public final void setResolution(RESOLUTION resolution) {
-			this.set("resolution",resolution.toString().toLowerCase());
-		}
-		
-		public final void keepAspectRatio(boolean b) {
-			this.set("keepAspectRatio", b);
-		}
-	}
-	
-	public GeoChart() {
-		super();
-	}
-	
-	public GeoChart(AbstractDataTable data,Options options) {
-		super(data,options);
-	}
-	
-	@Override
-	public void addSelectHandler(SelectHandler handler) {
-		Selection.addSelectHandler(this, handler);
-	}
 
-	@Override
-	public JsArray<Selection> getSelections() {
-		return Selection.getSelections(this);
-	}
+		public static class Options extends CommonChartOptions {
+			public static Options create() {
+				return JavaScriptObject.createObject().cast();
+			}
 
-	@Override
-	public void setSelections(JsArray<Selection> sel) {
-		Selection.setSelections(this, sel);
-	}
+			protected Options()  {}
 
-	@Override
-	protected native JavaScriptObject createJso(Element parent) /*-{
+			public final void setRegion(String region)  {
+				this.set("region",region);
+			}
+
+			public final void setResolution(RESOLUTION resolution) {
+				this.set("resolution",resolution.toString().toLowerCase());
+			}
+
+			public final void keepAspectRatio(boolean b) {
+				this.set("keepAspectRatio", b);
+			}
+		}
+
+		public GeoChart() {
+			super();
+		}
+
+		public GeoChart(AbstractDataTable data,Options options) {
+			super(data,options);
+		}
+
+		@Override
+		public void addSelectHandler(SelectHandler handler) {
+			Selection.addSelectHandler(this, handler);
+		}
+
+		@Override
+		public JsArray<Selection> getSelections() {
+			return Selection.getSelections(this);
+		}
+
+		@Override
+		public void setSelections(JsArray<Selection> sel) {
+			Selection.setSelections(this, sel);
+		}
+
+		@Override
+		protected native JavaScriptObject createJso(Element parent) /*-{
 		return new $wnd.google.visualization.GeoChart(parent);
 	}-*/;
-	
-}
 
+	}
 }
 
