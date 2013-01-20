@@ -32,6 +32,16 @@ public class DBManager {
 		}
 	}
 
+	// Datenbankverbindung trennen
+	public void disconnect() {
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	// Gibt das erste Ergebnistupel der Abfrage zurueck
 	public String getQueryResult(ResultSet rs, String query)
 			throws SQLException {

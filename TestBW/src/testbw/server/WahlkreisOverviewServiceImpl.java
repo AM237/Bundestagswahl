@@ -24,6 +24,7 @@ public class WahlkreisOverviewServiceImpl extends RemoteServiceServlet
 		manager.connect();
 
 		Statement st = manager.getStatement();
+
 		ResultSet rs = null;
 		DataAnalyzer analyzer = new DataAnalyzer(st, rs);
 
@@ -32,10 +33,14 @@ public class WahlkreisOverviewServiceImpl extends RemoteServiceServlet
 			ArrayList<ArrayList<String>> result = analyzer
 					.getWahlkreisOverview(queryInput);
 			st.close();
+			manager.disconnect();
+
 			return result;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		manager.disconnect();
+
 		return null;
 	}
 }

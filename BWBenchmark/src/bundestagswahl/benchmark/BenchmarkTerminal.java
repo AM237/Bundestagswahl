@@ -43,7 +43,7 @@ public class BenchmarkTerminal extends Thread {
 				HttpResponse response = httpclient.execute(httpget);
 				long delay = System.currentTimeMillis() - time;
 				BWBenchmark.addResultTime(query - 1, delay);
-				System.out.println(response.getStatusLine());
+				System.out.println(response.getStatusLine());				
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
 					InputStream instream = entity.getContent();

@@ -32,10 +32,13 @@ public class SeatDistributionServiceImpl extends RemoteServiceServlet implements
 			ArrayList<ArrayList<String>> result = analyzer
 					.getSeatDistribution(queryInput);
 			st.close();
+			manager.disconnect();
 			return result;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		manager.disconnect();
 		return null;
 	}
+
 }

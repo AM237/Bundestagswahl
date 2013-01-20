@@ -32,10 +32,13 @@ public class GetMembersServiceImpl extends RemoteServiceServlet implements
 			ArrayList<ArrayList<String>> result = analyzer
 					.getMembers(queryInput);
 			st.close();
+			manager.disconnect();
+
 			return result;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		manager.disconnect();
 		return null;
 	}
 }

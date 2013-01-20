@@ -32,10 +32,14 @@ public class GetKnappsterSiegerServiceImpl extends RemoteServiceServlet
 			ArrayList<ArrayList<String>> result = analyzer
 					.getKnappsterSieger(queryInput);
 			st.close();
+			manager.disconnect();
+
 			return result;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		manager.disconnect();
+
 		return null;
 	}
 }

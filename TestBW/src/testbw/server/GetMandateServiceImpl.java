@@ -32,10 +32,14 @@ public class GetMandateServiceImpl extends RemoteServiceServlet implements
 			ArrayList<ArrayList<String>> result = analyzer
 					.getUeberhangsmandate(queryInput);
 			st.close();
+			manager.disconnect();
+
 			return result;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		manager.disconnect();
+
 		return null;
 	}
 }

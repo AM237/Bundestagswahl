@@ -33,12 +33,14 @@ public class WahlkreissiegerServiceImpl extends RemoteServiceServlet implements
 			ArrayList<ArrayList<String>> result = analyzer
 					.getWahlkreissieger(queryInput);
 			st.close();
+			manager.disconnect();
 			return result;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		}
+		manager.disconnect();
 		return null;
 	}
 }

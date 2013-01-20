@@ -40,8 +40,10 @@ public class BWBenchmark {
 	static int numberRequests;
 	static double requestDelay;
 
+	
 	static double[] resultTime;
 
+	
 	public static void main(String[] args) throws Exception {
 
 		resultTime = new double[6];
@@ -94,7 +96,7 @@ public class BWBenchmark {
 	public static synchronized void printResultTimes() {
 		for (int i = 0; i < 6; i++) {
 			System.out.println("Query " + Integer.toString(i + 1) + " : "
-					+ resultTime[i] / 6.0f);
+					+ resultTime[i] / numberRequests /1000+ " s" );
 		}
 	}
 
