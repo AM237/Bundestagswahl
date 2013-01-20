@@ -763,14 +763,14 @@ public class DataAnalyzer {
 		String wahlkreisNr = queryInput[1];
 		
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmeliste AS ( " +
-				"SELECT p.name AS kandidatenname, t.name AS parteiname " +
+				"SELECT p.name AS kandidatenname, t.name AS parteiname, p.politikernummer " +
 				"FROM " +
 				"	(SELECT * FROM direktkandidat WHERE jahr = "+jahrName+" AND wahlkreis = "+ wahlkreisNr +") d " +
 				"	JOIN politiker p ON p.politikernummer = d.politiker " +
 				"   JOIN partei t ON d.partei = t.parteinummer);");
 		
 		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmeliste AS ( " +
-				"SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname " +
+				"SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname, p.politikernummer " +
 				"FROM " +
 				"	(SELECT listenplatz, partei, politiker, bundesland " +
 				"    FROM listenkandidat WHERE jahr = "+jahrName+") l " +
@@ -784,8 +784,8 @@ public class DataAnalyzer {
 												"zweitstimmeliste");
 
 		List<List<String>> colNames = Arrays.asList(
-				Arrays.asList("Kandidatenname", "Partei"),
-				Arrays.asList("Listenplatz", "Parteiname", "Kandidatenname")
+				Arrays.asList("Kandidatenname", "Parteiname", "Politikernummer"),
+				Arrays.asList("Listenplatz", "Parteiname", "Kandidatenname", "Politikernummer")
 		);
 		
 		
@@ -802,6 +802,36 @@ public class DataAnalyzer {
 		}
 
 		return result;
+	}
+	
+	
+	
+	/**
+	 * Submit vote forms (tables)
+	 */
+	public void submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections) throws SQLException {
+				
+		String jahrName = queryInput[0];
+		
+		// Wahlkreis nr. where voting took place.
+		String wahlkreisNr = queryInput[1];
+		
+		// 1 Selection per table, should be looped twice, once for the erststimme,
+		// and once for the zweitstimme
+		for (int i = 0; i < selections.size(); i++){
+			ArrayList<String> currentSelection = selections.get(i);
+			
+			String name = currentSelection.get(0);
+			String party = currentSelection.get(1);
+			String politicianNr = currentSelection.get(2);
+			
+			// Debug
+			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreisNr + ", name: " + name + ", party: " + party + ", politicianNr " + politicianNr);
+			
+			/*
+			 * Insert update queries here
+			 */
+		}
 	}
 	
 	

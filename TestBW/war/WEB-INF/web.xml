@@ -57,8 +57,7 @@
     <url-pattern>/testbw/loader</url-pattern>
   </servlet-mapping>
   
-  
-  
+ 
   <servlet>
     <servlet-name>SeatDistributionServiceImpl</servlet-name>
     <servlet-class>testbw.server.SeatDistributionServiceImpl</servlet-class>
@@ -141,6 +140,17 @@
   <servlet-mapping>
     <servlet-name>RequestVoteServiceImpl</servlet-name>
     <url-pattern>/testbw/requestVote</url-pattern>
+  </servlet-mapping>
+  
+  
+  <servlet>
+    <servlet-name>SubmitVoteServiceImpl</servlet-name>
+    <servlet-class>testbw.server.SubmitVoteServiceImpl</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>SubmitVoteServiceImpl</servlet-name>
+    <url-pattern>/testbw/submitVote</url-pattern>
   </servlet-mapping>
 
 

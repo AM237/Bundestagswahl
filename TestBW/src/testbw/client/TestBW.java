@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import testbw.util.InputDirectory;
 
@@ -34,6 +35,7 @@ import com.google.gwt.user.cellview.client.HasKeyboardSelectionPolicy.KeyboardSe
 import com.google.gwt.user.cellview.client.SimplePager;
 import com.google.gwt.user.cellview.client.SimplePager.TextLocation;
 import com.google.gwt.user.cellview.client.TextColumn;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.AbsolutePanel;
@@ -149,8 +151,8 @@ public class TestBW implements EntryPoint {
 	private HorizontalPanel wkOverviewErststimmenHPanel = new HorizontalPanel();
 	
 	// Submit vote panel ------------------------------------------------------
-	private HorizontalPanel submitVotePanel = new HorizontalPanel();
-	
+	private VerticalPanel submitVotePanel = new VerticalPanel();
+	private Button submitVoteButton = new Button("Stimme abgeben");
 
 	// Services ---------------------------------------------------------------
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);	
@@ -164,6 +166,7 @@ public class TestBW implements EntryPoint {
 	private GetKnappsterSiegerServiceAsync knappsterSiegerSvc = GWT.create(GetKnappsterSiegerService.class);
 	private WKOverviewErststimmenServiceAsync wkOverviewErststimmenSvc = GWT.create(WKOverviewErststimmenService.class);
 	private RequestVoteServiceAsync requestVoteSvc = GWT.create(RequestVoteService.class);
+	private SubmitVoteServiceAsync submitVoteSvc = GWT.create(SubmitVoteService.class);
 	
 	
 	// Other global variables -------------------------------------------------
@@ -227,8 +230,9 @@ public class TestBW implements EntryPoint {
 		
 		// Voting form --------------------------------------------------------
 		submitVotePanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
-		submitVotePanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
-		submitVotePanel.setSpacing(30);
+		submitVotePanel.setVerticalAlignment(VerticalPanel.ALIGN_TOP);
+		submitVotePanel.setSize(""+ RootLayoutPanel.get().getOffsetWidth()+"px", ""+ RootLayoutPanel.get().getOffsetHeight()+"px");
+		//submitVotePanel.setSpacing(30);
 
 		// Projects input section ---------------------------------------------
 		inputFieldsVPanelProject.add(inputFieldsProjectLabel);
@@ -368,6 +372,8 @@ public class TestBW implements EntryPoint {
 				requestVoteForm();
 			}
 		});
+		
+
 		
 				
 		
@@ -582,7 +588,7 @@ public class TestBW implements EntryPoint {
 		
 		// TODO: manage inputs
 		
-		// Make the call to the loadData service.
+		// Make the call to the request vote service.
 		String[] input = new String[3];
 		String[] query = new String[3];
 		input[0] = serverName.getText();
@@ -934,22 +940,49 @@ public class TestBW implements EntryPoint {
 		return callback;
 	}
 	
+	// Submit voting form
+	public AsyncCallback<Void> setupSubmitVoteCallback(){
+		
+		AsyncCallback<Void> callback = new AsyncCallback<Void>() {
+
+			@SuppressWarnings("deprecation")
+			public void onFailure(Throwable caught) {
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +
+						": Error while submitting voting form: " + caught.getMessage());
+			}
+
+			@SuppressWarnings("deprecation")
+			public void onSuccess(Void v) {
+
+				ta.setText(ta.getText() + "\n" + "-> " + 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Voting form successfully submitted.");
+
+				Window.alert("Voting form successfully submitted");
+			}
+		};
+
+		return callback;
+	}
 	
 	public void setupVoteForms(ArrayList<ArrayList<String>> s, String tabName, CellPanel layoutPanel){
-		
-		HorizontalPanel htabPanel = new HorizontalPanel();
-		htabPanel.setSize(""+tabPanel.getOffsetWidth()+"px", ""+tabPanel.getOffsetHeight()+"px");
-		htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
-		htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_TOP);
+	
 		
 		VerticalPanel finalForm = new VerticalPanel();
 		finalForm.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 		finalForm.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		
+		HorizontalPanel htabPanel = new HorizontalPanel();
+		htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		htabPanel.setVerticalAlignment(HorizontalPanel.ALIGN_TOP);
+		htabPanel.setSpacing(30);
+		
 		Image headerPic = new Image(InputDirectory.stimmzettel);
 		finalForm.add(headerPic);
-		finalForm.add(htabPanel);
 		
+		// selected objects repository
+		final HashMap<Integer, CandidateInfo> selectedRepo = new HashMap<Integer, CandidateInfo>();
+
 		
 		for (int i = 0; i < s.size(); i=i+2){
 			
@@ -969,7 +1002,7 @@ public class TestBW implements EntryPoint {
 			// The pager used to display the current range.
 			RangeLabelPager rangeLabelPager = new RangeLabelPager();
 
-			CellList<CandidateInfo> cellList;
+			final CellList<CandidateInfo> cellList;
 			Images images = GWT.create(Images.class);
 		    CandidateCell candidateCell = new CandidateCell(images.candidate());
 
@@ -985,8 +1018,10 @@ public class TestBW implements EntryPoint {
 		    		new SingleSelectionModel<CandidateInfo>(CandidateInfo.KEY_PROVIDER);
 		    cellList.setSelectionModel(selectionModel);
 		    selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
-		      public void onSelectionChange(SelectionChangeEvent event) {
-		        //contactForm.setContact(selectionModel.getSelectedObject());
+		      
+		    	// Keep track of selection changes, update current choices
+		    	public void onSelectionChange(SelectionChangeEvent event) {
+		        selectedRepo.put(cellList.hashCode(),  selectionModel.getSelectedObject());
 		      }
 		    });
 		    
@@ -1008,13 +1043,62 @@ public class TestBW implements EntryPoint {
 		    dpanel.add(scroll);
 			vPanel.add(dpanel);
 			vPanel.add(rangeLabelPager);
-			layoutPanel.add(vPanel);
-			
+			htabPanel.add(vPanel);	
 		}
+		
+		
+		// listen for mouse events on the submit vote button.
+		submitVoteButton.addClickHandler(new ClickHandler() {
+			@SuppressWarnings("deprecation")
+			public void onClick(ClickEvent event) {
+				ta.setText(ta.getText() + "\n" + "-> "+ 
+						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Submitting vote ...");
+				
+				// send current choices to server
+				ArrayList<ArrayList<String>> choices = new ArrayList<ArrayList<String>>();
+				
+				Iterator<Map.Entry<Integer, CandidateInfo>> entries = selectedRepo.entrySet().iterator();
+				while (entries.hasNext()) {
+				    Map.Entry<Integer, CandidateInfo> entry = entries.next();
+				    CandidateInfo current = entry.getValue();
+				    
+				    ArrayList<String> temp = new ArrayList<String>();
+				    temp.add(current.name);
+				    temp.add(current.party);
+				    temp.add(current.politicianID);
+				    choices.add(temp);
+				}
+				
+				
+				
+				// Initialize the service proxy.
+				if (submitVoteSvc == null) {
+					submitVoteSvc = (SubmitVoteServiceAsync) GWT.create(SubmitVoteService.class);
+					ServiceDefTarget target = (ServiceDefTarget) submitVoteSvc;
+					target.setServiceEntryPoint(GWT.getModuleBaseURL() + "submitVote");
+				}
+			
+				
+				// Make the call to the submit vote service.
+				String[] input = new String[3];
+				String[] query = new String[3];
+				input[0] = serverName.getText();
+				input[1] = dbInputBox.getText();
+				input[2] = passwordBox.getText();
+				query[0] = dropList.get(yearInput.getSelectedIndex());
+				query[1] = wahlkreisVote.getText();
+				
+				// Request voting form.
+				((SubmitVoteServiceAsync) submitVoteSvc).submitVote(input, query, choices, setupSubmitVoteCallback());
+			}
+		});
+		
 	
 		// TODO : replace already existing tab if possible
-		htabPanel.add(layoutPanel);	
-		tabPanel.add(finalForm, tabName);
+		finalForm.add(htabPanel);
+		finalForm.add(submitVoteButton);
+		layoutPanel.add(finalForm);
+		tabPanel.add(layoutPanel, tabName);
 	}
 	
 	
@@ -1318,141 +1402,136 @@ public class TestBW implements EntryPoint {
 	}-*/;
 
 	}
-	
-	
-	
-	 // Cell List
-	 ///////////////////////////////////////////////////////////////////////////
-	
-	
-	  /**
-	   * Information about a candidate.
-	   */
-	  public static class CandidateInfo implements Comparable<CandidateInfo> {
 
-	    
-	    // The key provider that provides the unique ID of a candidate.
-	    public static final ProvidesKey<CandidateInfo> KEY_PROVIDER = new ProvidesKey<CandidateInfo>() {
-	      @Override
-	      public Object getKey(CandidateInfo item) {
-	        return item == null ? null : item.getId();
-	      }
-	    };
+	/**
+	 * Information about a candidate.
+	 */
+	public static class CandidateInfo implements Comparable<CandidateInfo> {
 
-	    private String name = "";
-	    private String listPos = "";
-	    private String party = "";
-	    
-	    private static int nextId = 0;
-	    
-	    // unique id per candidate
-	    private final int id;
-	    
-	    public CandidateInfo() {
-	    	this.id = nextId;
-	    	nextId++;
-	    }
 
-	    @Override
-	    public int compareTo(CandidateInfo o) {
-	    	return (o == null || o.name == null) ? -1 : -o.name.compareTo(name);
-	    }
+		// The key provider that provides the unique ID of a candidate.
+		public static final ProvidesKey<CandidateInfo> KEY_PROVIDER = new ProvidesKey<CandidateInfo>() {
+			@Override
+			public Object getKey(CandidateInfo item) {
+				return item == null ? null : item.getId();
+			}
+		};
 
-	    @Override
-	    public boolean equals(Object o) {
-	      if (o instanceof CandidateInfo) {
-	        return id == ((CandidateInfo) o).id;
-	      }
-	      return false;
-	    }
-	    
-	    public String getName() {return name;}
-	    public String getListPos() {return listPos;}
-	    public String getParty() {return party;}
-	    
-	    public void setName(String name) {this.name = name;}
-	    public void setListPos(String listpos) {this.listPos = listpos;}
-	    public void setParty(String party){this.party = party;}
-	    
-	    public void setProperty(String prop, String value){
-	    	String s = prop.toLowerCase();
-	    	if (s.contains("partei")) this.party = value;
-	    	else if (s.contains("name")) this.name = value;
-	    	else if (s.contains("platz")) this.listPos = value;
-	    }
-	        
-	    public int getId() { return this.id; }
+		private String name = "";
+		private String listPos = "";
+		private String party = "";
+		private String politicianID = "";
 
-	    @Override
-	    public int hashCode() { return id; }
-	  }
-	
-	  /**
-	   * candidate portrait used
-	   */
-	  static interface Images extends ClientBundle {
-	    ImageResource candidate();
-	  }
+		private static int nextId = 0;
 
-	  /**
-	   * The Cell used to render a {@link ContactInfo}.
-	   */
-	  static class CandidateCell extends AbstractCell<CandidateInfo> {
+		// unique id per candidate
+		private final int id;
 
-	    // html of the image used for candidates
-	    private final String imageHtml;
+		public CandidateInfo() {
+			this.id = nextId;
+			nextId++;
+		}
 
-	    public CandidateCell(ImageResource image) {
-	      this.imageHtml = AbstractImagePrototype.create(image).getHTML();
-	    }
+		@Override
+		public int compareTo(CandidateInfo o) {
+			return (o == null || o.name == null) ? -1 : -o.name.compareTo(name);
+		}
 
-	    @Override
-	    public void render(Context context, CandidateInfo value, SafeHtmlBuilder sb) {
-	      // Value can be null, so do a null check..
-	      if (value == null) {
-	        return;
-	      }
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof CandidateInfo) {
+				return id == ((CandidateInfo) o).id;
+			}
+			return false;
+		}
 
-	      sb.appendHtmlConstant("<table>");
+		public String getName() {return name;}
+		public String getListPos() {return listPos;}
+		public String getParty() {return party;}
 
-	      // Add the candidate image.
-	      sb.appendHtmlConstant("<tr><td rowspan='3'>");
-	      sb.appendHtmlConstant(imageHtml);
-	      sb.appendHtmlConstant("</td>");
+		public void setName(String name) {this.name = name;}
+		public void setListPos(String listpos) {this.listPos = listpos;}
+		public void setParty(String party){this.party = party;}
 
-	      // Add the remaining details
-	      sb.appendHtmlConstant("<td style='font-size:160%;'>");
-	      sb.appendEscaped(value.getName());
-	      sb.appendHtmlConstant("</td></tr><tr><td style='font-size:120%;'>");
-	      sb.appendEscaped(value.getListPos().equals("") ? value.getParty() : value.getParty() + " (Listenplatz " + value.getListPos() + ")");
-	      sb.appendHtmlConstant("</td></tr></table>");
-	    }
-	  }
-	  
-	  
-	  
-	  /**
-	   * A pager that displays the current range without any controls to change the
-	   * range.
-	   */
-	  public class RangeLabelPager extends AbstractPager {
+		public void setProperty(String prop, String value){
+			String s = prop.toLowerCase();
+			if (s.contains("parteiname")) this.party = value;
+			else if (s.contains("kandidatenname")) this.name = value;
+			else if (s.contains("listenplatz")) this.listPos = value;
+			else if (s.contains("politikernummer")) this.politicianID = value;
+		}
 
-	    // Labels shows range
-	    private final HTML label = new HTML();
+		public int getId() { return this.id; }
 
-	    public RangeLabelPager() {
-	      initWidget(label);
-	    }
+		@Override
+		public int hashCode() { return id; }
+	}
 
-	    @Override
-	    protected void onRangeOrRowCountChanged() {
-	      HasRows display = getDisplay();
-	      Range range = display.getVisibleRange();
-	      int start = range.getStart();
-	      int end = start + range.getLength();
-	      label.setText(start + " - " + end + " : " + display.getRowCount(),
-	          HasDirection.Direction.LTR);
-	    }
-	  }
+	/**
+	 * candidate portrait used
+	 */
+	static interface Images extends ClientBundle {
+		ImageResource candidate();
+	}
+
+	/**
+	 * The Cell used to render a {@link ContactInfo}.
+	 */
+	static class CandidateCell extends AbstractCell<CandidateInfo> {
+
+		// html of the image used for candidates
+		private final String imageHtml;
+
+		public CandidateCell(ImageResource image) {
+			this.imageHtml = AbstractImagePrototype.create(image).getHTML();
+		}
+
+		@Override
+		public void render(Context context, CandidateInfo value, SafeHtmlBuilder sb) {
+			// Value can be null, so do a null check..
+			if (value == null) {
+				return;
+			}
+
+			sb.appendHtmlConstant("<table>");
+
+			// Add the candidate image.
+			sb.appendHtmlConstant("<tr><td rowspan='3'>");
+			sb.appendHtmlConstant(imageHtml);
+			sb.appendHtmlConstant("</td>");
+
+			// Add the remaining details
+			sb.appendHtmlConstant("<td style='font-size:160%;'>");
+			sb.appendEscaped(value.getName());
+			sb.appendHtmlConstant("</td></tr><tr><td style='font-size:120%;'>");
+			sb.appendEscaped(value.getListPos().equals("") ? value.getParty() : value.getParty() + " (Listenplatz " + value.getListPos() + ")");
+			sb.appendHtmlConstant("</td></tr></table>");
+		}
+	}
+
+
+	/**
+	 * A pager that displays the current range without any controls to change the
+	 * range.
+	 */
+	public class RangeLabelPager extends AbstractPager {
+
+		// Labels shows range
+		private final HTML label = new HTML();
+
+		public RangeLabelPager() {
+			initWidget(label);
+		}
+
+		@Override
+		protected void onRangeOrRowCountChanged() {
+			HasRows display = getDisplay();
+			Range range = display.getVisibleRange();
+			int start = range.getStart();
+			int end = start + range.getLength();
+			label.setText(start + " - " + end + " : " + display.getRowCount(),
+					HasDirection.Direction.LTR);
+		}
+	}
 }
 
