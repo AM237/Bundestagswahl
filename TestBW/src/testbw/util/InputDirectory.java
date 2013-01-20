@@ -20,4 +20,6 @@ public class InputDirectory {
 	public final static String erststimmen09Pfad = "..\\csv\\erststimmen2009.csv";
 	public final static String zweitstimmen05Pfad = "..\\csv\\zweitstimmen2005.csv";
 	public final static String zweitstimmen09Pfad = "..\\csv\\zweitstimmen2009.csv";
+	
+	public final static String stimmzettel = "http://127.0.0.1:8888/img/stimmzettel.png";
 }
