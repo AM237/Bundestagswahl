@@ -155,6 +155,13 @@ public class TestBW implements EntryPoint {
 	private Button submitVoteButton = new Button("Stimme abgeben");
 
 	// Services ---------------------------------------------------------------
+	
+	/*
+	 * Dependencies:
+	 * 
+	 * 1. * -> seatDistSvc
+	 * 2. getMembersSvc -> get Wahlkreissieger
+	 */
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);	
 	private GeneratorServiceAsync generateSvc = GWT.create(GeneratorService.class);
 	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
@@ -752,7 +759,7 @@ public class TestBW implements EntryPoint {
 				
 				// Call all dependent services
 				((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
-				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
+				//((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 				((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
 				((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
 				((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
@@ -783,6 +790,9 @@ public class TestBW implements EntryPoint {
 						DateTimeFormat.getFullTimeFormat().format(new Date()) +": Wahlkreissieger analysis complete.");
 				
 				setupUITables(s, "Wahlkreissieger", (CellPanel)wkHPanel);
+				
+				// Call dependent services
+				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 			}
 		};
 
