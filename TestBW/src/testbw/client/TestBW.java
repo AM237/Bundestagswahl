@@ -154,6 +154,12 @@ public class TestBW implements EntryPoint {
 	private Button submitVoteButton = new Button("Stimme abgeben");
 
 	// Services ---------------------------------------------------------------
+
+	/*
+	 * Dependencies:
+	 * 
+	 * 1. * -> seatDistSvc 2. getMembersSvc -> get Wahlkreissieger
+	 */
 	private SetupStaticDBServiceAsync setupSvc = GWT.create(SetupStaticDBService.class);
 	private GeneratorServiceAsync generateSvc = GWT.create(GeneratorService.class);
 	private LoaderServiceAsync loaderSvc = GWT.create(LoaderService.class);
@@ -755,6 +761,7 @@ public class TestBW implements EntryPoint {
 
 				setupUITables(s, "Wahlkreissieger", (CellPanel) wkHPanel);
 
+				// Call dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Bundestag members analysis started.");
 				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
 
@@ -803,6 +810,7 @@ public class TestBW implements EntryPoint {
 
 				setupUITables(s, "Ueberhangsmandate", (CellPanel) mandateHPanel);
 
+				// Call dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis started.");
 				((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
 
