@@ -1,7 +1,8 @@
 package bundestagswahl.benchmark;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.http.HttpEntity;
@@ -43,10 +44,14 @@ public class BenchmarkTerminal extends Thread {
 				HttpResponse response = httpclient.execute(httpget);
 				long delay = System.currentTimeMillis() - time;
 				BWBenchmark.addResultTime(query - 1, delay);
-				System.out.println(response.getStatusLine());				
+				System.out.println(response.getStatusLine());
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
-					InputStream instream = entity.getContent();
+					InputStreamReader instream = new InputStreamReader(
+							entity.getContent());
+					BufferedReader reader = new BufferedReader(instream);
+					System.out.println(reader.readLine());
+
 					instream.close();
 				}
 				sleep((long) (1000.0f * requestDelay * (Math.random() * 0.4 + 0.8)));

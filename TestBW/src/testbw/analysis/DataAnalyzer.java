@@ -22,8 +22,7 @@ public class DataAnalyzer {
 	/**
 	 * Returns seat distribution of the Bundestag.
 	 */
-	public ArrayList<ArrayList<String>> getSeatDistribution(String[] queryInput)
-			throws SQLException {
+	public ArrayList<ArrayList<String>> getSeatDistribution(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahr = queryInput[0];
@@ -31,12 +30,7 @@ public class DataAnalyzer {
 		// Auswertung ---------------------------------------------------
 
 		// -- View 'stimmenpropartei'
-		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( "
-				+ "SELECT p.name AS partei, t1.anzahl AS anzahl FROM "
-				+ "((SELECT partei, sum(anzahl) AS anzahl "
-				+ " FROM zweitstimmen " + " WHERE jahr = '" + jahr + "' "
-				+ " GROUP BY partei) t1 " + "JOIN "
-				+ "partei p ON t1.partei::text = p.parteinummer::text));");
+		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( " + "SELECT p.name AS partei, t1.anzahl AS anzahl FROM " + "((SELECT partei, sum(anzahl) AS anzahl " + " FROM zweitstimmen " + " WHERE jahr = '" + jahr + "' " + " GROUP BY partei) t1 " + "JOIN " + "partei p ON t1.partei::text = p.parteinummer::text));");
 
 		// -- Trigger Divisoren -> ItrErgebnisse
 		// -- Typ: vordefiniert?
@@ -44,14 +38,9 @@ public class DataAnalyzer {
 		st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
 		st.executeUpdate("DROP FUNCTION IF EXISTS berechneitr() CASCADE;");
 		st.executeUpdate("DELETE FROM itrergebnisse;");
-		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ "
-				+ "BEGIN "
-				+ "  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); "
-				+ "  RETURN NEW; " + "END; " + "$$ LANGUAGE plpgsql;");
+		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " + "BEGIN " + "  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " + "  RETURN NEW; " + "END; " + "$$ LANGUAGE plpgsql;");
 
-		st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse "
-				+ "AFTER INSERT ON divisoren " + "FOR EACH ROW "
-				+ "EXECUTE PROCEDURE berechneitr();");
+		st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse " + "AFTER INSERT ON divisoren " + "FOR EACH ROW " + "EXECUTE PROCEDURE berechneitr();");
 
 		// -- Load: Divisoren
 		// -- Typ: Vorberechnung?
@@ -60,52 +49,27 @@ public class DataAnalyzer {
 		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
 
 		// -- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS ("
-				+ "WITH sitzzuweisung AS ( "
-				+ "	SELECT * FROM itrergebnisse "
-				+ "	ORDER BY anzahl DESC "
-				+ "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '"
-				+ jahr
-				+ "')), "
-				+
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS (" + "WITH sitzzuweisung AS ( " + "	SELECT * FROM itrergebnisse " + "	ORDER BY anzahl DESC " + "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahr + "')), " +
 
-				"unfiltered AS ( "
-				+ "	SELECT partei AS parteiname, COUNT(*) AS sitze "
-				+ "	FROM sitzzuweisung "
-				+ "	GROUP BY partei), "
-				+
+		"unfiltered AS ( " + "	SELECT partei AS parteiname, COUNT(*) AS sitze " + "	FROM sitzzuweisung " + "	GROUP BY partei), " +
 
-				"filtered AS ( "
-				+ "SELECT * FROM unfiltered "
-				+ "WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) "
-				+
+		"filtered AS ( " + "SELECT * FROM unfiltered " + "WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) " +
 
-				"SELECT parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze "
-				+ "FROM filtered);");
+		"SELECT parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze " + "FROM filtered);");
 
 		// -- Auswertungsanfrage: Endergebnisse (Erststimmen - wiederverwendbare
 		// Tabellen)
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvotes AS ("
-				+ "  SELECT wahlkreis, max(anzahl) AS max "
-				+ "  FROM erststimmen " + "  WHERE jahr = '" + jahr + "' "
-				+ "  GROUP BY wahlkreis);");
+		st.executeUpdate("CREATE OR REPLACE VIEW maxvotes AS (" + "  SELECT wahlkreis, max(anzahl) AS max " + "  FROM erststimmen " + "  WHERE jahr = '" + jahr + "' " + "  GROUP BY wahlkreis);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS ("
-				+ "	SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max "
-				+ "	FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '"
-				+ jahr + "') e "
-				+ "	ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
+		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS (" + "	SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " + "	FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '" + jahr + "') e " + "	ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS ("
-				+ "	SELECT wahlkreis, max, min(kandnum) AS kandnum "
-				+ "	FROM maxvoteskand " + "	GROUP BY wahlkreis, max);");
+		st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS (" + "	SELECT wahlkreis, max, min(kandnum) AS kandnum " + "	FROM maxvoteskand " + "	GROUP BY wahlkreis, max);");
 
 		// -- Auswertungsanfrage: Endergebnisse (Erststimmen)
-		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS ("
-				+
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS (" +
 
-				// Tabellen werden wiederverwendet - > als eigene Views
-				// definiert
+		// Tabellen werden wiederverwendet - > als eigene Views
+		// definiert
 				/*
 				 * "WITH maxvotes AS ( " +
 				 * "  SELECT wahlkreis, max(anzahl) AS max " +
@@ -124,17 +88,9 @@ public class DataAnalyzer {
 				 * "FROM maxvoteskand " + "GROUP BY wahlkreis, max), " +
 				 */
 
-				"WITH parteinsitze AS ( "
-				+ "SELECT partei, count(*) AS sitze "
-				+ "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"
-				+ jahr
-				+ "') d "
-				+ "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis "
-				+ "GROUP BY partei) " +
+				"WITH parteinsitze AS ( " + "SELECT partei, count(*) AS sitze " + "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d " + "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " + "GROUP BY partei) " +
 
-				"SELECT p.name AS parteiname, pn.sitze AS sitze "
-				+ "FROM parteinsitze pn join partei p "
-				+ "ON pn.partei = p.parteinummer);");
+				"SELECT p.name AS parteiname, pn.sitze AS sitze " + "FROM parteinsitze pn join partei p " + "ON pn.partei = p.parteinummer);");
 
 		// Gesamtverteilung = zweitstimmenergebnis + ueberhangsmandate -> siehe
 		// ueberhangsmandate
@@ -150,157 +106,28 @@ public class DataAnalyzer {
 		 */
 
 		// parteien aus dem zweitstimmenergebnis
-		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienzweitstimmen AS ( "
-				+ "	SELECT z.parteiname, p.parteinummer "
-				+ "	FROM zweitstimmenergebnis z JOIN partei p "
-				+ "	ON z.parteiname = p.name); ");
+		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienzweitstimmen AS ( " + "	SELECT z.parteiname, p.parteinummer " + "	FROM zweitstimmenergebnis z JOIN partei p " + "	ON z.parteiname = p.name); ");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienerststimmen AS ( "
-				+ "	SELECT e.parteiname, p.parteinummer "
-				+ "	FROM erststimmenergebnis e JOIN partei p "
-				+ "	ON e.parteiname = p.name); ");
+		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienerststimmen AS ( " + "	SELECT e.parteiname, p.parteinummer " + "	FROM erststimmenergebnis e JOIN partei p " + "	ON e.parteiname = p.name); ");
 
 		// Ergaenzung wk with bl info
-		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslandzweitstimmen AS ( "
-				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl "
-				+ "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"
-				+ jahr
-				+ "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"
-				+ jahr
-				+ "') w  "
+		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslandzweitstimmen AS ( " + "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " + "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslanderststimmen AS ( "
-				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl "
-				+ "	FROM  (SELECT * FROM erststimmen WHERE jahr = '"
-				+ jahr
-				+ "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"
-				+ jahr
-				+ "') w  "
+		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslanderststimmen AS ( " + "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl " + "	FROM  (SELECT * FROM erststimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
 
 		// anzahl stimmen pro "finalisten" partei/kandidaten und bundesland
-		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichtzweitstimmen AS ( "
-				+ "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl "
-				+ "	FROM wkbundeslandzweitstimmen w JOIN partei p ON w.partei = p.parteinummer "
-				+ "   WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) "
+		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichtzweitstimmen AS ( " + "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " + "	FROM wkbundeslandzweitstimmen w JOIN partei p ON w.partei = p.parteinummer " + "   WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) "
 				+ "	GROUP BY p.name, w.bundesland);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( "
-				+ "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl "
-				+ "	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '"
-				+ jahr
-				+ "') d "
-				+ "	ON w.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer"
-				+ "   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) "
-				+ "	GROUP BY p.name, w.bundesland);");
+		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( " + "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " + "	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '" + jahr + "') d "
+				+ "	ON w.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer" + "   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) " + "	GROUP BY p.name, w.bundesland);");
 
 		// Table meta info
-		List<String> tableNames = Arrays.asList("Zweitstimmenergebnis",
-				"parteibluebersichtzweitstimmen", "Erststimmenergebnis",
-				"parteibluebersichterststimmen");
+		List<String> tableNames = Arrays.asList("Zweitstimmenergebnis", "parteibluebersichtzweitstimmen", "Erststimmenergebnis", "parteibluebersichterststimmen");
 
-		List<List<String>> colNames = Arrays.asList(
-				Arrays.asList("Parteiname", "Sitze"),
-				Arrays.asList("Parteiname", "Bundesland", "Stimmen"),
-				Arrays.asList("Parteiname", "Sitze"),
-				Arrays.asList("Parteiname", "Bundesland", "Stimmen"));
-
-		for (int i = 0; i < tableNames.size(); i++) {
-
-			ArrayList<String> header = new ArrayList<String>();
-			header.add(tableNames.get(i));
-			for (int j = 0; j < colNames.get(i).size(); j++) {
-				header.add(colNames.get(i).get(j));
-			}
-
-			result.add(header);
-			collectFromQuery(result, tableNames.get(i));
-		}
-
-		return result;
-	}
-
-	/**
-	 * Get the winners for every Wahlkreis
-	 */
-	public ArrayList<ArrayList<String>> getWahlkreissieger(String[] queryInput)
-			throws SQLException, NumberFormatException {
-
-		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
-		String jahrName = queryInput[0];
-
-		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  w.name as wahlkreisname, p.name as politikername, pa.name as parteiname, s1.anzahl FROM erststimmen s1 , wahlkreis w , direktkandidat d , partei pa,  politiker p WHERE s1.jahr = "
-				+ jahrName
-				+ " AND p.politikernummer = d.politiker"
-				+ " AND d.kandidatennummer = s1.kandidatennummer"
-				+ " AND pa.parteinummer = d.partei"
-				+ " AND w.jahr = "
-				+ jahrName
-				+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM erststimmen s2 WHERE s2.jahr = "
-				+ jahrName + " AND s2.wahlkreis = w.wahlkreisnummer)");
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmengewinner AS SELECT w.name as wahlkreisname, pa.name as parteiname, s1.anzahl FROM zweitstimmen s1 , wahlkreis w, partei pa WHERE s1.jahr = "
-				+ jahrName
-				+ " AND w.jahr = "
-				+ jahrName
-				+ " AND pa.parteinummer = s1.partei"
-				+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM zweitstimmen s2 WHERE s2.jahr = "
-				+ jahrName + " AND s2.wahlkreis = w.wahlkreisnummer)");
-
-		List<String> tableNames = Arrays.asList("erststimmengewinner",
-				"zweitstimmengewinner");
-
-		List<List<String>> colNames = Arrays.asList(Arrays.asList("Wahlkreis",
-				"Kandidatennummer", "Partei", "Anzahl"), Arrays.asList(
-				"Wahlkreis", "Partei", "Anzahl"));
-
-		for (int i = 0; i < tableNames.size(); i++) {
-
-			ArrayList<String> header = new ArrayList<String>();
-			header.add(tableNames.get(i));
-			for (int j = 0; j < colNames.get(i).size(); j++) {
-				header.add(colNames.get(i).get(j));
-			}
-
-			result.add(header);
-			collectFromQuery(result, tableNames.get(i));
-		}
-
-		return result;
-	}
-
-	/**
-	 * Return the members of the Bundestag
-	 */
-	public ArrayList<ArrayList<String>> getMembers(String[] queryInput)
-			throws SQLException {
-
-		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
-		String jahr = queryInput[0];
-
-		/*
-		 * st.executeUpdate(
-		 * "CREATE OR REPLACE VIEW mitgliedererststimme AS ( SELECT esg.kandidatennummer, d.partei FROM erststimmengewinner esg, direktkandidat d WHERE esg.kandidatennummer = d.kandidatennummer)"
-		 * );
-		 * 
-		 * st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS(" +
-		 * "WITH verteilung AS ( " + "	SELECT * " +
-		 * "	FROM erststimmenergebnis  " + "  union all " + " 	SELECT * " +
-		 * " 	FROM zweitstimmenergebnis)" +
-		 * "SELECT lk.politiker, pa.parteinummer   FROM listenkandidat lk, politiker p,verteilung v, partei pa WHERE pa.name =  v.parteiname AND lk.partei = pa.parteinummer AND lk.listenplatz => v.sitze- (SELECT count(*) FROM mitgliedererststimme mes WHERE mes.partei = pa.parteinummer )"
-		 * + "UNION (SELECT * FROM mitgliedererststimme) )");
-		 */
-
-		st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS SELECT * FROM partei");
-
-		List<String> tableNames = Arrays.asList("mitglieder");
-		/*
-		 * List<List<String>> colNames = Arrays.asList( Arrays.asList("Partei",
-		 * "Name") );
-		 */
-
-		List<List<String>> colNames = Arrays.asList(Arrays.asList(
-				"Parteinummer", "Name"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Parteiname", "Sitze"), Arrays.asList("Parteiname", "Bundesland", "Stimmen"), Arrays.asList("Parteiname", "Sitze"), Arrays.asList("Parteiname", "Bundesland", "Stimmen"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
@@ -320,17 +147,15 @@ public class DataAnalyzer {
 	/**
 	 * Return a view of all Ueberhangsmandate
 	 */
-	public ArrayList<ArrayList<String>> getUeberhangsmandate(String[] queryInput)
-			throws SQLException {
+	public ArrayList<ArrayList<String>> getUeberhangsmandate(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahr = queryInput[0];
 
 		// Ueberhangsmandate
-		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangerststimmen AS ( "
-				+
+		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangerststimmen AS ( " +
 
-				// Also computed in getSeatDistribution -> use those results
+		// Also computed in getSeatDistribution -> use those results
 				/*
 				 * // groesste Stimmenanzahl fuer jeden Wahlkreis
 				 * "WITH maxvotes AS ( " +
@@ -352,33 +177,18 @@ public class DataAnalyzer {
 				 */
 
 				// in wahlkreis x won party y
-				"WITH parteigewinner AS ( "
-				+ "	SELECT m.wahlkreis AS wahlkreis, d.partei AS partei "
-				+ "	FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"
-				+ jahr
-				+ "') d "
-				+ "	ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis), "
-				+
+				"WITH parteigewinner AS ( " + "	SELECT m.wahlkreis AS wahlkreis, d.partei AS partei " + "	FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d " + "	ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis), " +
 
 				// in bundesland z, wahlkreis x won party y
-				"blgewinner AS ( "
-				+ "	SELECT b.name AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei "
-				+ "	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '"
-				+ jahr
-				+ "') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) "
-				+
+				"blgewinner AS ( " + "	SELECT b.name AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei " + "	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) " +
 
-				"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate "
-				+ "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer "
-				+ "GROUP BY b.bundesland, p.name);");
+				"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate " + "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
 
 		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangzweitstimmen AS ( "
 				+
 
 				// parteien aus dem zweitstimmenergebnis
-				"WITH ergebnisparteien AS ( "
-				+ "	SELECT z.parteiname, p.parteinummer "
-				+ "	FROM zweitstimmenergebnis z JOIN partei p "
+				"WITH ergebnisparteien AS ( " + "	SELECT z.parteiname, p.parteinummer " + "	FROM zweitstimmenergebnis z JOIN partei p "
 				+ "	ON z.parteiname = p.name), "
 				+
 
@@ -388,32 +198,20 @@ public class DataAnalyzer {
 				+
 
 				// iteratoren reduziert pro Partei
-				"parteiiterators AS ( "
-				+ " 	SELECT * "
-				+ "	FROM ergebnisparteien e, iterators i "
+				"parteiiterators AS ( " + " 	SELECT * " + "	FROM ergebnisparteien e, iterators i "
 				+ "	WHERE i.iterator <= 2 * (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = e.parteiname)), "
 				+
 
 				// anzahl stimmen pro "finalisten" partei und bundesland
-				"parteibluebersicht AS ( "
-				+ "	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl "
-				+ "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"
-				+ jahr
-				+ "' AND partei IN (SELECT parteinummer FROM ergebnisparteien)) z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"
-				+ jahr
-				+ "') w  "
+				"parteibluebersicht AS ( " + "	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl " + "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahr + "' AND partei IN (SELECT parteinummer FROM ergebnisparteien)) z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer "
 				+ "	GROUP BY z.partei, b.name), "
 				+
 
 				// tree: partei x iterator x bundesland builds to result for
 				// iterator
-				"parteiiteratorbl AS ( "
-				+ "	SELECT p1.parteiname AS parteiname, p1.parteinummer AS parteinummer, p2.bundesland AS bundesland, (p2.anzahl::numeric / p1.iterator::numeric) + RANDOM() AS itrergebnis "
-				+ "	FROM parteiiterators p1 JOIN parteibluebersicht p2 "
-				+ "	ON p1.parteinummer = p2.partei "
-				+ "   ORDER BY partei ASC, itrergebnis DESC), "
-				+
+				"parteiiteratorbl AS ( " + "	SELECT p1.parteiname AS parteiname, p1.parteinummer AS parteinummer, p2.bundesland AS bundesland, (p2.anzahl::numeric / p1.iterator::numeric) + RANDOM() AS itrergebnis " + "	FROM parteiiterators p1 JOIN parteibluebersicht p2 " + "	ON p1.parteinummer = p2.partei "
+				+ "   ORDER BY partei ASC, itrergebnis DESC), " +
 
 				/*
 				 * // auswahl bundeslaender mit groessten zwischenergebnissen
@@ -433,38 +231,158 @@ public class DataAnalyzer {
 				 * "GROUP BY parteiname, parteinummer, bundesland); "
 				 */
 
-				"partitionen AS ( "
-				+ "	SELECT p.parteiname AS parteiname, p.bundesland AS bundesland, p.itrergebnis AS itrergebnis, ROW_NUMBER() OVER (PARTITION BY p.parteiname ORDER BY p.itrergebnis DESC) AS rn "
-				+ "	FROM parteiiteratorbl p), "
-				+
+				"partitionen AS ( " + "	SELECT p.parteiname AS parteiname, p.bundesland AS bundesland, p.itrergebnis AS itrergebnis, ROW_NUMBER() OVER (PARTITION BY p.parteiname ORDER BY p.itrergebnis DESC) AS rn " + "	FROM parteiiteratorbl p), " +
 
-				"filter AS ( "
-				+ "	SELECT * FROM partitionen p "
-				+ "	WHERE p.rn <= (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = p.parteiname)) "
-				+
+				"filter AS ( " + "	SELECT * FROM partitionen p " + "	WHERE p.rn <= (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = p.parteiname)) " +
 
-				"SELECT f.parteiname AS parteiname, f.bundesland AS bundesland, COUNT(*) as mandate "
-				+ "FROM filter f " + "GROUP BY f.parteiname, f.bundesland);"
+				"SELECT f.parteiname AS parteiname, f.bundesland AS bundesland, COUNT(*) as mandate " + "FROM filter f " + "GROUP BY f.parteiname, f.bundesland);"
 
 		);
 
-		st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( "
-				+
+		st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( " +
 
-				"WITH unfiltered AS ( "
-				+ "	SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate "
-				+ "	FROM ueberhangerststimmen e JOIN ueberhangzweitstimmen z "
-				+ "	ON e.bundesland = z.bundesland AND e.parteiname = z.parteiname) "
-				+
+		"WITH unfiltered AS ( " + "	SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate " + "	FROM ueberhangerststimmen e JOIN ueberhangzweitstimmen z " + "	ON e.bundesland = z.bundesland AND e.parteiname = z.parteiname) " +
 
-				"SELECT * FROM unfiltered " + "WHERE mandate > 0);"
+		"SELECT * FROM unfiltered " + "WHERE mandate > 0);"
 
 		);
 
 		List<String> tableNames = Arrays.asList("umandate");
 
-		List<List<String>> colNames = Arrays.asList(Arrays.asList("Bundesland",
-				"Parteiname", "Ueberhangsmandate"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Bundesland", "Parteiname", "Ueberhangsmandate"));
+
+		for (int i = 0; i < tableNames.size(); i++) {
+
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++) {
+				header.add(colNames.get(i).get(j));
+			}
+
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i));
+		}
+
+		return result;
+	}
+
+	/**
+	 * Get the winners for every Wahlkreis. Dependend on getSeatdistribution -
+	 * SQL View maxvotesuniquekand
+	 */
+	public ArrayList<ArrayList<String>> getWahlkreissieger(String[] queryInput) throws SQLException, NumberFormatException {
+
+		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
+		String jahrName = queryInput[0];
+
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnernummern AS SELECT  mvuk.wahlkreis as wahlkreisnummer, d.politiker, d.partei , mvuk.max as anzahl FROM " + "maxvotesuniquekand mvuk, wahlkreis w , direktkandidat d  WHERE " + " d.kandidatennummer = mvuk.kandnum" + " AND w.jahr = " + jahrName
+				+ " AND mvuk.wahlkreis = w.wahlkreisnummer");
+
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  w.name as wahlkreisname, p.name as politikername, pa.name as parteiname, esg.anzahl FROM erststimmengewinnernummern esg  , wahlkreis w, partei pa,  politiker p WHERE " + " p.politikernummer = esg.politiker" + " AND pa.parteinummer = esg.partei" + " AND w.jahr = "
+				+ jahrName + " AND esg.wahlkreisnummer = w.wahlkreisnummer");
+
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  w.name as wahlkreisname, p.name as politikername, pa.name as parteiname, esg.anzahl FROM erststimmengewinnernummern esg  , wahlkreis w, partei pa,  politiker p WHERE " + " p.politikernummer = esg.politiker" + " AND pa.parteinummer = esg.partei" + " AND w.jahr = "
+				+ jahrName + " AND esg.wahlkreisnummer = w.wahlkreisnummer");
+
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmengewinner AS SELECT w.name as wahlkreisname, pa.name as parteiname, s1.anzahl FROM zweitstimmen s1 , wahlkreis w, partei pa WHERE s1.jahr = " + jahrName + " AND w.jahr = " + jahrName + " AND pa.parteinummer = s1.partei"
+				+ " AND s1.wahlkreis = w.wahlkreisnummer AND s1.anzahl = ( SELECT max(s2.anzahl) FROM zweitstimmen s2 WHERE s2.jahr = " + jahrName + " AND s2.wahlkreis = w.wahlkreisnummer)");
+
+		List<String> tableNames = Arrays.asList("erststimmengewinner", "zweitstimmengewinner");
+
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Wahlkreis", "Kandidatennummer", "Partei", "Stimmen"), Arrays.asList("Wahlkreis", "Partei", "Stimmen"));
+
+		for (int i = 0; i < tableNames.size(); i++) {
+
+			ArrayList<String> header = new ArrayList<String>();
+			header.add(tableNames.get(i));
+			for (int j = 0; j < colNames.get(i).size(); j++) {
+				header.add(colNames.get(i).get(j));
+			}
+
+			result.add(header);
+			collectFromQuery(result, tableNames.get(i), "ORDER BY wahlkreisname ASC");
+		}
+
+		return result;
+	}
+
+	/**
+	 * Return the members of the Bundestag. Dependend on getSeatdistribution-
+	 * SQL View maxvotesuniquekand ; getWahlkreissieger ; getUeberhangmandate
+	 */
+	public ArrayList<ArrayList<String>> getMembers(String[] queryInput) throws SQLException {
+
+		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
+		String jahrName = queryInput[0];
+
+		// st.executeUpdate("CREATE OR REPLACE VIEW listenkanidatenohnedirektkandidaten AS("
+		// +
+		// "SELECT partei , bundesland , politiker ,listenplatz - (SELECT count(*) FROM erststimmengewinnernummern esg,listenkandidat lk2 WHERE esg.politiker = lk.politiker AND  lk2.politiker = lk.politiker AND lk2.listenplatz <  lk.listenplatz ) as listenplatz FROM listenkandidat lk WHERE lk.jahr = "
+		// + jahrName
+		// +
+		// " AND lk.politiker NOT IN (SELECT esg.politiker  FROM erststimmengewinnernummern esg) "
+		// + " )");
+		//
+		// System.out.println("+++++++++++++");
+		//
+		// // rs =
+		// st.executeQuery("SELECT * FROM listenkanidatenohnedirektkandidaten;");
+		// // ResultSetMetaData meta = rs.getMetaData();
+		// // int anzFields = meta.getColumnCount();
+		// // System.out.println("------------");
+		// // while (rs.next()) {
+		// // for (int i = 0; i < anzFields; i++) {
+		// // System.out.println(rs.getString(i + 1));
+		// // }
+		// // System.out.println("\n");
+		// //
+		// // }
+		// //
+		// st.executeUpdate("CREATE OR REPLACE VIEW listenkanidatohnedirektkandidaten AS("
+		// // +
+		// //
+		// "SELECT  lk1.partei , lk1.bundesland , count(*)+1 as listenplatz, lk1.politiker FROM listenkanidatenohnedirektkandidatohnenummerierung lk1,listenkanidatenohnedirektkandidatohnenummerierung lk2 WHERE lk1.listenplatz < lk2.listenplatz GROUP BY  lk1.partei , lk1.bundesland , lk1.politiker "
+		// // + " )");
+		//
+		// System.out.println("------------");
+		//
+		// st.executeUpdate("CREATE OR REPLACE VIEW mitgliederunsortiert AS("
+		// + "WITH verteilung AS ( "
+		// + "	SELECT * "
+		// + "	FROM erststimmenergebnis  "
+		// + "  union all "
+		// + " 	SELECT * "
+		// + " 	FROM zweitstimmenergebnis)"
+		//
+		// + "WITH parteierststimmensitze AS ( "
+		// +
+		// "(SELECT partei, bundesland,count(*) as anzahl FROM erststimmengewinnernummern esg GROUP BY partei ))"
+		//
+		// +
+		// "SELECT p.name as politikername, pa.name as parteiname  FROM listenkanidatohnedirektkandidaten lk, politiker p,verteilung v, partei pa WHERE p.politikernummer = lk.politiker AND pa.parteinummer = lk.partei =  AND pa.name =  v.parteiname AND lk.listenplatz >= v.sitze- (SELECT anzahl FROM parteierststimmensitze pes WHERE pes.partei = pa.parteinummer )"
+		// +
+		// "UNION (SELECT politikername,parteiname FROM erststimmengewinner) )");
+		//
+		// st.executeQuery("SELECT * FROM mitgliederunsortiert;");
+		//
+		// System.out.println("------------");
+		//
+		// st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS(" +
+		// "SELECT * FROM mitgliederunsortiert ORDER BY parteiname, politikername"
+		// + ")");
+		// st.executeQuery("SELECT * FROM mitglieder;");
+		//
+		// System.out.println("------------");
+		//
+		st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS SELECT * FROM partei");
+
+		List<String> tableNames = Arrays.asList("mitglieder");
+		/*
+		 * List<List<String>> colNames = Arrays.asList( Arrays.asList("Partei",
+		 * "Name") );
+		 */
+
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Parteinummer", "Name"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
@@ -484,8 +402,7 @@ public class DataAnalyzer {
 	/**
 	 * Return overview of the Wahlkreise
 	 */
-	public ArrayList<ArrayList<String>> getWahlkreisOverview(String[] queryInput)
-			throws SQLException {
+	public ArrayList<ArrayList<String>> getWahlkreisOverview(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 
@@ -546,19 +463,9 @@ public class DataAnalyzer {
 			e.printStackTrace();
 		}
 
-		List<String> tableNames = Arrays.asList("wahlbeteiligungabsolut",
-				"wahlbeteiligungrelativ", "erststimmengewinnerkandidat",
-				"parteinenanteilabsolut", "parteinenanteilrelativ",
-				"parteinenanteilabsolutvorjahr", "parteinenanteilveraenderung");
+		List<String> tableNames = Arrays.asList("wahlbeteiligungabsolut", "wahlbeteiligungrelativ", "erststimmengewinnerkandidat", "parteinenanteilabsolut", "parteinenanteilrelativ", "parteinenanteilabsolutvorjahr", "parteinenanteilveraenderung");
 
-		List<List<String>> colNames = Arrays.asList(
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
@@ -578,8 +485,7 @@ public class DataAnalyzer {
 	/**
 	 * Knappster Sieger
 	 */
-	public ArrayList<ArrayList<String>> getKnappsterSieger(String[] queryInput)
-			throws SQLException {
+	public ArrayList<ArrayList<String>> getKnappsterSieger(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 
@@ -618,12 +524,9 @@ public class DataAnalyzer {
 			e.printStackTrace();
 		}
 
-		List<String> tableNames = Arrays.asList("knappstegewinner",
-				"knappsteergebnisse");
+		List<String> tableNames = Arrays.asList("knappstegewinner", "knappsteergebnisse");
 
-		List<List<String>> colNames = Arrays.asList(
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
@@ -643,8 +546,7 @@ public class DataAnalyzer {
 	/**
 	 * Wahlkreis Overview Erststimmen
 	 */
-	public ArrayList<ArrayList<String>> getOverview(String[] queryInput)
-			throws SQLException {
+	public ArrayList<ArrayList<String>> getOverview(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 
@@ -716,23 +618,9 @@ public class DataAnalyzer {
 			e.printStackTrace();
 		}
 
-		List<String> tableNames = Arrays.asList(
-				"wahlbeteiligungabsoluteinzelstimmen",
-				"wahlbeteiligungrelativeinzelstimmen",
-				"erststimmengewinnerkandidateinzelstimmen",
-				"parteinenanteilabsoluteinzelstimmen",
-				"parteinenanteilrelativeinzelstimmen",
-				"parteinenanteilabsolutvorjahreinzelstimmen",
-				"parteinenanteilveraenderungeinzelstimmen");
+		List<String> tableNames = Arrays.asList("wahlbeteiligungabsoluteinzelstimmen", "wahlbeteiligungrelativeinzelstimmen", "erststimmengewinnerkandidateinzelstimmen", "parteinenanteilabsoluteinzelstimmen", "parteinenanteilrelativeinzelstimmen", "parteinenanteilabsolutvorjahreinzelstimmen", "parteinenanteilveraenderungeinzelstimmen");
 
-		List<List<String>> colNames = Arrays.asList(
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
@@ -752,39 +640,21 @@ public class DataAnalyzer {
 	/**
 	 * Request vote forms (tables)
 	 */
-	public ArrayList<ArrayList<String>> requestVote(String[] queryInput)
-			throws SQLException {
+	public ArrayList<ArrayList<String>> requestVote(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahrName = queryInput[0];
 		String wahlkreisNr = queryInput[1];
 
-		st.executeUpdate("CREATE OR REPLACE VIEW erststimmeliste AS ( "
-				+ "SELECT p.name AS kandidatenname, t.name AS parteiname, p.politikernummer "
-				+ "FROM " + "	(SELECT * FROM direktkandidat WHERE jahr = "
-				+ jahrName + " AND wahlkreis = " + wahlkreisNr + ") d "
-				+ "	JOIN politiker p ON p.politikernummer = d.politiker "
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmeliste AS ( " + "SELECT p.name AS kandidatenname, t.name AS parteiname, p.politikernummer " + "FROM " + "	(SELECT * FROM direktkandidat WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreisNr + ") d " + "	JOIN politiker p ON p.politikernummer = d.politiker "
 				+ "   JOIN partei t ON d.partei = t.parteinummer);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmeliste AS ( "
-				+ "SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname, p.politikernummer "
-				+ "FROM "
-				+ "	(SELECT listenplatz, partei, politiker, bundesland "
-				+ "    FROM listenkandidat WHERE jahr = " + jahrName + ") l "
-				+ "	JOIN politiker p ON p.politikernummer = l.politiker "
-				+ "	JOIN (SELECT * FROM wahlkreis WHERE jahr = " + jahrName
-				+ ") w ON w.bundesland = l.bundesland "
-				+ "	JOIN partei t ON t.parteinummer = l.partei "
-				+ "WHERE wahlkreisnummer = " + wahlkreisNr + " "
-				+ "ORDER BY l.listenplatz);");
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmeliste AS ( " + "SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname, p.politikernummer " + "FROM " + "	(SELECT listenplatz, partei, politiker, bundesland " + "    FROM listenkandidat WHERE jahr = " + jahrName + ") l "
+				+ "	JOIN politiker p ON p.politikernummer = l.politiker " + "	JOIN (SELECT * FROM wahlkreis WHERE jahr = " + jahrName + ") w ON w.bundesland = l.bundesland " + "	JOIN partei t ON t.parteinummer = l.partei " + "WHERE wahlkreisnummer = " + wahlkreisNr + " " + "ORDER BY l.listenplatz);");
 
-		List<String> tableNames = Arrays.asList("erststimmeliste",
-				"zweitstimmeliste");
+		List<String> tableNames = Arrays.asList("erststimmeliste", "zweitstimmeliste");
 
-		List<List<String>> colNames = Arrays.asList(Arrays.asList(
-				"Kandidatenname", "Parteiname", "Politikernummer"), Arrays
-				.asList("Listenplatz", "Parteiname", "Kandidatenname",
-						"Politikernummer"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Kandidatenname", "Parteiname", "Politikernummer"), Arrays.asList("Listenplatz", "Parteiname", "Kandidatenname", "Politikernummer"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
@@ -804,8 +674,7 @@ public class DataAnalyzer {
 	/**
 	 * Submit vote forms (tables)
 	 */
-	public void submitVote(String[] queryInput,
-			ArrayList<ArrayList<String>> selections) throws SQLException {
+	public void submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections) throws SQLException {
 
 		String jahrName = queryInput[0];
 
@@ -823,9 +692,7 @@ public class DataAnalyzer {
 			String politicianNr = currentSelection.get(2);
 
 			// Debug
-			System.out.println("Updating: year: " + jahrName + ", wkNr: "
-					+ wahlkreisNr + ", name: " + name + ", party: " + party
-					+ ", politicianNr " + politicianNr);
+			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreisNr + ", name: " + name + ", party: " + party + ", politicianNr " + politicianNr);
 
 			/*
 			 * Insert update queries here
@@ -834,11 +701,11 @@ public class DataAnalyzer {
 	}
 
 	// Get data from ResultSet into required table format
-	private void collectFromQuery(ArrayList<ArrayList<String>> result,
-			String tableName) throws SQLException {
+
+	private void collectFromQuery(ArrayList<ArrayList<String>> result, String tableName, String orderBy) throws SQLException {
 
 		result.add(new ArrayList<String>());
-		rs = st.executeQuery("SELECT * FROM " + tableName + ";");
+		rs = st.executeQuery("SELECT * FROM " + tableName + " " + orderBy + ";");
 		ResultSetMetaData meta = rs.getMetaData();
 		int anzFields = meta.getColumnCount();
 		while (rs.next()) {
@@ -849,4 +716,9 @@ public class DataAnalyzer {
 			result.get(result.size() - 1).add("$$");
 		}
 	}
+
+	private void collectFromQuery(ArrayList<ArrayList<String>> result, String tableName) throws SQLException {
+		collectFromQuery(result, tableName, "");
+	}
+
 }
