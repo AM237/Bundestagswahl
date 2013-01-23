@@ -30,17 +30,12 @@ public class DataAnalyzer {
 		// Auswertung ---------------------------------------------------
 
 		// -- View 'stimmenpropartei'
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( " + "SELECT p.name AS partei, t1.anzahl AS anzahl FROM " + "((SELECT partei, sum(anzahl) AS anzahl " + " FROM zweitstimmen "
-				+ " WHERE jahr = '" + jahr + "' " + " GROUP BY partei) t1 " + "JOIN " + "partei p ON t1.partei::text = p.parteinummer::text));");
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( " 
 				+ "SELECT p.name AS partei, t1.anzahl AS anzahl FROM " 
 				+ "((SELECT partei, sum(anzahl) AS anzahl " + " FROM zweitstimmen " 
 				+ " WHERE jahr = '" + jahr + "' " 
 				+ " GROUP BY partei) t1 " 
 				+ "JOIN " + "partei p ON t1.partei::text = p.parteinummer::text));");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		// -- Trigger Divisoren -> ItrErgebnisse
 		// -- Typ: vordefiniert?
@@ -48,15 +43,10 @@ public class DataAnalyzer {
 		st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
 		st.executeUpdate("DROP FUNCTION IF EXISTS berechneitr() CASCADE;");
 		st.executeUpdate("DELETE FROM itrergebnisse;");
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " + "BEGIN "
-				+ "  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " + "  RETURN NEW; " + "END; " + "$$ LANGUAGE plpgsql;");
-=======
 		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " 
 				+ "BEGIN " 
 				+ "  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " 
 				+ "  RETURN NEW; " + "END; " + "$$ LANGUAGE plpgsql;");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse " 
 				+ "AFTER INSERT ON divisoren " 
@@ -70,35 +60,21 @@ public class DataAnalyzer {
 		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
 
 		// -- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS (" + "WITH sitzzuweisung AS ( " + "	SELECT * FROM itrergebnisse " + "	ORDER BY anzahl DESC "
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS (" 
 				+ "WITH sitzzuweisung AS ( " 
 				+ "	SELECT * FROM itrergebnisse " 
 				+ "	ORDER BY anzahl DESC " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahr + "')), " +
 
-<<<<<<< HEAD
-				"unfiltered AS ( " + "	SELECT partei AS parteiname, COUNT(*) AS sitze " + "	FROM sitzzuweisung " + "	GROUP BY partei), " +
-=======
 				"unfiltered AS ( " 
 				+ "	SELECT partei AS parteiname, COUNT(*) AS sitze " 
 				+ "	FROM sitzzuweisung " 
 				+ "	GROUP BY partei), " +
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
-<<<<<<< HEAD
-				"filtered AS ( " + "SELECT * FROM unfiltered " + "WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) " +
-
-				"SELECT parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze " + "FROM filtered);");
-=======
 				"filtered AS ( " 
 				+ "SELECT * FROM unfiltered " 
 				+ "WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) " 
 				+ "SELECT parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze " + "FROM filtered);");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		// -- Auswertungsanfrage: Endergebnisse (Erststimmen - wiederverwendbare
 		// Tabellen)
@@ -108,15 +84,10 @@ public class DataAnalyzer {
 				+ "  WHERE jahr = '" + jahr + "' " 
 				+ "  GROUP BY wahlkreis);");
 
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS (" + "	SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max "
-				+ "	FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '" + jahr + "') e " + "	ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS (" 
 				+ "	SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " 
 				+ "	FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '" + jahr + "') e " 
 				+ "	ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS (" 
 				+ "	SELECT wahlkreis, max, min(kandnum) AS kandnum " 
@@ -124,11 +95,10 @@ public class DataAnalyzer {
 				+ "	GROUP BY wahlkreis, max);");
 
 		// -- Auswertungsanfrage: Endergebnisse (Erststimmen)
-		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS ("
-				+
+		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS (" +
 
-				// Tabellen werden wiederverwendet - > als eigene Views
-				// definiert
+		// Tabellen werden wiederverwendet - > als eigene Views
+		// definiert
 				/*
 				 * "WITH maxvotes AS ( " +
 				 * "  SELECT wahlkreis, max(anzahl) AS max " +
@@ -147,8 +117,7 @@ public class DataAnalyzer {
 				 * "FROM maxvoteskand " + "GROUP BY wahlkreis, max), " +
 				 */
 
-				"WITH parteinsitze AS ( " + "SELECT partei, count(*) AS sitze " + "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d "
-				+ "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " + "GROUP BY partei) " +
+				"WITH parteinsitze AS ( " + "SELECT partei, count(*) AS sitze " + "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d " + "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " + "GROUP BY partei) " +
 
 				"SELECT p.name AS parteiname, pn.sitze AS sitze " + "FROM parteinsitze pn join partei p " + "ON pn.partei = p.parteinummer);");
 
@@ -166,68 +135,38 @@ public class DataAnalyzer {
 		 */
 
 		// parteien aus dem zweitstimmenergebnis
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienzweitstimmen AS ( " + "	SELECT z.parteiname, p.parteinummer " + "	FROM zweitstimmenergebnis z JOIN partei p "
-				+ "	ON z.parteiname = p.name); ");
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienzweitstimmen AS ( " 
 				+ "	SELECT z.parteiname, p.parteinummer " 
 				+ "	FROM zweitstimmenergebnis z JOIN partei p " + "	ON z.parteiname = p.name); ");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienerststimmen AS ( " + "	SELECT e.parteiname, p.parteinummer " + "	FROM erststimmenergebnis e JOIN partei p "
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienerststimmen AS ( " 
 				+ "	SELECT e.parteiname, p.parteinummer " 
 				+ "	FROM erststimmenergebnis e JOIN partei p " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	ON e.parteiname = p.name); ");
 
 		// Ergaenzung wk with bl info
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslandzweitstimmen AS ( " + "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl "
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslandzweitstimmen AS ( " 
 				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
 
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslanderststimmen AS ( "
-				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl " + "	FROM  (SELECT * FROM erststimmen WHERE jahr = '"
-				+ jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  " + "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslanderststimmen AS ( " 
 				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl " 
 				+ "	FROM  (SELECT * FROM erststimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		// anzahl stimmen pro "finalisten" partei/kandidaten und bundesland
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichtzweitstimmen AS ( " + "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl "
-				+ "	FROM wkbundeslandzweitstimmen w JOIN partei p ON w.partei = p.parteinummer " + "   WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) "
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichtzweitstimmen AS ( " 
 				+ "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " 
 				+ "	FROM wkbundeslandzweitstimmen w JOIN partei p ON w.partei = p.parteinummer " 
 				+ " WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) "
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	GROUP BY p.name, w.bundesland);");
 
-<<<<<<< HEAD
-		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( " + "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl "
-				+ "	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '" + jahr + "') d "
-				+ "	ON w.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer" + "   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) "
-=======
 		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( " 
 				+ "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " 
 				+ "	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '" + jahr + "') d "
 				+ "	ON w.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer" 
 				+ "   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	GROUP BY p.name, w.bundesland);");
 
 		// Table meta info
@@ -237,14 +176,10 @@ public class DataAnalyzer {
 				"Erststimmenergebnis", 
 				"parteibluebersichterststimmen");
 
-<<<<<<< HEAD
-		List<List<String>> colNames = Arrays.asList(Arrays.asList("Parteiname", "Sitze"), Arrays.asList("Parteiname", "Bundesland", "Stimmen"), Arrays.asList("Parteiname", "Sitze"),
-=======
 		List<List<String>> colNames = Arrays.asList(
 				Arrays.asList("Parteiname", "Sitze"), 
 				Arrays.asList("Parteiname", "Bundesland", "Stimmen"), 
 				Arrays.asList("Parteiname", "Sitze"), 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				Arrays.asList("Parteiname", "Bundesland", "Stimmen"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
@@ -261,6 +196,8 @@ public class DataAnalyzer {
 
 		return result;
 	}
+	
+
 
 	/**
 	 * Return a view of all Ueberhangsmandate
@@ -296,41 +233,22 @@ public class DataAnalyzer {
 				 */
 
 				// in wahlkreis x won party y
-<<<<<<< HEAD
 				"WITH parteigewinner AS ( " + "	SELECT m.wahlkreis AS wahlkreis, d.partei AS partei " + "	FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '"
 				+ jahr + "') d " + "	ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis), "
 				+
-=======
-				"WITH parteigewinner AS ( " 
-				+ "	SELECT m.wahlkreis AS wahlkreis, d.partei AS partei " 
-				+ "	FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d " 
-				+ "	ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis), " +
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 				// in bundesland z, wahlkreis x won party y
-<<<<<<< HEAD
 				"blgewinner AS ( " + "	SELECT b.name AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei " + "	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr
 				+ "') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) " +
-=======
-				"blgewinner AS ( " 
-				+ "	SELECT b.name AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei " 
-				+ "	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) " +
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
-				"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate " 
-				+ "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
+				"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate " + "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
 
 		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangzweitstimmen AS ( "
 				+
 
 				// parteien aus dem zweitstimmenergebnis
-<<<<<<< HEAD
 				"WITH ergebnisparteien AS ( "
 				+ "	SELECT z.parteiname, p.parteinummer "
-=======
-				"WITH ergebnisparteien AS ( " 
-				+ "	SELECT z.parteiname, p.parteinummer " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	FROM zweitstimmenergebnis z JOIN partei p "
 				+ "	ON z.parteiname = p.name), "
 				+
@@ -341,19 +259,13 @@ public class DataAnalyzer {
 				+
 
 				// iteratoren reduziert pro Partei
-<<<<<<< HEAD
 				"parteiiterators AS ( "
 				+ " 	SELECT * "
-=======
-				"parteiiterators AS ( " 
-				+ " 	SELECT * " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	FROM ergebnisparteien e, iterators i "
 				+ "	WHERE i.iterator <= 2 * (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = e.parteiname)), "
 				+
 
 				// anzahl stimmen pro "finalisten" partei und bundesland
-<<<<<<< HEAD
 				"parteibluebersicht AS ( "
 				+ "	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl "
 				+ "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '"
@@ -361,28 +273,15 @@ public class DataAnalyzer {
 				+ "' AND partei IN (SELECT parteinummer FROM ergebnisparteien)) z JOIN (SELECT * FROM wahlkreis WHERE jahr = '"
 				+ jahr
 				+ "') w  "
-=======
-				"parteibluebersicht AS ( " 
-				+ "	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl " 
-				+ "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahr + "' AND partei IN (SELECT parteinummer FROM ergebnisparteien)) z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer "
 				+ "	GROUP BY z.partei, b.name), "
 				+
 
 				// tree: partei x iterator x bundesland builds to result for
 				// iterator
-<<<<<<< HEAD
 				"parteiiteratorbl AS ( "
 				+ "	SELECT p1.parteiname AS parteiname, p1.parteinummer AS parteinummer, p2.bundesland AS bundesland, (p2.anzahl::numeric / p1.iterator::numeric) + RANDOM() AS itrergebnis "
 				+ "	FROM parteiiterators p1 JOIN parteibluebersicht p2 " + "	ON p1.parteinummer = p2.partei " + "   ORDER BY partei ASC, itrergebnis DESC), " +
-=======
-				"parteiiteratorbl AS ( " 
-				+ "	SELECT p1.parteiname AS parteiname, p1.parteinummer AS parteinummer, p2.bundesland AS bundesland, (p2.anzahl::numeric / p1.iterator::numeric) + RANDOM() AS itrergebnis " 
-				+ "	FROM parteiiterators p1 JOIN parteibluebersicht p2 " 
-				+ "	ON p1.parteinummer = p2.partei "
-				+ " ORDER BY partei ASC, itrergebnis DESC), " +
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 				/*
 				 * // auswahl bundeslaender mit groessten zwischenergebnissen
@@ -402,43 +301,22 @@ public class DataAnalyzer {
 				 * "GROUP BY parteiname, parteinummer, bundesland); "
 				 */
 
-<<<<<<< HEAD
 				"partitionen AS ( "
 				+ "	SELECT p.parteiname AS parteiname, p.bundesland AS bundesland, p.itrergebnis AS itrergebnis, ROW_NUMBER() OVER (PARTITION BY p.parteiname ORDER BY p.itrergebnis DESC) AS rn "
-=======
-				"partitionen AS ( " 
-				+ "	SELECT p.parteiname AS parteiname, p.bundesland AS bundesland, p.itrergebnis AS itrergebnis, ROW_NUMBER() OVER (PARTITION BY p.parteiname ORDER BY p.itrergebnis DESC) AS rn " 
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "	FROM parteiiteratorbl p), " +
 
-				"filter AS ( " 
-				+ "	SELECT * FROM partitionen p " 
-				+ "	WHERE p.rn <= (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = p.parteiname)) " +
+				"filter AS ( " + "	SELECT * FROM partitionen p " + "	WHERE p.rn <= (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = p.parteiname)) " +
 
-				"SELECT f.parteiname AS parteiname, f.bundesland AS bundesland, COUNT(*) as mandate " 
-				+ "FROM filter f " 
-				+ "GROUP BY f.parteiname, f.bundesland);"
+				"SELECT f.parteiname AS parteiname, f.bundesland AS bundesland, COUNT(*) as mandate " + "FROM filter f " + "GROUP BY f.parteiname, f.bundesland);"
 
 		);
 
 		st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( " +
 
-<<<<<<< HEAD
 		"WITH unfiltered AS ( " + "	SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate " + "	FROM ueberhangerststimmen e JOIN ueberhangzweitstimmen z "
 				+ "	ON e.bundesland = z.bundesland AND e.parteiname = z.parteiname) " +
-=======
-			"WITH unfiltered AS ( " 
-			+ "	SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate " 
-			+ "	FROM ueberhangerststimmen e JOIN ueberhangzweitstimmen z " 
-			+ "	ON e.bundesland = z.bundesland AND e.parteiname = z.parteiname) " +
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
-<<<<<<< HEAD
 				"SELECT * FROM unfiltered " + "WHERE mandate > 0);"
-=======
-			"SELECT * FROM unfiltered " 
-			+ "WHERE mandate > 0);"
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		);
 
@@ -822,41 +700,18 @@ public class DataAnalyzer {
 		String jahrName = queryInput[0];
 		String wahlkreisNr = queryInput[1];
 
-<<<<<<< HEAD
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmeliste AS ( " + "SELECT p.name AS kandidatenname, t.name AS parteiname, p.politikernummer " + "FROM "
 				+ "	(SELECT * FROM direktkandidat WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreisNr + ") d " + "	JOIN politiker p ON p.politikernummer = d.politiker "
-=======
-		st.executeUpdate("CREATE OR REPLACE VIEW erststimmeliste AS ( " 
-				+ "SELECT p.name AS kandidatenname, t.name AS parteiname, p.politikernummer " 
-				+ "FROM " 
-				+ "	(SELECT * FROM direktkandidat WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreisNr + ") d " 
-				+ "	JOIN politiker p ON p.politikernummer = d.politiker "
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 				+ "   JOIN partei t ON d.partei = t.parteinummer);");
 
-<<<<<<< HEAD
 		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmeliste AS ( " + "SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname, p.politikernummer " + "FROM "
 				+ "	(SELECT listenplatz, partei, politiker, bundesland " + "    FROM listenkandidat WHERE jahr = " + jahrName + ") l " + "	JOIN politiker p ON p.politikernummer = l.politiker "
 				+ "	JOIN (SELECT * FROM wahlkreis WHERE jahr = " + jahrName + ") w ON w.bundesland = l.bundesland " + "	JOIN partei t ON t.parteinummer = l.partei " + "WHERE wahlkreisnummer = "
 				+ wahlkreisNr + " " + "ORDER BY l.listenplatz);");
-=======
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmeliste AS ( " 
-				+ "SELECT l.listenplatz AS listenplatz, t.name AS parteiname, p.name AS kandidatenname, p.politikernummer " 
-				+ "FROM " 
-				+ "	(SELECT listenplatz, partei, politiker, bundesland " 
-				+ "    FROM listenkandidat WHERE jahr = " + jahrName + ") l "
-				+ "	JOIN politiker p ON p.politikernummer = l.politiker " 
-				+ "	JOIN (SELECT * FROM wahlkreis WHERE jahr = " + jahrName + ") w ON w.bundesland = l.bundesland " 
-				+ "	JOIN partei t ON t.parteinummer = l.partei " 
-				+ "WHERE wahlkreisnummer = " + wahlkreisNr + " " 
-				+ "ORDER BY l.listenplatz);");
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		List<String> tableNames = Arrays.asList("erststimmeliste", "zweitstimmeliste");
 
-		List<List<String>> colNames = Arrays.asList(
-				Arrays.asList("Kandidatenname", "Parteiname", "Politikernummer"), 
-				Arrays.asList("Listenplatz", "Parteiname", "Kandidatenname", "Politikernummer"));
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Kandidatenname", "Parteiname", "Politikernummer"), Arrays.asList("Listenplatz", "Parteiname", "Kandidatenname", "Politikernummer"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
 
