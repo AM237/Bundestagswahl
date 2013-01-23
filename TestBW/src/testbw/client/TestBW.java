@@ -726,7 +726,6 @@ public class TestBW implements EntryPoint {
 				tabPanel.add(distPanel, "Verteilung");
 
 				// Call all dependent services
-
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis started.");
 				((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
 
@@ -764,7 +763,6 @@ public class TestBW implements EntryPoint {
 				// Call dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Bundestag members analysis started.");
 				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
-
 			}
 		};
 
