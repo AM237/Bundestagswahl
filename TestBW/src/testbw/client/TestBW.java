@@ -127,27 +127,36 @@ public class TestBW implements EntryPoint {
 	private TextArea ta = new TextArea();
 	private Label taLabel = new Label();
 
+	// Input Holder
+	private HorizontalPanel inputHolder = new HorizontalPanel();
+
 	// Query result: seat distribution ----------------------------------------
 	private AbsolutePanel distPanel = new AbsolutePanel();
 	private HashMap<String, Color> colorMap = new HashMap<String, Color>();
 
 	// Query result: Wahlkreis winners ----------------------------------------
 	private HorizontalPanel wkHPanel = new HorizontalPanel();
+	private HorizontalPanel wkHPanelContainer = new HorizontalPanel();
 
 	// Query result: Bundestag members ----------------------------------------
 	private HorizontalPanel membersHPanel = new HorizontalPanel();
+	private HorizontalPanel membersHPanelContainer = new HorizontalPanel();
 
 	// Query result: Ueberhangsmandate ----------------------------------------
 	private HorizontalPanel mandateHPanel = new HorizontalPanel();
+	private HorizontalPanel mandateHPanelContainer = new HorizontalPanel();
 
 	// Query result: Wahlkreis Overview ---------------------------------------
 	private HorizontalPanel wkOverviewHPanel = new HorizontalPanel();
+	private HorizontalPanel wkOverviewHPanelContainer = new HorizontalPanel();
 
 	// Query result: Knappster Sieger Overview --------------------------------
 	private HorizontalPanel knappsterSiegerHPanel = new HorizontalPanel();
+	private HorizontalPanel knappsterSiegerHPanelContainer = new HorizontalPanel();
 
 	// Query result: Wahlkreis Overview (Erststimmen )-------------------------
 	private HorizontalPanel wkOverviewErststimmenHPanel = new HorizontalPanel();
+	private HorizontalPanel wkOverviewErststimmenHPanelContainer = new HorizontalPanel();
 
 	// Submit vote panel ------------------------------------------------------
 	private VerticalPanel submitVotePanel = new VerticalPanel();
@@ -302,7 +311,6 @@ public class TestBW implements EntryPoint {
 		ta.setHeight("300px");
 
 		// Root ----------------------------------------------------------------
-		HorizontalPanel inputHolder = new HorizontalPanel();
 		inputHolder.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		inputHolder.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		inputHolder.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
@@ -545,6 +553,38 @@ public class TestBW implements EntryPoint {
 		queryInput[0] = dropList.get(yearInput.getSelectedIndex());
 		queryInput[1] = wahlkreisInput.getText();
 
+		// Show all Tabs
+		tabPanel.clear();
+
+		distPanel.clear();
+		wkHPanelContainer.clear();
+		membersHPanelContainer.clear();
+		mandateHPanelContainer.clear();
+		wkOverviewHPanelContainer.clear();
+		knappsterSiegerHPanelContainer.clear();
+		wkOverviewErststimmenHPanelContainer.clear();
+
+		inputHolder.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+		inputHolder.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+		inputHolder.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+
+		distPanel.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		wkHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		membersHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		mandateHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		wkOverviewHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		knappsterSiegerHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		wkOverviewErststimmenHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+
+		tabPanel.add(inputHolder, "Start");
+		tabPanel.add(distPanel, "Verteilung");
+		tabPanel.add(wkHPanelContainer, "Wahlkreissieger");
+		tabPanel.add(membersHPanelContainer, "Bundestagsmitglieder");
+		tabPanel.add(mandateHPanelContainer, "Ueberhangsmandate");
+		tabPanel.add(wkOverviewHPanelContainer, "Wahlkreisuebersicht");
+		tabPanel.add(knappsterSiegerHPanelContainer, "Knappster Sieger");
+		tabPanel.add(wkOverviewErststimmenHPanelContainer, "Wahlkreisuebersicht (Erststimmen)");
+
 		// Setup all required callback objects and
 		// make the call to each respective service.
 		// All other services require this one to finish first, so delay their
@@ -723,7 +763,6 @@ public class TestBW implements EntryPoint {
 				dpanel.setVisible(false);
 				distPanel.add(dpanel, 0, 0);
 				distPanel.add(pcharts, 0, 0);
-				tabPanel.add(distPanel, "Verteilung");
 
 				// Call all dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis started.");
@@ -758,7 +797,7 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis complete.");
 
-				setupUITables(s, "Wahlkreissieger", (CellPanel) wkHPanel);
+				setupUITables(s, (CellPanel) wkHPanel, wkHPanelContainer);
 
 				// Call dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Bundestag members analysis started.");
@@ -784,7 +823,7 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Bundestag members analysis complete.");
 
-				setupUITables(s, "Bundestagsmitglieder", (CellPanel) membersHPanel);
+				setupUITables(s, (CellPanel) membersHPanel, membersHPanelContainer);
 			}
 		};
 
@@ -806,7 +845,7 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis complete.");
 
-				setupUITables(s, "Ueberhangsmandate", (CellPanel) mandateHPanel);
+				setupUITables(s, (CellPanel) mandateHPanel, mandateHPanelContainer);
 
 				// Call dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis started.");
@@ -833,7 +872,7 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview complete.");
 
-				setupUITables(s, "Wahlkreisuebersicht", (CellPanel) wkOverviewHPanel);
+				setupUITables(s, (CellPanel) wkOverviewHPanel, wkOverviewHPanelContainer);
 			}
 		};
 
@@ -855,7 +894,7 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Knappster Sieger analysis complete.");
 
-				setupUITables(s, "Knappster Sieger", (CellPanel) knappsterSiegerHPanel);
+				setupUITables(s, (CellPanel) knappsterSiegerHPanel, knappsterSiegerHPanelContainer);
 			}
 		};
 
@@ -877,7 +916,7 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview (Erststimmen) complete.");
 
-				setupUITables(s, "Wahlkreisuebersicht (Erststimmen)", (CellPanel) wkOverviewErststimmenHPanel);
+				setupUITables(s, (CellPanel) wkOverviewErststimmenHPanel, wkOverviewErststimmenHPanelContainer);
 			}
 		};
 
@@ -1065,9 +1104,8 @@ public class TestBW implements EntryPoint {
 	 * @param layoutPanel
 	 *            - the "root" layout panel of the tab.
 	 */
-	public void setupUITables(ArrayList<ArrayList<String>> s, String tabName, CellPanel layoutPanel) {
+	public void setupUITables(ArrayList<ArrayList<String>> s, CellPanel layoutPanel, HorizontalPanel htabPanel) {
 
-		HorizontalPanel htabPanel = new HorizontalPanel();
 		htabPanel.setSize("" + tabPanel.getOffsetWidth() + "px", "" + tabPanel.getOffsetHeight() + "px");
 		htabPanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		htabPanel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
@@ -1108,7 +1146,7 @@ public class TestBW implements EntryPoint {
 
 		// TODO : replace already existing tab if possible
 		htabPanel.add(layoutPanel);
-		tabPanel.add(htabPanel, tabName);
+
 	}
 
 	// Helper methods and classes -----------------------------------------
