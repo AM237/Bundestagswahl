@@ -893,7 +893,8 @@ public class TestBW implements EntryPoint {
 
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Error while getting voting form: " + caught.getMessage() + ". " + "Has the data been generated and uploaded to the database?");
+				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Error while getting voting form: " + caught.getMessage() + ". "
+						+ "Has the data been generated and uploaded to the database?");
 			}
 
 			@SuppressWarnings("deprecation")
@@ -1363,8 +1364,8 @@ public class TestBW implements EntryPoint {
 
 		@Override
 		protected native JavaScriptObject createJso(Element parent) /*-{
-																	return new $wnd.google.visualization.GeoChart(parent);
-																	}-*/;
+			return new $wnd.google.visualization.GeoChart(parent);
+		}-*/;
 
 	}
 
