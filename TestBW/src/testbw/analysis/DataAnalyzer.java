@@ -369,54 +369,41 @@ public class DataAnalyzer {
 		String wahlkreis = queryInput[1];
 
 		try {
+			st.executeUpdate("DROP VIEW wahlbeteiligungabsolut CASCADE");
+			st.executeUpdate("DROP VIEW wahlbeteiligungrelativ CASCADE");
+			st.executeUpdate("DROP VIEW erststimmengewinnerkandidat CASCADE");
+			st.executeUpdate("DROP VIEW parteinenanteilabsolut CASCADE");
+			st.executeUpdate("DROP VIEW parteinenanteilrelativ CASCADE");
 
-			/*
-			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT sum(anzahl) FROM erststimmen  WHERE jahr = "
-			 * + jahrName + " AND wahlkreis = " + wahlkreis);
-			 * 
-			 * 
-			 * st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS "
-			 * +
-			 * "SELECT (SELECT * FROM wahlbeteiligungabsolut)::float / (  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = "
-			 * + jahrName + " AND wahlkreis = " + wahlkreis + " )::float ;");
-			 * 
-			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS " +
-			 * "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politiker AND d.kandidatennummer = (SELECT e.kandidatennummer FROM erststimmengewinner e ORDER BY RANDOM() LIMIT 1)"
-			 * );
-			 * 
-			 * st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS "
-			 * +
-			 * "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
-			 * + jahrName +
-			 * " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
-			 * 
-			 * st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS "
-			 * +
-			 * "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsolut) as anteil FROM parteinenanteilabsolut pa "
-			 * );
-			 * 
-			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS " +
-			 * "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
-			 * + Integer.toString(Integer.parseInt(jahrName) - 4) +
-			 * " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
-			 * 
-			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW parteinenanteilveraenderung AS " +
-			 * "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer"
-			 * );
-			 */
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT sum(anzahl) FROM erststimmen  WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis);
+
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS "
+					+ "SELECT (SELECT * FROM wahlbeteiligungabsolut)::float / (  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis
+					+ " )::float ;");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS "
+					+ "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politiker AND d.kandidatennummer = (SELECT e.kandidatennummer FROM erststimmengewinner e ORDER BY RANDOM() LIMIT 1)");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS " + "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = " + jahrName
+					+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS "
+					+ "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsolut) as anteil FROM parteinenanteilabsolut pa ");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS " + "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
+					+ Integer.toString(Integer.parseInt(jahrName) - 4) + " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS "
+					+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer");
 
 			// Dummy tables
-			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS SELECT * FROM partei");
+			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS SELECT * FROM partei");
 
 		} catch (SQLException e) {
 			e.printStackTrace();
