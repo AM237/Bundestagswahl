@@ -22,62 +22,21 @@ public class DataAnalyzer {
 	/**
 	 * Returns seat distribution of the Bundestag.
 	 */
-	public ArrayList<ArrayList<String>> getSeatDistribution(String[] queryInput) throws SQLException {
+public ArrayList<ArrayList<String>> getSeatDistribution(String[] queryInput) throws SQLException {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahr = queryInput[0];
 
-		// Auswertung ---------------------------------------------------
-
-		// -- View 'stimmenpropartei'
+		// Auswertung ---------------------------------------------------------
+		// --------------------------------------------------------------------
+		
+		// -- Auswertungsanfrage: Endergebnisse (wiederverwendbare Tabellen)
 		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( " 
-				+ "SELECT p.name AS partei, t1.anzahl AS anzahl FROM " 
-				+ "((SELECT partei, sum(anzahl) AS anzahl " + " FROM zweitstimmen " 
+				+ " SELECT partei, sum(anzahl) AS anzahl " 
+				+ " FROM zweitstimmen " 
 				+ " WHERE jahr = '" + jahr + "' " 
-				+ " GROUP BY partei) t1 " 
-				+ "JOIN " + "partei p ON t1.partei::text = p.parteinummer::text));");
+				+ " GROUP BY partei);");
 
-		// -- Trigger Divisoren -> ItrErgebnisse
-		// -- Typ: vordefiniert?
-		// -- Verweist auf: stimmenpropartei
-		st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
-		st.executeUpdate("DROP FUNCTION IF EXISTS berechneitr() CASCADE;");
-		st.executeUpdate("DELETE FROM itrergebnisse;");
-		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " 
-				+ "BEGIN " 
-				+ "  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " 
-				+ "  RETURN NEW; " + "END; " + "$$ LANGUAGE plpgsql;");
-
-		st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse " 
-				+ "AFTER INSERT ON divisoren " 
-				+ "FOR EACH ROW " 
-				+ "EXECUTE PROCEDURE berechneitr();");
-
-		// -- Load: Divisoren
-		// -- Typ: Vorberechnung?
-		// -- Verweist auf: divisoren, sitzeprojahr
-		st.executeUpdate("DELETE FROM divisoren;");
-		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
-
-		// -- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS (" 
-				+ "WITH sitzzuweisung AS ( " 
-				+ "	SELECT * FROM itrergebnisse " 
-				+ "	ORDER BY anzahl DESC " 
-				+ "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahr + "')), " +
-
-				"unfiltered AS ( " 
-				+ "	SELECT partei AS parteiname, COUNT(*) AS sitze " 
-				+ "	FROM sitzzuweisung " 
-				+ "	GROUP BY partei), " +
-
-				"filtered AS ( " 
-				+ "SELECT * FROM unfiltered " 
-				+ "WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) " 
-				+ "SELECT parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze " + "FROM filtered);");
-
-		// -- Auswertungsanfrage: Endergebnisse (Erststimmen - wiederverwendbare
-		// Tabellen)
 		st.executeUpdate("CREATE OR REPLACE VIEW maxvotes AS (" 
 				+ "  SELECT wahlkreis, max(anzahl) AS max " 
 				+ "  FROM erststimmen " 
@@ -86,7 +45,7 @@ public class DataAnalyzer {
 
 		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS (" 
 				+ "	SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max " 
-				+ "	FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '" + jahr + "') e " 
+				+ "	FROM maxvotes m JOIN (SELECT * FROM erststimmen s WHERE s.jahr = '" + jahr + "') e " 
 				+ "	ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
 
 		st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS (" 
@@ -94,80 +53,79 @@ public class DataAnalyzer {
 				+ "	FROM maxvoteskand " 
 				+ "	GROUP BY wahlkreis, max);");
 
+		// -- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS ( "
+				+ "WITH divisoren AS ( "
+				+ "	SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2) AS div), "
+				
+				+ "itrergebnisse AS ( "
+				+ "	SELECT s.partei AS parteinum,  (s.anzahl / d.div::float8) AS anzahl "
+				+ "	FROM divisoren d, stimmenpropartei s "
+				+ "	ORDER BY anzahl DESC " 
+				+ "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahr + "')), "
+				
+				+ "unfiltered AS ( " 
+				+ "	SELECT parteinum, COUNT(*) AS sitze " 
+				+ "	FROM itrergebnisse " 
+				+ "	GROUP BY parteinum), "
+
+				+ "filtered AS ( " 
+				+ "SELECT * FROM unfiltered " 
+				+ "WHERE sitze >= 0.05 * (SELECT sum(sitze) FROM unfiltered)) " 
+				
+				+ "SELECT p.name AS parteiname, (sitze * (SELECT SUM(sitze) FROM unfiltered) / (SELECT SUM(sitze) FROM filtered))::bigint AS sitze " 
+				+ "FROM filtered f JOIN partei p ON f.parteinum = p.parteinummer);");
+		
+
 		// -- Auswertungsanfrage: Endergebnisse (Erststimmen)
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS (" +
+				"WITH parteinsitze AS ( " 
+				+ "SELECT partei, COUNT(*) AS sitze " 
+				+ "FROM maxvotesuniquekand m JOIN (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d " 
+				+ "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " 
+				+ "GROUP BY partei) " +
 
-		// Tabellen werden wiederverwendet - > als eigene Views
-		// definiert
-				/*
-				 * "WITH maxvotes AS ( " +
-				 * "  SELECT wahlkreis, max(anzahl) AS max " +
-				 * "  FROM erststimmen " + "  WHERE jahr = '"+jahr+"' " +
-				 * "  GROUP BY wahlkreis), " +
-				 * 
-				 * "maxvoteskand AS ( " +
-				 * "SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max "
-				 * +
-				 * "FROM maxvotes m left outer join (SELECT * FROM erststimmen s WHERE s.jahr = '"
-				 * +jahr+"') e " +
-				 * "ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl), " +
-				 * 
-				 * "maxvotesuniquekand AS ( " +
-				 * "SELECT wahlkreis, max, min(kandnum) AS kandnum " +
-				 * "FROM maxvoteskand " + "GROUP BY wahlkreis, max), " +
-				 */
+				"SELECT p.name AS parteiname, pn.sitze AS sitze " 
+				+ "FROM parteinsitze pn join partei p " 
+				+ "ON pn.partei = p.parteinummer);");
+		
 
-				"WITH parteinsitze AS ( " + "SELECT partei, count(*) AS sitze " + "FROM maxvotesuniquekand m left outer join (SELECT * FROM direktkandidat dk WHERE dk.jahr = '" + jahr + "') d " + "ON m.kandnum = d.kandidatennummer AND m.wahlkreis = d.wahlkreis " + "GROUP BY partei) " +
-
-				"SELECT p.name AS parteiname, pn.sitze AS sitze " + "FROM parteinsitze pn join partei p " + "ON pn.partei = p.parteinummer);");
-
-		// Gesamtverteilung = zweitstimmenergebnis + ueberhangsmandate -> siehe
-		// ueberhangsmandate
-		/*
-		 * //-- Auswertung der Gesamtverteilung (Sitze -> Partei)
-		 * st.executeUpdate("CREATE OR REPLACE VIEW gesamtverteilung AS (" +
-		 * "WITH verteilung AS ( " + "	SELECT * " +
-		 * "	FROM erststimmenergebnis  " + "  union all " + " 	SELECT * " +
-		 * " 	FROM zweitstimmenergebnis)" +
-		 * 
-		 * "SELECT parteiname, sum(sitze)::float8 AS anteil " +
-		 * "FROM verteilung " + "GROUP BY parteiname)");
-		 */
-
-		// parteien aus dem zweitstimmenergebnis
-		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienzweitstimmen AS ( " 
-				+ "	SELECT z.parteiname, p.parteinummer " 
-				+ "	FROM zweitstimmenergebnis z JOIN partei p " + "	ON z.parteiname = p.name); ");
-
-		st.executeUpdate("CREATE OR REPLACE VIEW ergebnisparteienerststimmen AS ( " 
-				+ "	SELECT e.parteiname, p.parteinummer " 
-				+ "	FROM erststimmenergebnis e JOIN partei p " 
-				+ "	ON e.parteiname = p.name); ");
-
-		// Ergaenzung wk with bl info
-		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslandzweitstimmen AS ( " 
-				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.partei AS partei, z.anzahl AS anzahl " 
-				+ "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
-				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
-
-		st.executeUpdate("CREATE OR REPLACE VIEW wkbundeslanderststimmen AS ( " 
-				+ "	SELECT b.abkuerzung AS bundesland, z.wahlkreis AS wahlkreis, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl " 
-				+ "	FROM  (SELECT * FROM erststimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
-				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer); ");
-
-		// anzahl stimmen pro "finalisten" partei/kandidaten und bundesland
+		// Karten Info  -------------------------------------------------------
+		// --------------------------------------------------------------------
+		
 		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichtzweitstimmen AS ( " 
-				+ "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " 
-				+ "	FROM wkbundeslandzweitstimmen w JOIN partei p ON w.partei = p.parteinummer " 
-				+ " WHERE w.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) "
-				+ "	GROUP BY p.name, w.bundesland);");
+				+ "WITH ergebnisparteienzweitstimmen AS ( "
+				+ "		SELECT z.parteiname, p.parteinummer " 
+				+ "		FROM zweitstimmenergebnis z JOIN partei p " 
+				+ "		ON z.parteiname = p.name), "
+				
+				+ "bundeslandzweitstimmen AS ( "
+				+ "		SELECT b.abkuerzung AS bundesland, z.partei AS partei, z.anzahl AS anzahl " 
+				+ "		FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
+				+ "		ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) "
+						
+				+ "	SELECT p.name AS partei, b.bundesland AS bundesland, SUM(b.anzahl)::numeric AS anzahl " 
+				+ "	FROM bundeslandzweitstimmen b JOIN partei p ON b.partei = p.parteinummer " 
+				+ " WHERE b.partei IN (SELECT parteinummer FROM ergebnisparteienzweitstimmen) "
+				+ "	GROUP BY p.name, b.bundesland);");
 
+		
 		st.executeUpdate("CREATE OR REPLACE VIEW parteibluebersichterststimmen AS ( " 
-				+ "	SELECT p.name AS partei, w.bundesland AS bundesland, SUM(w.anzahl)::numeric AS anzahl " 
-				+ "	FROM wkbundeslanderststimmen w JOIN (SELECT * FROM direktkandidat WHERE jahr = '" + jahr + "') d "
-				+ "	ON w.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer" 
-				+ "   WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) " 
-				+ "	GROUP BY p.name, w.bundesland);");
+				+ "WITH ergebnisparteienerststimmen AS ( "
+				+ "		SELECT e.parteiname, p.parteinummer " 
+				+ "		FROM erststimmenergebnis e JOIN partei p " 
+				+ "		ON e.parteiname = p.name), "
+				
+				+ "bundeslanderststimmen AS ( "
+				+ "		SELECT b.abkuerzung AS bundesland, z.kandidatennummer AS kandidatennummer, z.anzahl AS anzahl " 
+				+ "		FROM  (SELECT * FROM erststimmen WHERE jahr = '" + jahr + "') z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahr + "') w  "
+				+ "		ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) "
+				
+				+ "	SELECT p.name AS partei, b.bundesland AS bundesland, SUM(b.anzahl)::numeric AS anzahl " 
+				+ "	FROM bundeslanderststimmen b JOIN (SELECT * FROM direktkandidat WHERE jahr = '" + jahr + "') d "
+				+ "	ON b.kandidatennummer = d.kandidatennummer JOIN partei p ON d.partei = p.parteinummer" 
+				+ " WHERE d.partei IN (SELECT parteinummer FROM ergebnisparteienerststimmen) " 
+				+ "	GROUP BY p.name, b.bundesland);");
 
 		// Table meta info
 		List<String> tableNames = Arrays.asList(
