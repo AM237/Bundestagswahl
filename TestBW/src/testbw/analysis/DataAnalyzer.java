@@ -369,20 +369,25 @@ public class DataAnalyzer {
 		String wahlkreis = queryInput[1];
 
 		try {
-			st.executeUpdate("DROP VIEW wahlbeteiligungabsolut CASCADE");
-			st.executeUpdate("DROP VIEW wahlbeteiligungrelativ CASCADE");
-			st.executeUpdate("DROP VIEW erststimmengewinnerkandidat CASCADE");
-			st.executeUpdate("DROP VIEW parteinenanteilabsolut CASCADE");
-			st.executeUpdate("DROP VIEW parteinenanteilrelativ CASCADE");
+
+			// st.executeUpdate("DROP VIEW wahlbeteiligungrelativ CASCADE");
+			// st.executeUpdate("DROP VIEW erststimmengewinnerkandidat CASCADE");
+			// st.executeUpdate("DROP VIEW parteinenanteilabsolut CASCADE");
+			// st.executeUpdate("DROP VIEW parteinenanteilrelativ CASCADE");
+
+			// erststimmengewinnernummern AS SELECT mvuk.wahlkreis as
+			// wahlkreisnummer, d.politiker, d.partei , mvuk.max as anzahl
+
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlberechtigtewahlkreis AS ( SELECT wahlkreis, wahlberechtigte FROM wahlberechtigte WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis
+					+ " )");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT sum(anzahl) FROM erststimmen  WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis);
 
 			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS "
-					+ "SELECT (SELECT * FROM wahlbeteiligungabsolut)::float / (  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis
-					+ " )::float ;");
+					+ "SELECT (SELECT * FROM wahlbeteiligungabsolut)::float / (  SELECT wahlberechtigte FROM wahlberechtigtewahlkreis )::float ;");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS "
-					+ "SELECT name FROM politiker p , direktkandidat d WHERE p.politikernummer = d.politiker AND d.kandidatennummer = (SELECT e.kandidatennummer FROM erststimmengewinner e ORDER BY RANDOM() LIMIT 1)");
+					+ "SELECT name FROM politiker p  WHERE p.politikernummer  = (SELECT e.politiker FROM erststimmengewinnernummern e ORDER BY RANDOM() LIMIT 1)");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS " + "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = " + jahrName
 					+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
@@ -396,35 +401,53 @@ public class DataAnalyzer {
 			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS "
 					+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer");
 
-			// Dummy tables
-			// st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT * FROM partei");
-			// st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS SELECT * FROM partei");
-			// st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS SELECT * FROM partei");
-			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS SELECT * FROM partei");
-			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS SELECT * FROM partei");
-			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS SELECT * FROM partei");
-			// st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS SELECT * FROM partei");
-
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
-		List<String> tableNames = Arrays.asList("wahlbeteiligungabsolut", "wahlbeteiligungrelativ", "erststimmengewinnerkandidat", "parteinenanteilabsolut", "parteinenanteilrelativ",
-				"parteinenanteilabsolutvorjahr", "parteinenanteilveraenderung");
+		List<List<String>> tableNames = Arrays.asList(Arrays.asList("wahlbeteiligungabsolut", "wahlbeteiligungrelativ", "erststimmengewinnerkandidat"), Arrays.asList("parteinenanteilabsolut"),
+				Arrays.asList("parteinenanteilrelativ"), Arrays.asList("parteinenanteilabsolutvorjahr"), Arrays.asList("parteinenanteilveraenderung"));
 
-		List<List<String>> colNames = Arrays.asList(Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"),
-				Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"));
+		List<String> valueNames = Arrays.asList("Absolute Wahlbeteiligung", "Relative Wahlbeteiligung", "Erststimmengewinner");
+
+		List<List<String>> colNames = Arrays.asList(Arrays.asList("Wahlkreisergebnisse", ""), Arrays.asList("Partei", "Zweitstimmen"), Arrays.asList("Partei", "Relativ"),
+				Arrays.asList("Partei Vorjahr", "Zweitstimmen"), Arrays.asList("Partei Vorjahr", "Veränderung"));
 
 		for (int i = 0; i < tableNames.size(); i++) {
+			for (int k = 0; k < tableNames.get(i).size(); k++) {
 
-			ArrayList<String> header = new ArrayList<String>();
-			header.add(tableNames.get(i));
-			for (int j = 0; j < colNames.get(i).size(); j++) {
-				header.add(colNames.get(i).get(j));
+				if (k == 0) {
+					ArrayList<String> header = new ArrayList<String>();
+					header.add("wahlkreisoverview");
+					header.add(colNames.get(i).get(0));
+					header.add(colNames.get(i).get(1));
+					result.add(header);
+					result.add(new ArrayList<String>());
+				}
+
+				rs = st.executeQuery("SELECT * FROM " + tableNames.get(i).get(k) + ";");
+				ResultSetMetaData meta = rs.getMetaData();
+				int anzFields = meta.getColumnCount();
+
+				if (i == 0)
+					result.get(result.size() - 1).add(valueNames.get(k));
+
+				while (rs.next()) {
+					for (int j = 0; j < anzFields; j++) {
+						result.get(result.size() - 1).add(rs.getString(j + 1));
+					}
+					// add delimiter
+					result.get(result.size() - 1).add("$$");
+
+				}
 			}
+		}
 
-			result.add(header);
-			collectFromQuery(result, tableNames.get(i));
+		for (List<String> resultlist : result) {
+			for (String string : resultlist) {
+				System.out.print("  " + string);
+			}
+			System.out.print("\n");
 		}
 
 		return result;
