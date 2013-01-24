@@ -346,6 +346,12 @@ public class BWSetupDatabase {
 		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2005', '598');");
 		st.executeUpdate("INSERT INTO sitzeprojahr VALUES ('2009', '598');");
 
+		// TAN Tabelle
+		st.executeUpdate("DROP TABLE IF EXISTS tan CASCADE;");
+		st.executeUpdate("CREATE TABLE tan ( jahr INTEGER, wahlkreis INTEGER, tannummer INTEGER);");
+		
+		
+		/*
 		//-- Divisoren
 		//-- Typ: vordefiniert
 		//-- Verweist auf: -
@@ -357,31 +363,6 @@ public class BWSetupDatabase {
 		//-- Typ: vordefiniert
 		//-- Verweist auf: -
 		st.executeUpdate("DROP TABLE IF EXISTS itrergebnisse CASCADE;");
-		st.executeUpdate("CREATE TABLE itrergebnisse ( partei CHARACTER VARYING NOT NULL, anzahl NUMERIC NOT NULL, PRIMARY KEY(partei, anzahl));");
-
-		// Nun Teil der Auswertung wegen der Abhaengigkeit an 'stimmenpropartei', die nicht im Voraus berechnet werden darf.
-		/*//-- Trigger Divisoren -> ItrErgebnisse
-		//-- Typ: vordefiniert?
-		//-- Verweist auf: stimmenpropartei
-		st.executeUpdate("DROP TRIGGER IF EXISTS berechne_ItrErgebnisse ON divisoren CASCADE;");
-		st.executeUpdate("DROP FUNCTION IF EXISTS berechneitr() CASCADE;");
-		st.executeUpdate("CREATE OR REPLACE FUNCTION berechneitr() RETURNS trigger AS $$ " +
-				"BEGIN " +
-				"  INSERT INTO itrergebnisse (SELECT partei, (anzahl / NEW.div::float8) AS anzahl FROM stimmenpropartei); " +
-				"  RETURN NEW; " +
-				"END; " + 
-				"$$ LANGUAGE plpgsql;");
-
-		st.executeUpdate("CREATE TRIGGER berechne_ItrErgebnisse " +
-				"AFTER INSERT ON divisoren " +
-				"FOR EACH ROW " + 
-				"EXECUTE PROCEDURE berechneitr();");
-
-
-		//-- Load: Divisoren
-		//-- Typ: Vorberechnung?
-		//-- Verweist auf: divisoren, sitzeprojahr
-		st.executeUpdate("INSERT INTO divisoren ( SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM sitzeprojahr), 2));");
-		 */
+		st.executeUpdate("CREATE TABLE itrergebnisse ( partei CHARACTER VARYING NOT NULL, anzahl NUMERIC NOT NULL, PRIMARY KEY(partei, anzahl));");*/
 	}
 }
