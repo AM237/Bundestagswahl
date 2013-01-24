@@ -10,10 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-// Project dependencies
 import testbw.util.InputDirectory;
 
-// GWT / Visualization
 import com.google.gwt.cell.client.AbstractCell;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
@@ -34,7 +32,6 @@ import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.i18n.client.HasDirection;
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.ImageResource;
-import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractPager;
 import com.google.gwt.user.cellview.client.CellList;
@@ -92,6 +89,9 @@ import com.google.gwt.visualization.client.visualizations.Visualization;
 import com.google.gwt.visualization.client.visualizations.corechart.CoreChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart.PieOptions;
+import com.sun.corba.se.pept.transport.ContactInfo;
+// Project dependencies
+// GWT / Visualization
 
 public class TestBW implements EntryPoint {
 
@@ -106,12 +106,9 @@ public class TestBW implements EntryPoint {
 	private String password = "";
 	private String year = "";
 	private String wahlkreis = "";
-	
-	
-	
+
 	private VerticalPanel inputMainVPanel = new VerticalPanel();
-	
-	
+
 	// Query parameter input section ------------------------------------------
 	private ListBox yearInput = new ListBox(false);
 	private List<String> dropList = Arrays.asList("2005", "2009", "2013");
@@ -166,7 +163,7 @@ public class TestBW implements EntryPoint {
 	// Submit vote panel ------------------------------------------------------
 	private VerticalPanel submitVotePanel = new VerticalPanel();
 	private Button submitVoteButton = new Button("Stimme abgeben");
-	
+
 	// Login ------------------------------------------------------------------
 	private final DialogBox db = new DialogBox();
 	private HashMap<String, Integer> tabMappings = new HashMap<String, Integer>();
@@ -284,42 +281,41 @@ public class TestBW implements EntryPoint {
 		inputHolder.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		inputHolder.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		inputHolder.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
-		
+
 		db.addStyleDependentName("gwt-DialogBox");
-		db.setSize("" + RootLayoutPanel.get().getOffsetWidth()/4 + "px", "" + RootLayoutPanel.get().getOffsetHeight()/3 + "px");
+		db.setSize("" + RootLayoutPanel.get().getOffsetWidth() / 4 + "px", "" + RootLayoutPanel.get().getOffsetHeight() / 3 + "px");
 		db.setGlassEnabled(true);
 		db.setAnimationEnabled(true);
-		
-		//db.setAutoHideEnabled(true);
+
+		// db.setAutoHideEnabled(true);
 		HorizontalPanel hpanel = new HorizontalPanel();
-		hpanel.setSize("" + RootLayoutPanel.get().getOffsetWidth()/4+ "px", "" + RootLayoutPanel.get().getOffsetHeight()/3 + "px");
+		hpanel.setSize("" + RootLayoutPanel.get().getOffsetWidth() / 4 + "px", "" + RootLayoutPanel.get().getOffsetHeight() / 3 + "px");
 		hpanel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
 		hpanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		hpanel.add(createLoginForm());
 		db.add(hpanel);
 		inputHolder.add(db);
 		tabPanel.setAnimationDuration(0);
-		
+
 		// Configure initial login state
 		tabPanel.add(inputHolder, "Start");
-		tabMappings.put("Start", tabPanel.getWidgetCount()-1);
+		tabMappings.put("Start", tabPanel.getWidgetCount() - 1);
 		RootLayoutPanel.get().add(tabPanel);
-		
+
 		db.center();
 		db.show();
 		tabPanel.setAnimationDuration(500);
-		
+
 		tabPanel.addStyleName("gwt-TabPanel");
-		
-		tabPanel.addSelectionHandler(new SelectionHandler<Integer>(){
-			  public void onSelection(SelectionEvent<Integer> event){
-			   int tabId = event.getSelectedItem();			   
-			   if (tabId == 0){			   
-				   db.show();
-			   }
-			 }
+
+		tabPanel.addSelectionHandler(new SelectionHandler<Integer>() {
+			public void onSelection(SelectionEvent<Integer> event) {
+				int tabId = event.getSelectedItem();
+				if (tabId == 0) {
+					db.show();
+				}
+			}
 		});
-		
 
 		// Handles ------------------------------------------------------------
 		// --------------------------------------------------------------------
@@ -366,7 +362,7 @@ public class TestBW implements EntryPoint {
 				getAnalysis();
 			}
 		});
-		
+
 		Window.addResizeHandler(new ResizeHandler() {
 
 			@Override
@@ -398,14 +394,13 @@ public class TestBW implements EntryPoint {
 		VisualizationUtils.loadVisualizationApi(onLoadCallback, GeoChart.PACKAGE);
 	}
 
-
 	/**
 	 * Returns login widget used on start page.
 	 */
 	private Widget createLoginForm() {
-		
+
 		final DisclosurePanel advancedDisclosure = new DisclosurePanel("Auswahl");
-		
+
 		FlexTable layout = new FlexTable();
 		layout.setCellSpacing(6);
 		FlexCellFormatter cellFormatter = layout.getFlexCellFormatter();
@@ -417,9 +412,11 @@ public class TestBW implements EntryPoint {
 
 		layout.setHTML(1, 0, "DB Name");
 		final TextBox name = new TextBox();
+		name.setText("Bundestagswahl");
+
 		name.addStyleName("loginbox-empty");
 		name.addKeyPressHandler(new KeyPressHandler() {
-			public void onKeyPress(KeyPressEvent e){
+			public void onKeyPress(KeyPressEvent e) {
 				name.removeStyleName("loginbox-empty");
 				name.addStyleName("loginbox-full");
 				boolean enterPressed = KeyCodes.KEY_ENTER == e.getNativeEvent().getKeyCode();
@@ -427,14 +424,14 @@ public class TestBW implements EntryPoint {
 					advancedDisclosure.setOpen(true);
 			}
 		});
-		
-		
+
 		layout.setWidget(1, 1, name);
 		layout.setHTML(2, 0, "Username");
 		final TextBox user = new TextBox();
+		user.setText("user");
 		user.addStyleName("loginbox-empty");
 		user.addKeyPressHandler(new KeyPressHandler() {
-			public void onKeyPress(KeyPressEvent e){
+			public void onKeyPress(KeyPressEvent e) {
 				user.removeStyleName("loginbox-empty");
 				user.addStyleName("loginbox-full");
 				boolean enterPressed = KeyCodes.KEY_ENTER == e.getNativeEvent().getKeyCode();
@@ -442,27 +439,31 @@ public class TestBW implements EntryPoint {
 					advancedDisclosure.setOpen(true);
 			}
 		});
-		
+
 		layout.setWidget(2, 1, user);
 		layout.setHTML(3, 0, "Passwort");
 		final PasswordTextBox pw = new PasswordTextBox();
+		pw.setText("1234");
+
 		pw.addStyleName("loginbox-empty");
 		pw.addKeyPressHandler(new KeyPressHandler() {
-				public void onKeyPress(KeyPressEvent e){
-					pw.removeStyleName("loginbox-empty");
-					pw.addStyleName("loginbox-full");
-					boolean enterPressed = KeyCodes.KEY_ENTER == e.getNativeEvent().getKeyCode();
-					if (enterPressed)
-						advancedDisclosure.setOpen(true);
-				}
+			public void onKeyPress(KeyPressEvent e) {
+				pw.removeStyleName("loginbox-empty");
+				pw.addStyleName("loginbox-full");
+				boolean enterPressed = KeyCodes.KEY_ENTER == e.getNativeEvent().getKeyCode();
+				if (enterPressed)
+					advancedDisclosure.setOpen(true);
+			}
 		});
-		
+
 		layout.setWidget(3, 1, pw);
 		layout.setHTML(4, 0, "Wahlkreis Nr.");
 		final TextBox wk = new TextBox();
+		wk.setText("1");
+
 		wk.addStyleName("loginbox-empty");
 		wk.addKeyPressHandler(new KeyPressHandler() {
-			public void onKeyPress(KeyPressEvent e){
+			public void onKeyPress(KeyPressEvent e) {
 				wk.removeStyleName("loginbox-empty");
 				wk.addStyleName("loginbox-full");
 				boolean enterPressed = KeyCodes.KEY_ENTER == e.getNativeEvent().getKeyCode();
@@ -471,12 +472,10 @@ public class TestBW implements EntryPoint {
 			}
 		});
 		layout.setWidget(4, 1, wk);
-		
+
 		layout.setHTML(5, 0, "Jahr");
 		layout.setWidget(5, 1, yearInput);
-		
 
-		
 		Button adminButton = new Button("Administrator");
 		Button userButton = new Button("Stimmzettel");
 
@@ -486,7 +485,7 @@ public class TestBW implements EntryPoint {
 		hpanel.setSpacing(10);
 		hpanel.add(adminButton);
 		hpanel.add(userButton);
-		
+
 		dpanel.add(hpanel);
 
 		// Add advanced options to form in a disclosure panel
@@ -500,28 +499,26 @@ public class TestBW implements EntryPoint {
 		layout.setCellPadding(3);
 		decPanel.setWidget(layout);
 		decPanel.setStyleName("loginform");
-		
-		
+
 		// Click handlers
 		userButton.addClickHandler(new ClickHandler() {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				
+
 				dbname = name.getText();
 				username = user.getText();
 				password = pw.getText();
 				wahlkreis = wk.getText();
 				year = dropList.get(yearInput.getSelectedIndex());
-				
+
 				tabPanel.clear();
 				tabPanel.add(inputHolder, "Start");
-				
+
 				submitVotePanel.clear();
 				submitVotePanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
 				submitVotePanel.setVerticalAlignment(VerticalPanel.ALIGN_TOP);
 				submitVotePanel.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
-				
-				
+
 				// Check castability to prevent SQL injection
 				try {
 					int wknr = Integer.parseInt(wahlkreis);
@@ -530,9 +527,9 @@ public class TestBW implements EntryPoint {
 					pw.setText("");
 					wk.setText("");
 					db.hide();
-					
+
 					requestVoteForm();
-		
+
 				} catch (NumberFormatException e) {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
@@ -540,24 +537,24 @@ public class TestBW implements EntryPoint {
 				}
 			}
 		});
-		
-		
+
 		adminButton.addClickHandler(new ClickHandler() {
 			@SuppressWarnings("deprecation")
 			public void onClick(ClickEvent event) {
-				
+
 				dbname = name.getText();
 				username = user.getText();
 				password = pw.getText();
 				wahlkreis = wk.getText();
 				year = dropList.get(yearInput.getSelectedIndex());
-				
-			   /* for (int i = 1; i < tabPanel.getWidgetCount(); i++){
-				   tabPanel.remove(i);
-			    }*/
+
+				/*
+				 * for (int i = 1; i < tabPanel.getWidgetCount(); i++){
+				 * tabPanel.remove(i); }
+				 */
 				tabPanel.clear();
 				tabPanel.add(inputHolder, "Start");
-				
+
 				// Check castability to prevent SQL injection
 				try {
 					int wknr = Integer.parseInt(wahlkreis);
@@ -570,11 +567,11 @@ public class TestBW implements EntryPoint {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
 					db.hide();
-					
+
 					tabPanel.add(inputMainVPanel, "Admin");
-					tabMappings.put("Admin", tabPanel.getWidgetCount()-1);
+					tabMappings.put("Admin", tabPanel.getWidgetCount() - 1);
 					tabPanel.selectTab(tabMappings.get("Admin"));
-		
+
 				} catch (NumberFormatException e) {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
@@ -582,7 +579,7 @@ public class TestBW implements EntryPoint {
 				}
 			}
 		});
-		
+
 		return decPanel;
 	}
 
@@ -749,10 +746,9 @@ public class TestBW implements EntryPoint {
 		queryInput[1] = wahlkreis;
 
 		/*
-		// Show all Tabs
-		while (tabPanel.getWidgetCount() > 1) {
-			tabPanel.remove(1);
-		}*/
+		 * // Show all Tabs while (tabPanel.getWidgetCount() > 1) {
+		 * tabPanel.remove(1); }
+		 */
 
 		distPanel.clear();
 		wkHPanel.clear();
@@ -811,8 +807,6 @@ public class TestBW implements EntryPoint {
 
 	}
 
-	
-	
 	// Setup callback objects -------------------------------------------------
 	// ------------------------------------------------------------------------
 
@@ -956,7 +950,7 @@ public class TestBW implements EntryPoint {
 				distPanel.add(pcharts, 0, 0);
 
 				tabPanel.add(distPanel, "Verteilung");
-				tabMappings.put("Verteilung", tabPanel.getWidgetCount()-1);
+				tabMappings.put("Verteilung", tabPanel.getWidgetCount() - 1);
 
 				// Call all dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis started.");
@@ -1088,10 +1082,10 @@ public class TestBW implements EntryPoint {
 
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Knappster Sieger analysis complete.");
 				tabPanel.add(knappsterSiegerHPanelContainer, "Knappster Sieger");
-				tabMappings.put("Knappster Sieger", tabPanel.getWidgetCount()-1);
-				
+				tabMappings.put("Knappster Sieger", tabPanel.getWidgetCount() - 1);
+
 				tabPanel.add(wkOverviewErststimmenHPanelContainer, "Wahlkreisuebersicht (Erststimmen)");
-				tabMappings.put("Wahlkreisuebersicht (Erststimmen)", tabPanel.getWidgetCount()-1);
+				tabMappings.put("Wahlkreisuebersicht (Erststimmen)", tabPanel.getWidgetCount() - 1);
 
 				setupUITables(s, "Knappster Sieger", (CellPanel) knappsterSiegerHPanel, knappsterSiegerHPanelContainer);
 			}
@@ -1290,7 +1284,7 @@ public class TestBW implements EntryPoint {
 		finalForm.add(submitVoteButton);
 		layoutPanel.add(finalForm);
 		tabPanel.add(layoutPanel, tabName);
-		tabMappings.put(tabName, tabPanel.getWidgetCount()-1);
+		tabMappings.put(tabName, tabPanel.getWidgetCount() - 1);
 	}
 
 	/**
@@ -1348,12 +1342,9 @@ public class TestBW implements EntryPoint {
 		// TODO : replace already existing tab if possible
 		htabPanel.add(layoutPanel);
 		tabPanel.add(htabPanel, panelName);
-		tabMappings.put(panelName, tabPanel.getWidgetCount()-1);
+		tabMappings.put(panelName, tabPanel.getWidgetCount() - 1);
 	}
 
-	
-	
-	
 	// Helper methods and classes -----------------------------------------
 	// ------------------------------------------------------------------------
 

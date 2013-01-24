@@ -60,6 +60,8 @@ public class DataGenerator {
 		// Stimmengenerierung --------------------------------------------------
 
 		// Wahlberechtigte Tabelle leeren
+		st.executeUpdate("ALTER TABLE wahlberechtigte DROP CONSTRAINT wahlberechtigte_wahlkreis_key;");
+
 		st.executeUpdate("DELETE FROM wahlberechtigte;");
 
 		for (int jahr = 0; jahr < 2; jahr++) {

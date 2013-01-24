@@ -365,62 +365,82 @@ public class DataAnalyzer {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 
-		String jahrName = queryInput[0];
-		String wahlkreis = queryInput[1];
+		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
+		String wahlkreis = Integer.toString(Integer.parseInt(queryInput[1]));
 
 		try {
 
-			// st.executeUpdate("DROP VIEW wahlbeteiligungrelativ CASCADE");
-			// st.executeUpdate("DROP VIEW erststimmengewinnerkandidat CASCADE");
-			// st.executeUpdate("DROP VIEW parteinenanteilabsolut CASCADE");
-			// st.executeUpdate("DROP VIEW parteinenanteilrelativ CASCADE");
+			// st.executeUpdate("DROP VIEW parteienanteilrelativ CASCADE ");
 
-			// erststimmengewinnernummern AS SELECT mvuk.wahlkreis as
-			// wahlkreisnummer, d.politiker, d.partei , mvuk.max as anzahl
+			// st.executeUpdate("DROP VIEW wahlberechtigtewahlkreis CASCADE");
+			// st.executeUpdate("DROP VIEW wahlbeteiligungabsolut CASCADE ");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW wahlberechtigtewahlkreis AS ( SELECT wahlkreis, wahlberechtigte FROM wahlberechtigte WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis
-					+ " )");
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlkreisname AS  SELECT name FROM wahlkreis WHERE jahr = " + jahrName + " AND wahlkreisnummer = " + wahlkreis);
 
-			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT sum(anzahl) FROM erststimmen  WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis);
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlberechtigtewahlkreis AS  SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis);
 
-			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS "
-					+ "SELECT (SELECT * FROM wahlbeteiligungabsolut)::float / (  SELECT wahlberechtigte FROM wahlberechtigtewahlkreis )::float ;");
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsolut AS SELECT  sum(anzahl) FROM erststimmen  WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreis);
+
+			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativ AS SELECT"
+					+ " CAST( CAST( CAST( (SELECT * FROM wahlbeteiligungabsolut)::float/ ( SELECT * FROM wahlberechtigtewahlkreis)::float * 100 as decimal(10,0) ) as text) || CAST( ' %' as text) as text) ;");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidat AS "
-					+ "SELECT name FROM politiker p  WHERE p.politikernummer  = (SELECT e.politiker FROM erststimmengewinnernummern e ORDER BY RANDOM() LIMIT 1)");
+					+ "SELECT name FROM politiker p  WHERE p.politikernummer  = (SELECT e.politiker FROM erststimmengewinnernummern e WHERE e.wahlkreisnummer = " + wahlkreis
+					+ " ORDER BY RANDOM() LIMIT 1)");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolut AS " + "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = " + jahrName
-					+ " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilabsolut AS SELECT p.name as name, zs.anzahl as anzahl  FROM  partei p,zweitstimmen zs WHERE zs.jahr = " + jahrName
+					+ " AND zs.partei =  p.parteinummer AND zs.wahlkreis = " + wahlkreis);
 
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativ AS "
-					+ "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsolut) as anteil FROM parteinenanteilabsolut pa ");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilrelativ AS  SELECT pa.name as name, CAST( CAST( CAST( pa.anzahl::float/(SELECT * FROM wahlbeteiligungabsolut)::float *100 as decimal(10,2)) as text) || CAST( ' %' as text) as text) as anteil FROM parteienanteilabsolut pa ");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahr AS " + "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM zweitstimmen zs WHERE zs.jahr = "
-					+ Integer.toString(Integer.parseInt(jahrName) - 4) + " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilabsolutvorjahr AS  SELECT p.name as name, zs.anzahl as anzahl FROM zweitstimmen zs,partei p WHERE zs.jahr = "
+					+ Integer.toString(Integer.parseInt(jahrName) - 4) + " AND zs.partei =  p.parteinummer  AND zs.wahlkreis = " + wahlkreis);
 
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderung AS "
-					+ "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahr pa2, parteinenanteilabsolut pa1 WHERE pa1.parteinummer = pa2.parteinummer");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilveraenderung AS "
+					+ "SELECT pa1.name as name , pa1.anzahl-pa2.anzahl as anzahl FROM parteienanteilabsolut pa2, parteienanteilabsolutvorjahr pa1 WHERE pa1.name = pa2.name");
+
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteil AS  SELECT pa.name as name, pa.anzahl as absolut , pr.anteil as relativ , pv.anzahl as veraenderung FROM parteienanteilabsolut pa ,parteienanteilrelativ pr, parteienanteilveraenderung pv WHERE pa.name = pr.name AND pv.name = pr.name ORDER BY absolut DESC ");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilohnevorjahr AS  SELECT pa.name as name, pa.anzahl as absolut , pr.anteil as relativ , CAST(null as integer) as veraenderung  FROM parteienanteilabsolut pa ,parteienanteilrelativ pr WHERE pa.name = pr.name ORDER BY absolut DESC ");
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
-		List<List<String>> tableNames = Arrays.asList(Arrays.asList("wahlbeteiligungabsolut", "wahlbeteiligungrelativ", "erststimmengewinnerkandidat"), Arrays.asList("parteinenanteilabsolut"),
-				Arrays.asList("parteinenanteilrelativ"), Arrays.asList("parteinenanteilabsolutvorjahr"), Arrays.asList("parteinenanteilveraenderung"));
+		// System.out.println("\n");
+		// System.out.println("SELECT wahlberechtigte FROM wahlberechtigte WHERE jahr = "
+		// + jahrName + " AND wahlkreis = " + wahlkreis);
+		// rs = st.executeQuery("SELECT * FROM wahlberechtigtewahlkreis;");
+		// while (rs.next()) {
+		// System.out.println("RETURNWERT: " + rs.getString(1));
+		//
+		// }
+		// System.out.println("\n");
 
-		List<String> valueNames = Arrays.asList("Absolute Wahlbeteiligung", "Relative Wahlbeteiligung", "Erststimmengewinner");
+		List<List<String>> tableNames;
+		List<String> valueNames;
+		List<List<String>> colNames;
 
-		List<List<String>> colNames = Arrays.asList(Arrays.asList("Wahlkreisergebnisse", ""), Arrays.asList("Partei", "Zweitstimmen"), Arrays.asList("Partei", "Relativ"),
-				Arrays.asList("Partei Vorjahr", "Zweitstimmen"), Arrays.asList("Partei Vorjahr", "Veränderung"));
+		if (Integer.parseInt(queryInput[0]) >= 2009) {
+			tableNames = Arrays.asList(Arrays.asList("wahlkreisname", "wahlberechtigtewahlkreis", "wahlbeteiligungabsolut", "wahlbeteiligungrelativ", "erststimmengewinnerkandidat"),
+					Arrays.asList("parteienanteil"));
 
+		} else {
+			tableNames = Arrays.asList(Arrays.asList("wahlkreisname", "wahlberechtigtewahlkreis", "wahlbeteiligungabsolut", "wahlbeteiligungrelativ", "erststimmengewinnerkandidat"),
+					Arrays.asList("parteienanteilohnevorjahr"));
+		}
+		valueNames = Arrays.asList("Wahlkreis", "Wahlberechtigte", "Absolute Wahlbeteiligung", "Relative Wahlbeteiligung", "Erststimmengewinner");
+		colNames = Arrays.asList(Arrays.asList("Wahlkreisergebnisse", ""), Arrays.asList("Partei", "Zweitstimmen", "Relativ", "Veränderung"));
 		for (int i = 0; i < tableNames.size(); i++) {
 			for (int k = 0; k < tableNames.get(i).size(); k++) {
 
 				if (k == 0) {
 					ArrayList<String> header = new ArrayList<String>();
 					header.add("wahlkreisoverview");
-					header.add(colNames.get(i).get(0));
-					header.add(colNames.get(i).get(1));
+
+					for (int l = 0; l < colNames.get(i).size(); l++) {
+						header.add(colNames.get(i).get(l));
+					}
+
 					result.add(header);
 					result.add(new ArrayList<String>());
 				}
@@ -443,6 +463,7 @@ public class DataAnalyzer {
 			}
 		}
 
+		System.out.print("-----------");
 		for (List<String> resultlist : result) {
 			for (String string : resultlist) {
 				System.out.print("  " + string);
@@ -550,29 +571,27 @@ public class DataAnalyzer {
 			 * );
 			 * 
 			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW parteinenanteilabsoluteinzelstimmen AS "
-			 * +
+			 * "CREATE OR REPLACE VIEW parteienanteilabsoluteinzelstimmen AS " +
 			 * "SELECT p.parteinummer as parteinummer, (SELECT sum(zs.anzahl) FROM (SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr) zs WHERE zs.jahr = "
 			 * + jahrName +
 			 * " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
 			 * 
 			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW parteinenanteilrelativeinzelstimmen AS "
-			 * +
-			 * "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsoluteinzelstimmen) as anteil FROM parteinenanteilabsoluteinzelstimmen pa "
+			 * "CREATE OR REPLACE VIEW parteienanteilrelativeinzelstimmen AS " +
+			 * "SELECT pa.parteinummer as parteinummer, pa.anzahl/(SELECT * FROM wahlbeteiligungabsoluteinzelstimmen) as anteil FROM parteienanteilabsoluteinzelstimmen pa "
 			 * );
 			 * 
 			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahreinzelstimmen AS "
+			 * "CREATE OR REPLACE VIEW parteienanteilabsolutvorjahreinzelstimmen AS "
 			 * +
 			 * "SELECT p.parteinummer, (SELECT sum(zs.anzahl) FROM (SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr) zs WHERE zs.jahr = "
 			 * + Integer.toString(Integer.parseInt(jahrName) - 4) +
 			 * " AND zs.partei =  p.parteinummer) as anzahl  FROM partei p");
 			 * 
 			 * st.executeUpdate(
-			 * "CREATE OR REPLACE VIEW parteinenanteilveraenderungeinzelstimmen AS "
+			 * "CREATE OR REPLACE VIEW parteienanteilveraenderungeinzelstimmen AS "
 			 * +
-			 * "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteinenanteilabsolutvorjahreinzelstimmen pa2, parteinenanteilabsoluteinzelstimmen pa1 WHERE pa1.parteinummer = pa2.parteinummer"
+			 * "SELECT pa1.parteinummer as parteinummer , pa1.anzahl-pa2.anzahl as anzahl FROM parteienanteilabsolutvorjahreinzelstimmen pa2, parteienanteilabsoluteinzelstimmen pa1 WHERE pa1.parteinummer = pa2.parteinummer"
 			 * );
 			 */
 
@@ -580,17 +599,17 @@ public class DataAnalyzer {
 			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungabsoluteinzelstimmen AS SELECT * FROM partei");
 			st.executeUpdate("CREATE OR REPLACE VIEW wahlbeteiligungrelativeinzelstimmen AS SELECT * FROM partei");
 			st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnerkandidateinzelstimmen AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsoluteinzelstimmen AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilrelativeinzelstimmen AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilabsolutvorjahreinzelstimmen AS SELECT * FROM partei");
-			st.executeUpdate("CREATE OR REPLACE VIEW parteinenanteilveraenderungeinzelstimmen AS SELECT * FROM partei");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilabsoluteinzelstimmen AS SELECT * FROM partei");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilrelativeinzelstimmen AS SELECT * FROM partei");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilabsolutvorjahreinzelstimmen AS SELECT * FROM partei");
+			st.executeUpdate("CREATE OR REPLACE VIEW parteienanteilveraenderungeinzelstimmen AS SELECT * FROM partei");
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
 		List<String> tableNames = Arrays.asList("wahlbeteiligungabsoluteinzelstimmen", "wahlbeteiligungrelativeinzelstimmen", "erststimmengewinnerkandidateinzelstimmen",
-				"parteinenanteilabsoluteinzelstimmen", "parteinenanteilrelativeinzelstimmen", "parteinenanteilabsolutvorjahreinzelstimmen", "parteinenanteilveraenderungeinzelstimmen");
+				"parteienanteilabsoluteinzelstimmen", "parteienanteilrelativeinzelstimmen", "parteienanteilabsolutvorjahreinzelstimmen", "parteienanteilveraenderungeinzelstimmen");
 
 		List<List<String>> colNames = Arrays.asList(Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"),
 				Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"), Arrays.asList("Partei", "Name"));
