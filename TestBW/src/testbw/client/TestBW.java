@@ -526,6 +526,15 @@ public class TestBW implements EntryPoint {
 		userButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
 				
+				// Check inputs
+				if (name.getText().equals("") ||
+					user.getText().equals("") ||
+					pw.getText().equals("") ||
+					wk.getText().equals("")) {
+					
+					Window.alert("Eingaben sind unvollstaendig.");
+				}
+	
 				dbname = name.getText();
 				username = user.getText();
 				password = pw.getText();
@@ -562,6 +571,15 @@ public class TestBW implements EntryPoint {
 		
 		adminButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
+				
+				// Check inputs
+				if (name.getText().equals("") ||
+					user.getText().equals("") ||
+					pw.getText().equals("") ||
+					wk.getText().equals("")) {
+					
+					Window.alert("Eingaben sind unvollstaendig.");
+				}
 				
 				dbname = name.getText();
 				username = user.getText();
@@ -1103,7 +1121,7 @@ public class TestBW implements EntryPoint {
 	}
 
 	// Submit voting form
-	public AsyncCallback<Void> setupSubmitVoteCallback() {
+	public AsyncCallback<Void> setupSubmitVoteCallback(final ArrayList<SingleSelectionModel> sm) {
 
 		AsyncCallback<Void> callback = new AsyncCallback<Void>() {
 
@@ -1114,8 +1132,13 @@ public class TestBW implements EntryPoint {
 
 			@SuppressWarnings("deprecation")
 			public void onSuccess(Void v) {
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Voting form successfully submitted.");
-				Window.alert("Voting form successfully submitted");
+				
+				// Clear data
+				for (int i = 0; i < sm.size(); i++){
+					sm.get(i).setSelected(sm.get(i).getSelectedObject(), false);
+				}
+				tanBox.setText("");
+				Window.alert("Stimmzettel erfolgreich abgegeben.");
 			}
 		};
 
@@ -1139,6 +1162,9 @@ public class TestBW implements EntryPoint {
 
 		// selected objects repository
 		final HashMap<Integer, CandidateInfo> selectedRepo = new HashMap<Integer, CandidateInfo>();
+		
+		// selection models
+		final ArrayList<SingleSelectionModel> sm = new ArrayList<SingleSelectionModel>();
 
 		for (int i = 0; i < s.size(); i = i + 2) {
 
@@ -1172,6 +1198,7 @@ public class TestBW implements EntryPoint {
 			// Add a selection model
 			final SingleSelectionModel<CandidateInfo> selectionModel = new SingleSelectionModel<CandidateInfo>(CandidateInfo.KEY_PROVIDER);
 			cellList.setSelectionModel(selectionModel);
+			sm.add(selectionModel);
 			selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
 
 				// Keep track of selection changes, update current choices
@@ -1179,6 +1206,8 @@ public class TestBW implements EntryPoint {
 					selectedRepo.put(cellList.hashCode(), selectionModel.getSelectedObject());
 				}
 			});
+			
+			
 
 			// Link to data provider
 			ListDataProvider<CandidateInfo> dataProvider = new ListDataProvider<CandidateInfo>();
@@ -1236,6 +1265,7 @@ public class TestBW implements EntryPoint {
 					temp.add(current.politicianID);
 					choices.add(temp);
 				}
+				
 
 				// Initialize the service proxy.
 				if (submitVoteSvc == null) {
@@ -1252,14 +1282,15 @@ public class TestBW implements EntryPoint {
 				input[2] = password;
 				query[0] = year;
 				query[1] = wahlkreis;
+				query[2] = tan;
 
+				
 				// Request voting form.
-				((SubmitVoteServiceAsync) submitVoteSvc).submitVote(input, query, choices, setupSubmitVoteCallback());
+				((SubmitVoteServiceAsync) submitVoteSvc).submitVote(input, query, choices, setupSubmitVoteCallback(sm));
 			}
 		});
 
 		finalForm.add(htabPanel);
-		
 		HorizontalPanel hpanel = new HorizontalPanel();
 		ScrollPanel spanel = new ScrollPanel();
 		hpanel.setSpacing(20);
@@ -1268,9 +1299,6 @@ public class TestBW implements EntryPoint {
 		finalForm.add(hpanel);
 		spanel.add(finalForm);
 		layoutPanel.add(spanel);
-		
-		
-		
 		tabPanel.add(layoutPanel, tabName);
 	}
 

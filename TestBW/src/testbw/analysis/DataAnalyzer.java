@@ -656,6 +656,9 @@ public class DataAnalyzer {
 
 		// Wahlkreis nr. where voting took place.
 		String wahlkreisNr = queryInput[1];
+		
+		// Verified to be parseable to an integer
+		String tan = queryInput[2];
 
 		// 1 Selection per table, should be looped twice, once for the
 		// erststimme,
@@ -668,7 +671,7 @@ public class DataAnalyzer {
 			String politicianNr = currentSelection.get(2);
 
 			// Debug
-			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreisNr + ", name: " + name + ", party: " + party + ", politicianNr " + politicianNr);
+			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreisNr + ", name: " + name + ", party: " + party + ", politicianNr, " + politicianNr + "tan: " + tan);
 
 			/*
 			 * Insert update queries here
