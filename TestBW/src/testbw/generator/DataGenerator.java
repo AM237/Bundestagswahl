@@ -14,11 +14,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
-
 import testbw.util.DBManager;
 import testbw.util.InputDirectory;
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 
 public class DataGenerator {
 
@@ -31,56 +30,43 @@ public class DataGenerator {
 	private static String zweitstimmen09Pfad = InputDirectory.zweitstimmen09Pfad;
 
 	// Datenbankverbindungsdaten ----------------------------------------------
-	//private Connection conn = null;
+	// private Connection conn = null;
 	private Statement st = null;
 	private ResultSet rs = null;
 	private DBManager manager = null;
 
-	public DataGenerator(Statement st, DBManager manager){
-		//this.conn = conn;
+	public DataGenerator(Statement st, DBManager manager) {
+		// this.conn = conn;
 		this.st = st;
 		this.manager = manager;
 	}
 
-	public void generateData() throws FileNotFoundException, UnsupportedEncodingException, SQLException, IOException{
+	public void generateData() throws FileNotFoundException, UnsupportedEncodingException, SQLException, IOException {
 
 		CSVReader readerErgebnis[] = new CSVReader[2];
 		CSVWriter writerErststimmen[] = new CSVWriter[2];
 		CSVWriter writerZweitstimmen[] = new CSVWriter[2];
 
 		// CSV Reader/Writer initialisieren -----------------------------
-		readerErgebnis[0] = new CSVReader(new BufferedReader(
-				new InputStreamReader(new FileInputStream(
-						ergebnis05Pfad), "UTF-8")), ';');
-		readerErgebnis[1] = new CSVReader(new BufferedReader(
-				new InputStreamReader(new FileInputStream(
-						ergebnis09Pfad), "UTF-8")), ';');
+		readerErgebnis[0] = new CSVReader(new BufferedReader(new InputStreamReader(new FileInputStream(ergebnis05Pfad), "UTF-8")), ';');
+		readerErgebnis[1] = new CSVReader(new BufferedReader(new InputStreamReader(new FileInputStream(ergebnis09Pfad), "UTF-8")), ';');
 
-		writerErststimmen[0] = new CSVWriter(new BufferedWriter(
-				new OutputStreamWriter(new FileOutputStream(
-						erststimmen05Pfad), "UTF-8")), ';');
-		writerErststimmen[1] = new CSVWriter(new BufferedWriter(
-				new OutputStreamWriter(new FileOutputStream(
-						erststimmen09Pfad), "UTF-8")), ';');
+		writerErststimmen[0] = new CSVWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(erststimmen05Pfad), "UTF-8")), ';');
+		writerErststimmen[1] = new CSVWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(erststimmen09Pfad), "UTF-8")), ';');
 
-		writerZweitstimmen[0] = new CSVWriter(new BufferedWriter(
-				new OutputStreamWriter(new FileOutputStream(
-						zweitstimmen05Pfad), "UTF-8")), ';');
-		writerZweitstimmen[1] = new CSVWriter(new BufferedWriter(
-				new OutputStreamWriter(new FileOutputStream(
-						zweitstimmen09Pfad), "UTF-8")), ';');		
-
+		writerZweitstimmen[0] = new CSVWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(zweitstimmen05Pfad), "UTF-8")), ';');
+		writerZweitstimmen[1] = new CSVWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(zweitstimmen09Pfad), "UTF-8")), ';');
 
 		// Stimmengenerierung --------------------------------------------------
+
+		// Wahlberechtigte Tabelle leeren
+		st.executeUpdate("DELETE FROM wahlberechtigte;");
 
 		for (int jahr = 0; jahr < 2; jahr++) {
 			String jahrName = Integer.toString(2005 + jahr * 4);
 
 			System.out.println("Generating started from thread" + Thread.currentThread().getId());
 			String[] readLineErgebnis;
-
-			// Wahlberechtigte Tabelle leeren
-			st.executeUpdate("DELETE FROM wahlberechtigte;");
 
 			// kerg.csv------------------------------------
 
@@ -106,34 +92,22 @@ public class DataGenerator {
 
 			while ((readLineErgebnis = readerErgebnis[jahr].readNext()) != null) {
 
-				if (!readLineErgebnis[0].trim().equals("")
-						&& !readLineErgebnis[2].trim().equals("")
-						&& !readLineErgebnis[2].equals("99")) {
+				if (!readLineErgebnis[0].trim().equals("") && !readLineErgebnis[2].trim().equals("") && !readLineErgebnis[2].equals("99")) {
 
 					int wahlkreisnummer = Integer.parseInt(readLineErgebnis[0]);
 
 					String wahlkreisname = readLineErgebnis[1];
-					System.out.println("\n" + wahlkreisnummer
-							+ " - " + wahlkreisname);// Ladebalken
+					System.out.println("\n" + wahlkreisnummer + " - " + wahlkreisname);// Ladebalken
 
 					int wahlberechtigte = Integer.parseInt(readLineErgebnis[3]);
 
-					System.out.println(wahlberechtigte);
+					int aktelleBundeslandnummer = Integer.parseInt(manager.getQueryResult(rs, "SELECT bundesland FROM wahlkreis WHERE jahr = " + jahrName + " AND wahlkreisnummer = " + wahlkreisnummer
+							+ ";"));
 
-					int aktelleBundeslandnummer = Integer.parseInt(manager.getQueryResult(
-							//st,
-							rs,
-							"SELECT bundesland FROM wahlkreis WHERE jahr = "
-									+ jahrName
-									+ " AND wahlkreisnummer = "
-									+ wahlkreisnummer + ";"));
+					System.out.println("INSERT INTO wahlberechtigte VALUES (" + jahrName + "," + wahlkreisnummer + "," + wahlberechtigte);
 
 					// Wahlberechtigte einfuegen
-					st.executeUpdate("INSERT INTO wahlberechtigte VALUES ("
-							+ jahrName
-							+ ","
-							+ wahlkreisnummer
-							+ "," + wahlberechtigte + ");");
+					st.executeUpdate("INSERT INTO wahlberechtigte VALUES (" + jahrName + "," + wahlkreisnummer + "," + wahlberechtigte + ");");
 
 					for (int i = 19; i < 132; i = i + 4) {
 
@@ -151,19 +125,13 @@ public class DataGenerator {
 							zweitstimmenAnzahl = Integer.parseInt(readLineErgebnis[i + 2]);
 
 						aktuelleParteinummer = Integer.parseInt(manager.getQueryResult(
-								//st, 
-								rs,
-								"SELECT parteinummer FROM partei WHERE name = '"
-										+ partei + "';"));
+						// st,
+								rs, "SELECT parteinummer FROM partei WHERE name = '" + partei + "';"));
 
 						if (zweitstimmenAnzahl > 0) {
 
 							for (int j = 0; j < zweitstimmenAnzahl; j++) {
-								String[] writeLine = {
-										jahrName,
-										Integer.toString(zweitstimmzettelnummer),
-										Integer.toString(aktuelleParteinummer),
-										Integer.toString(wahlkreisnummer),
+								String[] writeLine = { jahrName, Integer.toString(zweitstimmzettelnummer), Integer.toString(aktuelleParteinummer), Integer.toString(wahlkreisnummer),
 										Integer.toString(aktelleBundeslandnummer) };
 
 								writerZweitstimmen[jahr].writeNext(writeLine);
@@ -172,23 +140,14 @@ public class DataGenerator {
 						}
 
 						if (erststimmenAnzahl > 0) {
-							aktuelleKandidatennummer = Integer.parseInt(manager.getQueryResult(
-									//st,
-									rs,
-									"SELECT kandidatennummer FROM direktkandidat WHERE jahr = "
-											+ jahrName
-											+ " AND wahlkreis = "
-											+ wahlkreisnummer
-											+ " AND partei = "
-											+ aktuelleParteinummer
-											+ ";"));
+							aktuelleKandidatennummer = Integer
+									.parseInt(manager.getQueryResult(
+									// st,
+											rs, "SELECT kandidatennummer FROM direktkandidat WHERE jahr = " + jahrName + " AND wahlkreis = " + wahlkreisnummer + " AND partei = "
+													+ aktuelleParteinummer + ";"));
 
 							for (int j = 0; j < erststimmenAnzahl; j++) {
-								String[] writeLine = {
-										jahrName,
-										Integer.toString(erststimmzettelnummer),
-										Integer.toString(aktuelleKandidatennummer),
-										Integer.toString(wahlkreisnummer) };
+								String[] writeLine = { jahrName, Integer.toString(erststimmzettelnummer), Integer.toString(aktuelleKandidatennummer), Integer.toString(wahlkreisnummer) };
 
 								writerErststimmen[jahr].writeNext(writeLine);
 								erststimmzettelnummer++;
@@ -203,6 +162,6 @@ public class DataGenerator {
 			readerErgebnis[jahr].close();
 
 			System.out.println("\nGenerating finished.");
-		}	
-	}	
+		}
+	}
 }
