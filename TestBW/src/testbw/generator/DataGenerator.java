@@ -104,8 +104,6 @@ public class DataGenerator {
 					int aktelleBundeslandnummer = Integer.parseInt(manager.getQueryResult(rs, "SELECT bundesland FROM wahlkreis WHERE jahr = " + jahrName + " AND wahlkreisnummer = " + wahlkreisnummer
 							+ ";"));
 
-					System.out.println("INSERT INTO wahlberechtigte VALUES (" + jahrName + "," + wahlkreisnummer + "," + wahlberechtigte);
-
 					// Wahlberechtigte einfuegen
 					st.executeUpdate("INSERT INTO wahlberechtigte VALUES (" + jahrName + "," + wahlkreisnummer + "," + wahlberechtigte + ");");
 
