@@ -512,6 +512,12 @@ public class TestBW implements EntryPoint {
 		decPanel.setWidget(layout);
 		decPanel.setStyleName("loginform");
 
+		// TODO remove after Debugging
+		pw.setText("1234");
+		user.setText("user");
+		name.setText("Bundestagswahl");
+		wk.setText("1");
+
 		// Click handlers
 		userButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {

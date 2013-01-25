@@ -467,7 +467,7 @@ public class DataAnalyzer {
 
 			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendenummern AS  SELECT s1.wahlkreisnummer as wahlkreis, d.politiker, d.partei , min(s1.anzahl - s2.anzahl)  AS differenz"
 					+ " FROM erststimmengewinnernummern s1,erststimmen s2 , direktkandidat d  WHERE s2.jahr = " + jahrName
-					+ " AND s1.anzahl - s2.anzahl > 0 AND s1.wahlkreisnummer = s2.wahlkreis AND d.kandidatennummer != s2.kandidatennummer  AND d.jahr = " + jahrName
+					+ " AND s1.anzahl - s2.anzahl >= 0 AND s1.wahlkreisnummer = s2.wahlkreis AND d.kandidatennummer != s2.kandidatennummer  AND d.jahr = " + jahrName
 					+ " AND s1.politiker = d.politiker GROUP BY s1.wahlkreisnummer, d.politiker, d.partei");
 
 			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendenummern ka , erststimmengewinnernummern es WHERE ka.politiker = es.politiker ORDER BY ka.differenz");
@@ -476,7 +476,7 @@ public class DataAnalyzer {
 
 			// st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnernummernkandidat AS SELECT es.wahlkreisnummer, d.kandidatennummer, es.partei , es.anzahl");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendeverlierernummern AS  SELECT s1.wahlkreis, d.politiker,  d.partei ,  d2.partei as gewinner, min(s1.anzahl - s2.anzahl)  AS differenz"
+			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendeverlierernummern AS  SELECT s1.wahlkreis, d.politiker,  d.partei ,  d2.partei as gewinner, max(s1.anzahl - s2.anzahl)  AS differenz"
 					+ " FROM erststimmen s1,erststimmengewinnernummern s2 , direktkandidat d , direktkandidat d2 WHERE s1.anzahl - s2.anzahl < 0 AND s1.wahlkreis = s2.wahlkreisnummer AND s1.kandidatennummer != d2.kandidatennummer AND  s1.jahr = "
 					+ jahrName + " AND d.jahr = " + jahrName + " AND s1.kandidatennummer = d.kandidatennummer AND s2.politiker = d2.politiker GROUP BY s1.wahlkreis, d.politiker, d.partei, d2.partei");
 
