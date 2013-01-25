@@ -668,14 +668,7 @@ public class DataAnalyzer {
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
 
 		// Wahlkreis nr. where voting took place.
-<<<<<<< HEAD
 		String wahlkreis = Integer.toString(Integer.parseInt(queryInput[1]));
-=======
-		String wahlkreisNr = queryInput[1];
-		
-		// Verified to be parseable to an integer
-		String tan = queryInput[2];
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 		// 1 Selection per table, should be looped twice, once for the
 		// erststimme,
@@ -688,11 +681,7 @@ public class DataAnalyzer {
 			String politicianNr = currentSelection.get(2);
 
 			// Debug
-<<<<<<< HEAD
 			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreis + ", name: " + name + ", party: " + party + ", politicianNr " + politicianNr);
-=======
-			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreisNr + ", name: " + name + ", party: " + party + ", politicianNr, " + politicianNr + "tan: " + tan);
->>>>>>> branch 'master' of https://github.com/AM237/Bundestagswahl.git
 
 			/*
 			 * Insert update queries here
