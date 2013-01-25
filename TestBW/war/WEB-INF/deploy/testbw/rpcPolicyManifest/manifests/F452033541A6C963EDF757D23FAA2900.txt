@@ -1,0 +1,2 @@
+serviceClass: testbw.client.GetMembersService
+path: 785EA36BC026A0A114394F71D13566A7.gwt.rpc

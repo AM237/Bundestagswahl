@@ -1,0 +1,2 @@
+serviceClass: testbw.client.WahlkreisOverviewService
+path: CEAC881E9994C74E1EB70EB513C3E397.gwt.rpc

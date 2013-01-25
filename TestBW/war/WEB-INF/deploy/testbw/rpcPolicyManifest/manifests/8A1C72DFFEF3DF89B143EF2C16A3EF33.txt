@@ -1,0 +1,2 @@
+serviceClass: testbw.client.GetKnappsterSiegerService
+path: AFB0BC9C246C83ECB4AFD979B6FDA210.gwt.rpc

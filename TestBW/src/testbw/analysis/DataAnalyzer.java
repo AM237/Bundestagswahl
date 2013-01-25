@@ -1,5 +1,7 @@
 package testbw.analysis;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -29,27 +31,32 @@ public class DataAnalyzer {
 		// Auswertung ---------------------------------------------------------
 		// --------------------------------------------------------------------
 		st.executeUpdate("DROP TABLE IF EXISTS wahltan CASCADE;");
-		st.executeUpdate("CREATE TABLE wahltan(tan integer, valid boolean ,PRIMARY KEY (tan))WITH (OIDS=FALSE);");
+		st.executeUpdate("CREATE TABLE wahltan(tan integer, valid boolean, voting bigint ,PRIMARY KEY (tan))WITH (OIDS=FALSE);");
 
 		int tan = 0;
 		for (int i = 0; i < 1000; i++) {
 			boolean newTan = false;
 			while (!newTan) {
-				tan = (int) (Math.random() * 2147483647);
+				tan = (int) (Math.random() * Integer.MAX_VALUE);
 				rs = st.executeQuery("SELECT * FROM wahltan WHERE tan = " + tan);
 				newTan = !rs.next();
 			}
-			st.executeUpdate("INSERT INTO wahltan VALUES (" + tan + ",true)");
+			st.executeUpdate("INSERT INTO wahltan VALUES (" + tan + ",true,0)");
 		}
 
-		// tempor�re Tabellen
+		result.add(new ArrayList<String>());
+		rs = st.executeQuery("SELECT * FROM wahltan LIMIT 1;");
+
+		while (rs.next()) {
+			System.out.println("EIN GENERIERTER TAN: " + rs.getString(1));
+		}
+
+		// temporäre Tabellen
 
 		st.executeUpdate("DROP TABLE IF EXISTS maxvotesuniquekand CASCADE;");
 		st.executeUpdate("CREATE TABLE maxvotesuniquekand(wahlkreis integer , max integer, kandnum integer ,  PRIMARY KEY (kandnum))WITH (OIDS=FALSE);");
 
 		// -- Auswertungsanfrage: Endergebnisse (wiederverwendbare Tabellen)
-
-		st.executeUpdate("DROP VIEW stimmenpropartei CASCADE");
 
 		st.executeUpdate("CREATE OR REPLACE VIEW stimmenpropartei AS ( " + " SELECT partei, sum(anzahl) AS anzahl " + " FROM zweitstimmen " + " WHERE jahr = '" + jahrName + "' "
 				+ " GROUP BY partei);");
@@ -145,7 +152,7 @@ public class DataAnalyzer {
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
 
-		// tempor�re Tabellen
+		// temporäre Tabellen
 
 		st.executeUpdate("DROP TABLE IF EXISTS ueberhangerststimmen CASCADE;");
 		st.executeUpdate("DROP TABLE IF EXISTS ueberhangzweitstimmen CASCADE;");
@@ -699,7 +706,7 @@ public class DataAnalyzer {
 	/**
 	 * Submit vote forms (tables)
 	 */
-	public void submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections) throws SQLException {
+	public void submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections, Connection conn) throws SQLException {
 
 		String jahrName = Integer.toString((Integer.parseInt(queryInput[0]) + 781924902) ^ 781924902);
 
@@ -711,22 +718,122 @@ public class DataAnalyzer {
 
 		System.out.println("\n\n " + jahrName + "   " + wahlkreis + "  " + tan);
 
-		// 1 Selection per table, should be looped twice, once for the
-		// erststimme,
-		// and once for the zweitstimme
-		for (int i = 0; i < selections.size(); i++) {
-			ArrayList<String> currentSelection = selections.get(i);
+		PreparedStatement updateStatement = null;
+		long random = (long) (1 + (Long.MAX_VALUE - 1) * Math.random());
+		updateStatement = conn.prepareStatement("UPDATE wahltan SET voting = ?  WHERE tan = ?;");
+		updateStatement.setLong(1, random);
+		updateStatement.setInt(2, tan);
+		System.out.println("\n\n nnnnnnnnnnnnn");
+		updateStatement.setInt(2, tan);
+		System.out.println("\n + " + updateStatement.executeUpdate());
 
-			String name = currentSelection.get(0);
-			String party = currentSelection.get(1);
-			String politicianNr = currentSelection.get(2);
+		updateStatement = conn.prepareStatement("SELECT  valid FROM wahltan WHERE tan = ? AND voting = ?;");
+		updateStatement.setInt(1, tan);
+		updateStatement.setLong(2, random);
 
-			// Debug
-			System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreis + ", name: " + name + ", party: " + party + ", politicianNr " + politicianNr);
+		rs = updateStatement.executeQuery();
 
-			/*
-			 * Insert update queries here
-			 */
+		ResultSetMetaData meta = rs.getMetaData();
+		int anzFields = meta.getColumnCount();
+		String validReturned = "";
+		if (anzFields == 1 && rs.next()) {
+			validReturned = rs.getString(1);
+		}
+
+		if (validReturned.equals("t") || validReturned.equals("TRUE") || validReturned.equals("true") || validReturned.equals("1")) {
+
+			System.out.println("\n\n ----------------------------");
+
+			// 1 Selection per table, should be looped twice, once for the
+			// erststimme,
+			// and once for the zweitstimme
+
+			if (selections.size() == 2) {
+				ArrayList<String> currentSelection = selections.get(0);
+				String erststimmeName = currentSelection.get(0);
+				String erststimmeParteiName = currentSelection.get(1);
+				String erststimmePolitiker = currentSelection.get(2);
+				int direktkandidatennummer;
+				int erststimmeWahlkreis;
+
+				currentSelection = selections.get(1);
+				String zweitstimmeName = currentSelection.get(0);
+				String zweitstimmeParteiName = currentSelection.get(1);
+				String zweitstimmePolitiker = currentSelection.get(2);
+				int zweitstimmeBundesland;
+				int zweitstimmeWahlkreis;
+				int zweitstimmePartei;
+
+				// Debug
+				System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreis + ", name: " + erststimmeName + ", party: " + erststimmeParteiName + ", politicianNr " + erststimmePolitiker);
+				System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreis + ", name: " + zweitstimmeName + ", party: " + zweitstimmeParteiName + ", politicianNr "
+						+ zweitstimmePolitiker);
+
+				/*
+				 * Insert update queries here
+				 */
+
+				//
+
+				updateStatement = conn
+						.prepareStatement("SELECT d.kandidatennummer FROM direktkandidat d, partei pa WHERE d.jahr = ? AND d.politiker = ? AND d.partei = pa.parteinummer AND pa.name = ? AND d.wahlkreis = ?;");
+				updateStatement.setInt(1, Integer.parseInt(jahrName));
+				updateStatement.setInt(2, Integer.parseInt(erststimmePolitiker));
+				updateStatement.setString(3, erststimmeParteiName);
+				updateStatement.setInt(4, Integer.parseInt(wahlkreis));
+				erststimmeWahlkreis = Integer.parseInt(wahlkreis);
+
+				rs = updateStatement.executeQuery();
+				meta = rs.getMetaData();
+				anzFields = meta.getColumnCount();
+				if (anzFields == 1 && rs.next()) {
+					System.out.println("+++++");
+					direktkandidatennummer = Integer.parseInt(rs.getString(1));
+					System.out.println("+++++");
+
+					updateStatement = conn.prepareStatement("SELECT w.bundesland, pa.parteinummer  FROM wahlkreis w, partei pa WHERE  w.jahr = ? AND  w.wahlkreisnummer = ? AND pa.name = ?;");
+					updateStatement.setInt(1, Integer.parseInt(jahrName));
+					updateStatement.setInt(2, Integer.parseInt(wahlkreis));
+					updateStatement.setString(3, zweitstimmeParteiName);
+					rs = updateStatement.executeQuery();
+					meta = rs.getMetaData();
+					anzFields = meta.getColumnCount();
+					System.out.println(anzFields);
+
+					if (anzFields == 2 && rs.next()) {
+						System.out.println("+++++");
+						zweitstimmeBundesland = Integer.parseInt(rs.getString(1));
+						zweitstimmePartei = Integer.parseInt(rs.getString(2));
+						zweitstimmeWahlkreis = Integer.parseInt(wahlkreis);
+
+						System.out.println("Kandidat RETURN: #" + direktkandidatennummer + "   " + erststimmeWahlkreis);
+
+						conn.setAutoCommit(false);
+						updateStatement = conn.prepareStatement("INSERT INTO erststimme VALUES (?,?,?,?);");
+						updateStatement.setInt(1, Integer.parseInt(jahrName));
+						updateStatement.setInt(2, tan);
+						updateStatement.setInt(3, direktkandidatennummer);
+						updateStatement.setInt(4, erststimmeWahlkreis);
+						updateStatement.executeUpdate();
+
+						updateStatement = conn.prepareStatement("INSERT INTO zweitstimme VALUES (?,?,?,?);");
+						updateStatement.setInt(1, Integer.parseInt(jahrName));
+						updateStatement.setInt(2, tan);
+						updateStatement.setInt(3, zweitstimmePartei);
+						updateStatement.setInt(4, zweitstimmeWahlkreis);
+						updateStatement.setInt(4, zweitstimmeBundesland);
+						updateStatement.executeUpdate();
+
+						updateStatement = conn.prepareStatement("UPDATE wahltan SET voting = ? , valid = false WHERE tan = ? ;");
+						updateStatement.setLong(1, 0);
+						updateStatement.setInt(2, tan);
+						updateStatement.executeUpdate();
+
+						conn.commit();
+					}
+				}
+			}
+
 		}
 	}
 

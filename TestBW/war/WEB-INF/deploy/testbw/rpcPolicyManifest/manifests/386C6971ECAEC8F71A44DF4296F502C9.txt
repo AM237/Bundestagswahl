@@ -1,0 +1,2 @@
+serviceClass: testbw.client.GetMandateService
+path: 44A2A99930044030B980C26A5A38A472.gwt.rpc

@@ -1,0 +1,2 @@
+serviceClass: testbw.client.WKOverviewErststimmenService
+path: 4EDFF5B64A052F1A946A89665F95361A.gwt.rpc
