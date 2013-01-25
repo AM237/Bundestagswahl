@@ -811,14 +811,15 @@ public class DataAnalyzer {
 						conn.setAutoCommit(false);
 						updateStatement = conn.prepareStatement("INSERT INTO erststimme VALUES (?,?,?,?);");
 						updateStatement.setInt(1, Integer.parseInt(jahrName));
-						updateStatement.setInt(2, tan);
+						updateStatement.setInt(2, -tan);// Neue
+														// Stimmzettelnummer
 						updateStatement.setInt(3, direktkandidatennummer);
 						updateStatement.setInt(4, erststimmeWahlkreis);
 						updateStatement.executeUpdate();
 
 						updateStatement = conn.prepareStatement("INSERT INTO zweitstimme VALUES (?,?,?,?);");
 						updateStatement.setInt(1, Integer.parseInt(jahrName));
-						updateStatement.setInt(2, tan);
+						updateStatement.setInt(2, -tan);
 						updateStatement.setInt(3, zweitstimmePartei);
 						updateStatement.setInt(4, zweitstimmeWahlkreis);
 						updateStatement.setInt(4, zweitstimmeBundesland);
