@@ -28,6 +28,19 @@ public class DataAnalyzer {
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
 		// Auswertung ---------------------------------------------------------
 		// --------------------------------------------------------------------
+		st.executeUpdate("DROP TABLE IF EXISTS wahltan CASCADE;");
+		st.executeUpdate("CREATE TABLE wahltan(tan integer, valid boolean ,PRIMARY KEY (tan))WITH (OIDS=FALSE);");
+
+		int tan = 0;
+		for (int i = 0; i < 1000; i++) {
+			boolean newTan = false;
+			while (!newTan) {
+				tan = (int) (Math.random() * 2147483647);
+				rs = st.executeQuery("SELECT * FROM wahltan WHERE tan = " + tan);
+				newTan = !rs.next();
+			}
+			st.executeUpdate("INSERT INTO wahltan VALUES (" + tan + ",true)");
+		}
 
 		// tempor�re Tabellen
 
@@ -688,10 +701,15 @@ public class DataAnalyzer {
 	 */
 	public void submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections) throws SQLException {
 
-		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
+		String jahrName = Integer.toString((Integer.parseInt(queryInput[0]) + 781924902) ^ 781924902);
 
 		// Wahlkreis nr. where voting took place.
-		String wahlkreis = Integer.toString(Integer.parseInt(queryInput[1]));
+		String wahlkreis = Integer.toString((Integer.parseInt(queryInput[1]) + 781924902) ^ 781924902);
+
+		// tan
+		int tan = (Integer.parseInt(queryInput[2]) + 781924902) ^ 781924902;
+
+		System.out.println("\n\n " + jahrName + "   " + wahlkreis + "  " + tan);
 
 		// 1 Selection per table, should be looped twice, once for the
 		// erststimme,

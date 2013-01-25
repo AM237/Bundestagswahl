@@ -1243,11 +1243,14 @@ public class TestBW implements EntryPoint {
 				input[0] = dbname;
 				input[1] = username;
 				input[2] = password;
-				query[0] = year;
-				query[1] = wahlkreis;
+
+				query[0] = Integer.toString((Integer.parseInt(year) ^ 781924902) - 781924902);
+				query[1] = Integer.toString((Integer.parseInt(wahlkreis) ^ 781924902) - 781924902);
+				query[2] = Integer.toString((Integer.parseInt(tan) ^ 781924902) - 781924902);
 
 				// Request voting form.
 				((SubmitVoteServiceAsync) submitVoteSvc).submitVote(input, query, choices, setupSubmitVoteCallback());
+
 			}
 		});
 
