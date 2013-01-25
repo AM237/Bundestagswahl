@@ -50,45 +50,28 @@ public class DataAnalyzer {
 
 		// -- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
 
-		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS ( " 
-				
-				+ "WITH divisoren AS ( " 
-				+ "	SELECT GENERATE_SERIES(1, 2*(SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahr + "')-1, 2) AS div), "
+		st.executeUpdate("CREATE OR REPLACE VIEW zweitstimmenergebnis AS ( "
 
-				+ "itrergebnisse AS ( " 
-					+ "	SELECT s.partei AS parteinum,  (s.anzahl / d.div::float8)+RANDOM() AS anzahl " 
-					+ "	FROM divisoren d, stimmenpropartei s " 
-					+ "	ORDER BY anzahl DESC "
-					+ "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahr + "')), "
+		+ "WITH divisoren AS ( " + "	SELECT GENERATE_SERIES(1, 2*(SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahrName + "')-1, 2) AS div), "
 
-				+ "unfiltered AS ( " 
-				+ "	SELECT parteinum, COUNT(*) AS sitze " 
-				+ "	FROM itrergebnisse " 
-				+ "	GROUP BY parteinum), "
+		+ "itrergebnisse AS ( " + "	SELECT s.partei AS parteinum,  (s.anzahl / d.div::float8)+RANDOM() AS anzahl " + "	FROM divisoren d, stimmenpropartei s " + "	ORDER BY anzahl DESC "
+				+ "   LIMIT (SELECT sitze FROM sitzeprojahr WHERE jahr = '" + jahrName + "')), "
 
-				+ "filtered AS ( " 
-				+ "SELECT * FROM unfiltered " 
-				+ "WHERE sitze >= 0.05 * (SELECT SUM(sitze) FROM sitzeprojahr WHERE jahr = '" + jahr + "')), "
-				
-				+ "huerdedivisoren AS ( "
-				+ "	SELECT GENERATE_SERIES(1, 2*((SELECT SUM(sitze) FROM sitzeprojahr WHERE jahr = '" + jahr + "') - (SELECT SUM(sitze) FROM filtered))::bigint, 2) AS div), "
-								
-				+ "huerdeitrergebnisse AS ( " 
-				+ "	SELECT f.parteinum AS parteinum,  (f.sitze / d.div::float8) AS anzahl " 
-				+ "	FROM huerdedivisoren d, filtered f " 
-				+ "	ORDER BY anzahl DESC "
-				+ "   LIMIT (((SELECT SUM(sitze) FROM sitzeprojahr WHERE jahr = '" + jahr + "') - (SELECT SUM(sitze) FROM filtered))::bigint)), "
-				
-				+ "neuezuweisungen AS ( "
-				+ "	SELECT parteinum, COUNT(*) AS sitze " 
-				+ "	FROM huerdeitrergebnisse " 
-				+ "	GROUP BY parteinum) "
-				
-				
-				+ "SELECT p.name AS parteiname, f.sitze + n.sitze AS sitze "
-				+ "FROM filtered f JOIN neuezuweisungen n ON f.parteinum = n.parteinum JOIN partei p ON f.parteinum = p.parteinummer);"
-				
-				);
+				+ "unfiltered AS ( " + "	SELECT parteinum, COUNT(*) AS sitze " + "	FROM itrergebnisse " + "	GROUP BY parteinum), "
+
+				+ "filtered AS ( " + "SELECT * FROM unfiltered " + "WHERE sitze >= 0.05 * (SELECT SUM(sitze) FROM sitzeprojahr WHERE jahr = '" + jahrName + "')), "
+
+				+ "huerdedivisoren AS ( " + "	SELECT GENERATE_SERIES(1, 2*((SELECT SUM(sitze) FROM sitzeprojahr WHERE jahr = '" + jahrName
+				+ "') - (SELECT SUM(sitze) FROM filtered))::bigint, 2) AS div), "
+
+				+ "huerdeitrergebnisse AS ( " + "	SELECT f.parteinum AS parteinum,  (f.sitze / d.div::float8) AS anzahl " + "	FROM huerdedivisoren d, filtered f " + "	ORDER BY anzahl DESC "
+				+ "   LIMIT (((SELECT SUM(sitze) FROM sitzeprojahr WHERE jahr = '" + jahrName + "') - (SELECT SUM(sitze) FROM filtered))::bigint)), "
+
+				+ "neuezuweisungen AS ( " + "	SELECT parteinum, COUNT(*) AS sitze " + "	FROM huerdeitrergebnisse " + "	GROUP BY parteinum) "
+
+				+ "SELECT p.name AS parteiname, f.sitze + n.sitze AS sitze " + "FROM filtered f JOIN neuezuweisungen n ON f.parteinum = n.parteinum JOIN partei p ON f.parteinum = p.parteinummer);"
+
+		);
 
 		// -- Auswertungsanfrage: Endergebnisse (Erststimmen)
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmenergebnis AS (" + "WITH parteinsitze AS ( " + "SELECT partei, COUNT(*) AS sitze "
