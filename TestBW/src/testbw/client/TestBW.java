@@ -433,7 +433,6 @@ public class TestBW implements EntryPoint {
 		// DB name section
 		layout.setHTML(1, 0, "DB Name");
 		final TextBox name = new TextBox();
-		name.setText("Bundestagswahl");
 		name.addStyleName("loginbox-empty");
 		name.addKeyPressHandler(new KeyPressHandler() {
 			public void onKeyPress(KeyPressEvent e) {
@@ -449,8 +448,6 @@ public class TestBW implements EntryPoint {
 		// User name section
 		layout.setHTML(2, 0, "Username");
 		final TextBox user = new TextBox();
-		user.setText("user");
-
 		user.addStyleName("loginbox-empty");
 		user.addKeyPressHandler(new KeyPressHandler() {
 			public void onKeyPress(KeyPressEvent e) {
@@ -466,8 +463,6 @@ public class TestBW implements EntryPoint {
 		// Password section
 		layout.setHTML(3, 0, "Passwort");
 		final PasswordTextBox pw = new PasswordTextBox();
-		pw.setText("1234");
-
 		pw.addStyleName("loginbox-empty");
 		pw.addKeyPressHandler(new KeyPressHandler() {
 			public void onKeyPress(KeyPressEvent e) {
@@ -483,8 +478,6 @@ public class TestBW implements EntryPoint {
 		// Wahlkreis section
 		layout.setHTML(4, 0, "Wahlkreis Nr.");
 		final TextBox wk = new TextBox();
-		wk.setText("1");
-
 		wk.addStyleName("loginbox-empty");
 		wk.addKeyPressHandler(new KeyPressHandler() {
 			public void onKeyPress(KeyPressEvent e) {
@@ -570,8 +563,6 @@ public class TestBW implements EntryPoint {
 
 				// Check castability to prevent SQL injection
 				try {
-					db.hide();
-					resizePanels();
 					Integer.parseInt(wahlkreis);
 					name.setText("");
 					name.setStyleName("loginbox-empty");
@@ -581,6 +572,7 @@ public class TestBW implements EntryPoint {
 					pw.setStyleName("loginbox-empty");
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
+					db.hide();
 
 					adminMainVPanelContainer.clear();
 					adminMainVPanelContainer.add(adminMainVPanel);
@@ -956,11 +948,11 @@ public class TestBW implements EntryPoint {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview analysis started.");
 				((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
 
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview (Erststimmen) analysis started.");
-				((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
-
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Knappster Sieger analysis started.");
 				((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
+
+				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview (Erststimmen) analysis started.");
+				((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
 
 			}
 		};
@@ -1516,8 +1508,8 @@ public class TestBW implements EntryPoint {
 
 		@Override
 		protected native JavaScriptObject createJso(Element parent) /*-{
-																	return new $wnd.google.visualization.GeoChart(parent);
-																	}-*/;
+			return new $wnd.google.visualization.GeoChart(parent);
+		}-*/;
 
 	}
 

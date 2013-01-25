@@ -465,30 +465,66 @@ public class DataAnalyzer {
 		String wahlkreis = Integer.toString(Integer.parseInt(queryInput[1]));
 		try {
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendenummern AS  SELECT s1.wahlkreis, d.politiker, d.partei , min(s1.anzahl - s2.anzahl)  AS differenz"
-					+ " FROM erststimmen s1,erststimmen s2 , direktkandidat d WHERE s2.jahr = " + jahrName
-					+ " AND s1.anzahl - s2.anzahl > 0 AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer AND  s1.jahr = " + jahrName + " AND d.jahr = " + jahrName
-					+ " AND s1.kandidatennummer = d.kandidatennummer GROUP BY s1.wahlkreis, d.politiker, d.partei");
+			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendenummern AS  SELECT s1.wahlkreisnummer as wahlkreis, d.politiker, d.partei , min(s1.anzahl - s2.anzahl)  AS differenz"
+					+ " FROM erststimmengewinnernummern s1,erststimmen s2 , direktkandidat d  WHERE s2.jahr = " + jahrName
+					+ " AND s1.anzahl - s2.anzahl > 0 AND s1.wahlkreisnummer = s2.wahlkreis AND d.kandidatennummer != s2.kandidatennummer  AND d.jahr = " + jahrName
+					+ " AND s1.politiker = d.politiker GROUP BY s1.wahlkreisnummer, d.politiker, d.partei");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendenummern ka , erststimmengewinnernummern es WHERE ka.politiker = es.politiker ORDER BY ka.differenz");
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendenummern ka , erststimmengewinnernummern es WHERE ka.politiker = es.politiker ORDER BY ka.differenz");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10 AS  SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappstegewinnernummern kg WHERE (SELECT count(*) FROM knappstegewinnernummern kg2 WHERE kg2.partei = kg.partei AND kg2.differenz < kg.differenz) < 10 ");
+			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10 AS  SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteabstaendenummern kg WHERE (SELECT count(*) FROM knappsteabstaendenummern kg2 WHERE kg2.partei = kg.partei AND kg2.differenz < kg.differenz) < 10 ");
+
+			// st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnernummernkandidat AS SELECT es.wahlkreisnummer, d.kandidatennummer, es.partei , es.anzahl");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendeverlierernummern AS  SELECT s1.wahlkreis, d.politiker,  d.partei ,  d2.partei as gewinner, min(s1.anzahl - s2.anzahl)  AS differenz"
-					+ " FROM erststimmen s1,erststimmen s2 , direktkandidat d , direktkandidat d2 WHERE s2.jahr = "
-					+ jahrName
-					+ " AND s1.anzahl - s2.anzahl < 0 AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer AND  s1.jahr = "
-					+ jahrName
-					+ " AND d.jahr = "
-					+ jahrName
-					+ " AND s1.kandidatennummer = d.kandidatennummer AND s2.kandidatennummer = d2.kandidatennummer GROUP BY s1.wahlkreis, d.politiker, d.partei, d2.partei");
+					+ " FROM erststimmen s1,erststimmengewinnernummern s2 , direktkandidat d , direktkandidat d2 WHERE s1.anzahl - s2.anzahl < 0 AND s1.wahlkreis = s2.wahlkreisnummer AND s1.kandidatennummer != d2.kandidatennummer AND  s1.jahr = "
+					+ jahrName + " AND d.jahr = " + jahrName + " AND s1.kandidatennummer = d.kandidatennummer AND s2.politiker = d2.politiker GROUP BY s1.wahlkreis, d.politiker, d.partei, d2.partei");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappsteverlierernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendeverlierernummern ka , erststimmengewinnernummern es WHERE ka.gewinner = es.politiker ORDER BY ka.differenz");
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappsteverlierernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendeverlierernummern ka , erststimmengewinnernummern es WHERE ka.gewinner = es.politiker ORDER BY ka.differenz");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10insg AS  SELECT * FROM knappstegewinnernummerntop10 UNION SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteverlierernummern kg WHERE (SELECT count(*) FROM knappsteverlierernummern kg2 WHERE kg2.partei = kg.partei AND kg.differenz > kg2.differenz) < 10-(SELECT count(*) FROM knappstegewinnernummern kg3 WHERE kg3.partei = kg.partei) ");
+			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10insg AS  SELECT * FROM knappstegewinnernummerntop10 UNION SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteabstaendeverlierernummern kg WHERE (SELECT count(*) FROM knappsteabstaendeverlierernummern kg2 WHERE kg2.partei = kg.partei AND kg.differenz > kg2.differenz) < 10-(SELECT count(*) FROM knappstegewinnernummern kg3 WHERE kg3.partei = kg.partei) ");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinner AS SELECT w.name as wname, p.name as pname, pa.name as paname, k10.differenz FROM wahlkreis w,knappstegewinnernummerntop10insg k10, politiker p, partei pa WHERE w.jahr = "
 					+ jahrName + " AND p.politikernummer = k10.politiker AND pa.parteinummer = k10.partei AND w.wahlkreisnummer = k10.wahlkreis ORDER BY pa.name , k10.differenz, w.name");
+
+			// erststimmengewinnernummern AS
+			// SELECT wahlkreisnummer, politiker, partei , anzahl
+
+			// .--------------------
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendenummern AS  SELECT s1.wahlkreis, d.politiker, d.partei , min(s1.anzahl - s2.anzahl)  AS differenz"
+			// +
+			// " FROM erststimmen s1,erststimmen s2 , direktkandidat d WHERE s2.jahr = "
+			// + jahrName
+			// +
+			// " AND s1.anzahl - s2.anzahl > 0 AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer AND  s1.jahr = "
+			// + jahrName + " AND d.jahr = " + jahrName
+			// +
+			// " AND s1.kandidatennummer = d.kandidatennummer GROUP BY s1.wahlkreis, d.politiker, d.partei");
+			//
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendenummern ka , erststimmengewinnernummern es WHERE ka.politiker = es.politiker ORDER BY ka.differenz");
+			//
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10 AS  SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappstegewinnernummern kg WHERE (SELECT count(*) FROM knappstegewinnernummern kg2 WHERE kg2.partei = kg.partei AND kg2.differenz < kg.differenz) < 10 ");
+			//
+			//
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendeverlierernummern AS  SELECT s1.wahlkreis, d.politiker,  d.partei ,  d2.partei as gewinner, min(s1.anzahl - s2.anzahl)  AS differenz"
+			// +
+			// " FROM erststimmen s1,erststimmen s2 , direktkandidat d , direktkandidat d2 WHERE s2.jahr = "
+			// + jahrName
+			// +
+			// " AND s1.anzahl - s2.anzahl < 0 AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != s2.kandidatennummer AND  s1.jahr = "
+			// + jahrName
+			// + " AND d.jahr = "
+			// + jahrName
+			// +
+			// " AND s1.kandidatennummer = d.kandidatennummer AND s2.kandidatennummer = d2.kandidatennummer GROUP BY s1.wahlkreis, d.politiker, d.partei, d2.partei");
+			//
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappsteverlierernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendeverlierernummern ka , erststimmengewinnernummern es WHERE ka.gewinner = es.politiker ORDER BY ka.differenz");
+			//
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10insg AS  SELECT * FROM knappstegewinnernummerntop10 UNION SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteverlierernummern kg WHERE (SELECT count(*) FROM knappsteverlierernummern kg2 WHERE kg2.partei = kg.partei AND kg.differenz > kg2.differenz) < 10-(SELECT count(*) FROM knappstegewinnernummern kg3 WHERE kg3.partei = kg.partei) ");
+			//
+			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinner AS SELECT w.name as wname, p.name as pname, pa.name as paname, k10.differenz FROM wahlkreis w,knappstegewinnernummerntop10insg k10, politiker p, partei pa WHERE w.jahr = "
+			// + jahrName +
+			// " AND p.politikernummer = k10.politiker AND pa.parteinummer = k10.partei AND w.wahlkreisnummer = k10.wahlkreis ORDER BY pa.name , k10.differenz, w.name");
 
 			// System.out.println("..............");
 			// System.out.println("\n");
