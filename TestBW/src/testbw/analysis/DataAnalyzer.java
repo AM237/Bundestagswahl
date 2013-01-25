@@ -29,6 +29,11 @@ public class DataAnalyzer {
 		// Auswertung ---------------------------------------------------------
 		// --------------------------------------------------------------------
 
+		// temporäre Tabellen
+
+		st.executeUpdate("DROP TABLE IF EXISTS maxvotesuniquekand CASCADE;");
+		st.executeUpdate("CREATE TABLE maxvotesuniquekand(wahlkreis integer , max integer, kandnum integer ,  PRIMARY KEY (kandnum))WITH (OIDS=FALSE);");
+
 		// -- Auswertungsanfrage: Endergebnisse (wiederverwendbare Tabellen)
 
 		st.executeUpdate("DROP VIEW stimmenpropartei CASCADE");
@@ -41,7 +46,7 @@ public class DataAnalyzer {
 		st.executeUpdate("CREATE OR REPLACE VIEW maxvoteskand AS (" + "	SELECT e.kandidatennummer AS kandnum, m.wahlkreis AS wahlkreis, m.max AS max "
 				+ "	FROM maxvotes m JOIN (SELECT * FROM erststimmen s WHERE s.jahr = '" + jahrName + "') e " + "	ON m.wahlkreis = e.wahlkreis AND m.max = e.anzahl);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW maxvotesuniquekand AS (" + "	SELECT wahlkreis, max, min(kandnum) AS kandnum " + "	FROM maxvoteskand " + "	GROUP BY wahlkreis, max);");
+		st.executeUpdate("INSERT INTO maxvotesuniquekand (SELECT wahlkreis, max, min(kandnum) AS kandnum 	FROM maxvoteskand 	GROUP BY wahlkreis, max ORDER BY max);");
 
 		// -- Auswertungsanfrage: Endergebnisse (Zweitstimmen)
 
@@ -116,8 +121,16 @@ public class DataAnalyzer {
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
 
+		// temporäre Tabellen
+
+		st.executeUpdate("DROP TABLE IF EXISTS ueberhangerststimmen CASCADE;");
+		st.executeUpdate("DROP TABLE IF EXISTS ueberhangzweitstimmen CASCADE;");
+
+		st.executeUpdate("CREATE TABLE ueberhangerststimmen(parteiname text,  bundesland text, mandate integer,  PRIMARY KEY (parteiname,bundesland))WITH (OIDS=FALSE);");
+		st.executeUpdate("CREATE TABLE ueberhangzweitstimmen(parteiname text,  bundesland text, mandate integer,  PRIMARY KEY (parteiname,bundesland))WITH (OIDS=FALSE);");
+
 		// Ueberhangsmandate
-		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangerststimmen AS ( "
+		st.executeUpdate("INSERT INTO ueberhangerststimmen ( "
 				+
 
 				// Also computed in getSeatDistribution -> use those results
@@ -152,7 +165,7 @@ public class DataAnalyzer {
 
 				"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate " + "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangzweitstimmen AS ( "
+		st.executeUpdate("INSERT INTO ueberhangzweitstimmen ( "
 				+
 
 				// parteien aus dem zweitstimmenergebnis
@@ -258,8 +271,7 @@ public class DataAnalyzer {
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
 
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnernummern AS SELECT  mvuk.wahlkreis as wahlkreisnummer, d.politiker, d.partei , mvuk.max as anzahl FROM "
-				+ "maxvotesuniquekand mvuk, wahlkreis w , direktkandidat d  WHERE d.jahr = " + jahrName + " AND w.jahr = " + jahrName
-				+ " AND  d.kandidatennummer = mvuk.kandnum   AND mvuk.wahlkreis = w.wahlkreisnummer");
+				+ "maxvotesuniquekand mvuk , direktkandidat d  WHERE d.jahr = " + jahrName + " AND  d.kandidatennummer = mvuk.kandnum ");
 
 		st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinner AS SELECT  w.name as wahlkreisname, p.name as politikername, pa.name as parteiname, esg.anzahl FROM "
 				+ "erststimmengewinnernummern esg  , wahlkreis w, partei pa,  politiker p WHERE  w.jahr = " + jahrName
@@ -465,24 +477,19 @@ public class DataAnalyzer {
 		String wahlkreis = Integer.toString(Integer.parseInt(queryInput[1]));
 		try {
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendenummern AS  SELECT s1.wahlkreisnummer as wahlkreis, d.politiker, d.partei , min(s1.anzahl - s2.anzahl)  AS differenz"
-					+ " FROM erststimmengewinnernummern s1,erststimmen s2 , direktkandidat d  WHERE s2.jahr = " + jahrName
-					+ " AND s1.anzahl - s2.anzahl >= 0 AND s1.wahlkreisnummer = s2.wahlkreis AND d.kandidatennummer != s2.kandidatennummer  AND d.jahr = " + jahrName
-					+ " AND s1.politiker = d.politiker GROUP BY s1.wahlkreisnummer, d.politiker, d.partei");
-
-			// st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendenummern ka , erststimmengewinnernummern es WHERE ka.politiker = es.politiker ORDER BY ka.differenz");
+			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendenummern AS  SELECT s1.wahlkreis as wahlkreis, d.politiker, d.partei , min(s1.max - s2.anzahl)  AS differenz"
+					+ " FROM maxvotesuniquekand s1,erststimmen s2 , direktkandidat d  WHERE s2.jahr = " + jahrName
+					+ " AND s1.max - s2.anzahl >= 0 AND s1.wahlkreis = s2.wahlkreis AND d.kandidatennummer != s2.kandidatennummer  AND d.jahr = " + jahrName
+					+ " AND s1.kandnum = d.kandidatennummer GROUP BY s1.wahlkreis, d.politiker, d.partei");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10 AS  SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteabstaendenummern kg WHERE (SELECT count(*) FROM knappsteabstaendenummern kg2 WHERE kg2.partei = kg.partei AND kg2.differenz < kg.differenz) < 10 ");
 
-			// st.executeUpdate("CREATE OR REPLACE VIEW erststimmengewinnernummernkandidat AS SELECT es.wahlkreisnummer, d.kandidatennummer, es.partei , es.anzahl");
+			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendeverlierernummern AS  SELECT s1.wahlkreis, d.politiker,  d.partei ,  d2.partei as gewinner, max(s1.anzahl - s2.max)  AS differenz"
+					+ " FROM erststimmen s1,maxvotesuniquekand s2 , direktkandidat d , direktkandidat d2 WHERE s1.anzahl - s2.max < 0 AND s1.wahlkreis = s2.wahlkreis AND s1.kandidatennummer != d2.kandidatennummer AND  s1.jahr = "
+					+ jahrName + " AND d.jahr = " + jahrName
+					+ " AND s1.kandidatennummer = d.kandidatennummer AND s2.kandnum = d2.kandidatennummer GROUP BY s1.wahlkreis, d.politiker, d.partei, d2.partei");
 
-			st.executeUpdate("CREATE OR REPLACE VIEW knappsteabstaendeverlierernummern AS  SELECT s1.wahlkreis, d.politiker,  d.partei ,  d2.partei as gewinner, max(s1.anzahl - s2.anzahl)  AS differenz"
-					+ " FROM erststimmen s1,erststimmengewinnernummern s2 , direktkandidat d , direktkandidat d2 WHERE s1.anzahl - s2.anzahl < 0 AND s1.wahlkreis = s2.wahlkreisnummer AND s1.kandidatennummer != d2.kandidatennummer AND  s1.jahr = "
-					+ jahrName + " AND d.jahr = " + jahrName + " AND s1.kandidatennummer = d.kandidatennummer AND s2.politiker = d2.politiker GROUP BY s1.wahlkreis, d.politiker, d.partei, d2.partei");
-
-			// st.executeUpdate("CREATE OR REPLACE VIEW knappsteverlierernummern AS  SELECT ka.wahlkreis, ka.politiker, ka.partei ,ka.differenz  FROM knappsteabstaendeverlierernummern ka , erststimmengewinnernummern es WHERE ka.gewinner = es.politiker ORDER BY ka.differenz");
-
-			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10insg AS  SELECT * FROM knappstegewinnernummerntop10 UNION SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteabstaendeverlierernummern kg WHERE (SELECT count(*) FROM knappsteabstaendeverlierernummern kg2 WHERE kg2.partei = kg.partei AND kg.differenz > kg2.differenz) < 10-(SELECT count(*) FROM knappstegewinnernummern kg3 WHERE kg3.partei = kg.partei) ");
+			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinnernummerntop10insg AS  SELECT * FROM knappstegewinnernummerntop10 UNION SELECT kg.wahlkreis, kg.politiker, kg.partei ,kg.differenz  FROM knappsteabstaendeverlierernummern kg WHERE (SELECT count(*) FROM knappsteabstaendeverlierernummern kg2 WHERE kg2.partei = kg.partei AND kg.differenz > kg2.differenz) < 10-(SELECT count(*) FROM knappsteabstaendenummern kg3 WHERE kg3.partei = kg.partei) ");
 
 			st.executeUpdate("CREATE OR REPLACE VIEW knappstegewinner AS SELECT w.name as wname, p.name as pname, pa.name as paname, k10.differenz FROM wahlkreis w,knappstegewinnernummerntop10insg k10, politiker p, partei pa WHERE w.jahr = "
 					+ jahrName + " AND p.politikernummer = k10.politiker AND pa.parteinummer = k10.partei AND w.wahlkreisnummer = k10.wahlkreis ORDER BY pa.name , k10.differenz, w.name");
