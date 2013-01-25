@@ -102,7 +102,7 @@ public class TestBW implements EntryPoint {
 	// Login ------------------------------------------------------------------
 	private final DialogBox db = new DialogBox();
 	private ListBox yearInput = new ListBox(false);
-	private List<String> dropList = Arrays.asList("2005", "2009", "2013");
+	private List<String> dropList = Arrays.asList("2005", "2009");
 	private HorizontalPanel startPanel = new HorizontalPanel();
 
 	// Admin panel
@@ -114,11 +114,11 @@ public class TestBW implements EntryPoint {
 	private VerticalPanel outputVPanel = new VerticalPanel();
 	private HorizontalPanel buttonsHPanel = new HorizontalPanel();
 	private Label buttonsPanelLabel = new Label();
-	private Button setupDBButton = new Button("DB Aufbauen");
-	private Button generateButton = new Button("Stimmen Generieren");
-	private Button loaderButton = new Button("Stimmen Laden");
+	private Button setupDBButton = new Button("DB aufbauen");
+	private Button generateButton = new Button("Stimmen generieren");
+	private Button loaderButton = new Button("Stimmen laden");
 	private Button analysisButton = new Button("Analyse");
-	private Button outputClear = new Button("Konsole Loeschen");
+	private Button outputClear = new Button("Konsole löschen");
 
 	// Output text (console) area ---------------------------------------------
 	private VerticalPanel consoleOutputVPanel = new VerticalPanel();
@@ -579,7 +579,7 @@ public class TestBW implements EntryPoint {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
 					db.hide();
-
+					resizePanels();
 					adminMainVPanelContainer.clear();
 					adminMainVPanelContainer.add(adminMainVPanel);
 					tabPanel.add(adminMainVPanelContainer, "Admin");
@@ -588,7 +588,7 @@ public class TestBW implements EntryPoint {
 				} catch (NumberFormatException e) {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
-					Window.alert("Bitte geben Sie eine gueltige Wahlkreisnummer (1 - 299) ein.");
+					Window.alert("Bitte geben Sie eine g�ltige Wahlkreisnummer (1 - 299) ein.");
 				}
 			}
 		});
@@ -922,6 +922,8 @@ public class TestBW implements EntryPoint {
 
 				tabPanel.add(distPanel, "Verteilung");
 
+				// tabPanel.selectTab(distPanel);
+
 				// Call all dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis started.");
 				((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
@@ -999,7 +1001,7 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onSuccess(ArrayList<ArrayList<String>> s) {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis complete.");
-				setupUITables(s, "Ueberhangsmandate", (CellPanel) mandateHPanel, mandateHPanelContainer);
+				setupUITables(s, "Überhangsmandate", (CellPanel) mandateHPanel, mandateHPanelContainer);
 
 				// Call dependent services
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis started.");
@@ -1024,7 +1026,7 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onSuccess(ArrayList<ArrayList<String>> s) {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview complete.");
-				setupUITables(s, "Wahlkreisuebersicht", (CellPanel) wkOverviewHPanel, wkOverviewHPanelContainer);
+				setupUITables(s, "Wahlkreisübersicht", (CellPanel) wkOverviewHPanel, wkOverviewHPanelContainer);
 			}
 		};
 

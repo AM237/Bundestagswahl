@@ -29,7 +29,7 @@ public class DataAnalyzer {
 		// Auswertung ---------------------------------------------------------
 		// --------------------------------------------------------------------
 
-		// temporäre Tabellen
+		// temporï¿½re Tabellen
 
 		st.executeUpdate("DROP TABLE IF EXISTS maxvotesuniquekand CASCADE;");
 		st.executeUpdate("CREATE TABLE maxvotesuniquekand(wahlkreis integer , max integer, kandnum integer ,  PRIMARY KEY (kandnum))WITH (OIDS=FALSE);");
@@ -132,7 +132,7 @@ public class DataAnalyzer {
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
 
-		// temporäre Tabellen
+		// temporï¿½re Tabellen
 
 		st.executeUpdate("DROP TABLE IF EXISTS ueberhangerststimmen CASCADE;");
 		st.executeUpdate("DROP TABLE IF EXISTS ueberhangzweitstimmen CASCADE;");
@@ -174,7 +174,7 @@ public class DataAnalyzer {
 				"blgewinner AS ( " + "	SELECT b.name AS bundesland,  p.wahlkreis AS wahlkreis,  p.partei AS partei " + "	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahrName
 				+ "') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) " +
 
-				"SELECT b.bundesland AS bundesland, p.name AS parteiname, COUNT(*) AS mandate " + "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
+				"SELECT  p.name AS parteiname,b.bundesland AS bundesland, COUNT(*) AS mandate " + "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
 
 		st.executeUpdate("INSERT INTO ueberhangzweitstimmen ( "
 				+
@@ -244,12 +244,15 @@ public class DataAnalyzer {
 
 		);
 
+		st.executeUpdate("CREATE OR REPLACE VIEW test AS ( SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate FROM ueberhangerststimmen e , ueberhangzweitstimmen z "
+				+ "	WHERE e.bundesland = z.bundesland AND e.parteiname = z.parteiname )" + "");
+
 		st.executeUpdate("CREATE OR REPLACE VIEW umandate AS ( " +
 
-		"WITH unfiltered AS ( " + "	SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate " + "	FROM ueberhangerststimmen e JOIN ueberhangzweitstimmen z "
-				+ "	ON e.bundesland = z.bundesland AND e.parteiname = z.parteiname) " +
+		"WITH unfiltered AS ( SELECT e.bundesland AS bundesland, e.parteiname AS parteiname, e.mandate - z.mandate AS mandate FROM ueberhangerststimmen e , ueberhangzweitstimmen z "
+				+ "	WHERE e.bundesland = z.bundesland AND e.parteiname = z.parteiname) " +
 
-				"SELECT * FROM unfiltered " + "WHERE mandate > 0);"
+				"SELECT * FROM unfiltered  WHERE mandate > 0);"
 
 		);
 
