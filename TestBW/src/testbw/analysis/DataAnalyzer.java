@@ -28,6 +28,11 @@ public class DataAnalyzer {
 
 		ArrayList<ArrayList<String>> result = new ArrayList<ArrayList<String>>();
 		String jahrName = Integer.toString(Integer.parseInt(queryInput[0]));
+
+		System.out.println("_________________________________");
+
+		System.out.println("_________________________________");
+
 		// Auswertung ---------------------------------------------------------
 		// --------------------------------------------------------------------
 		st.executeUpdate("DROP TABLE IF EXISTS wahltan CASCADE;");
@@ -37,7 +42,7 @@ public class DataAnalyzer {
 		for (int i = 0; i < 1000; i++) {
 			boolean newTan = false;
 			while (!newTan) {
-				tan = (int) (Math.random() * Integer.MAX_VALUE);
+				tan = (int) (100000000 + (Math.random() * (Integer.MAX_VALUE - 100000001)));
 				rs = st.executeQuery("SELECT * FROM wahltan WHERE tan = " + tan);
 				newTan = !rs.next();
 			}
@@ -724,7 +729,6 @@ public class DataAnalyzer {
 		updateStatement.setLong(1, random);
 		updateStatement.setInt(2, tan);
 		System.out.println("\n\n nnnnnnnnnnnnn");
-		updateStatement.setInt(2, tan);
 		System.out.println("\n + " + updateStatement.executeUpdate());
 
 		updateStatement = conn.prepareStatement("SELECT  valid FROM wahltan WHERE tan = ? AND voting = ?;");
@@ -773,8 +777,6 @@ public class DataAnalyzer {
 				 * Insert update queries here
 				 */
 
-				//
-
 				updateStatement = conn
 						.prepareStatement("SELECT d.kandidatennummer FROM direktkandidat d, partei pa WHERE d.jahr = ? AND d.politiker = ? AND d.partei = pa.parteinummer AND pa.name = ? AND d.wahlkreis = ?;");
 				updateStatement.setInt(1, Integer.parseInt(jahrName));
@@ -787,9 +789,7 @@ public class DataAnalyzer {
 				meta = rs.getMetaData();
 				anzFields = meta.getColumnCount();
 				if (anzFields == 1 && rs.next()) {
-					System.out.println("+++++");
 					direktkandidatennummer = Integer.parseInt(rs.getString(1));
-					System.out.println("+++++");
 
 					updateStatement = conn.prepareStatement("SELECT w.bundesland, pa.parteinummer  FROM wahlkreis w, partei pa WHERE  w.jahr = ? AND  w.wahlkreisnummer = ? AND pa.name = ?;");
 					updateStatement.setInt(1, Integer.parseInt(jahrName));
@@ -801,25 +801,21 @@ public class DataAnalyzer {
 					System.out.println(anzFields);
 
 					if (anzFields == 2 && rs.next()) {
-						System.out.println("+++++");
 						zweitstimmeBundesland = Integer.parseInt(rs.getString(1));
 						zweitstimmePartei = Integer.parseInt(rs.getString(2));
 						zweitstimmeWahlkreis = Integer.parseInt(wahlkreis);
 
-						System.out.println("Kandidat RETURN: #" + direktkandidatennummer + "   " + erststimmeWahlkreis);
-
 						conn.setAutoCommit(false);
 						updateStatement = conn.prepareStatement("INSERT INTO erststimme VALUES (?,?,?,?);");
 						updateStatement.setInt(1, Integer.parseInt(jahrName));
-						updateStatement.setInt(2, -tan);// Neue
-														// Stimmzettelnummer
+						updateStatement.setInt(2, tan);
 						updateStatement.setInt(3, direktkandidatennummer);
 						updateStatement.setInt(4, erststimmeWahlkreis);
 						updateStatement.executeUpdate();
 
 						updateStatement = conn.prepareStatement("INSERT INTO zweitstimme VALUES (?,?,?,?);");
 						updateStatement.setInt(1, Integer.parseInt(jahrName));
-						updateStatement.setInt(2, -tan);
+						updateStatement.setInt(2, tan);
 						updateStatement.setInt(3, zweitstimmePartei);
 						updateStatement.setInt(4, zweitstimmeWahlkreis);
 						updateStatement.setInt(4, zweitstimmeBundesland);

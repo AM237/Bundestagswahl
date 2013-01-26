@@ -1244,6 +1244,8 @@ public class TestBW implements EntryPoint {
 				input[1] = username;
 				input[2] = password;
 
+				// Einfachste Verschlüsselung des tans, sichere Verbindung
+				// garantieren
 				query[0] = Integer.toString((Integer.parseInt(year) ^ 781924902) - 781924902);
 				query[1] = Integer.toString((Integer.parseInt(wahlkreis) ^ 781924902) - 781924902);
 				query[2] = Integer.toString((Integer.parseInt(tan) ^ 781924902) - 781924902);
