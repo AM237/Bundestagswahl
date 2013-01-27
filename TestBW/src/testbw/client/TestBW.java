@@ -1097,7 +1097,7 @@ public class TestBW implements EntryPoint {
 	}
 
 	// Submit voting form
-	public AsyncCallback<Boolean> setupSubmitVoteCallback() {
+	public AsyncCallback<Boolean> setupSubmitVoteCallback(final ArrayList<SingleSelectionModel<CandidateInfo>> sm) {
 
 		AsyncCallback<Boolean> callback = new AsyncCallback<Boolean>() {
 
@@ -1112,15 +1112,26 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onSuccess(Boolean b) {
 				if (b == true) {
+					
+					for (int i = 0; i < sm.size(); i++){
+						sm.get(i).setSelected(sm.get(i).getSelectedObject(), false);
+					}
+					
+					tanBox.setText("");
+					tanBox.setStyleName("loginbox-empty");
+					
 					ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Voting form successfully submitted.");
 					Window.alert("Sie haben erfolgreich gewählt.");
 
 				} else {
+					
+					tanBox.setText("");
+					tanBox.setStyleName("loginbox-empty");
+					
 					ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Entered TAN is invalid!");
 					Window.alert("Die eingegebene  TAN-Nummer ist nicht gültig.");
 				}
 				tanBox.setText("");
-
 			}
 		};
 
@@ -1146,6 +1157,9 @@ public class TestBW implements EntryPoint {
 
 		// selected objects repository
 		final HashMap<Integer, CandidateInfo> selectedRepo = new HashMap<Integer, CandidateInfo>();
+		
+		// selection models
+		final ArrayList<SingleSelectionModel<CandidateInfo>> sm = new ArrayList<SingleSelectionModel<CandidateInfo>>();
 
 		for (int i = 0; i < s.size(); i = i + 2) {
 
@@ -1179,6 +1193,7 @@ public class TestBW implements EntryPoint {
 			// Add a selection model
 			final SingleSelectionModel<CandidateInfo> selectionModel = new SingleSelectionModel<CandidateInfo>(CandidateInfo.KEY_PROVIDER);
 			cellList.setSelectionModel(selectionModel);
+			sm.add(selectionModel);
 			selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
 
 				// Keep track of selection changes, update current choices
@@ -1244,7 +1259,7 @@ public class TestBW implements EntryPoint {
 					choices.add(temp);
 				}
 
-				if (choices.size() < 2) {
+				if (choices.size() < 1) {
 					Window.alert("Bitte geben Sie ihre Auswahl an.");
 					return;
 				}
@@ -1270,7 +1285,7 @@ public class TestBW implements EntryPoint {
 				query[2] = Integer.toString((Integer.parseInt(tan) ^ 781924902) - 781924902);
 
 				// Request voting form.
-				((SubmitVoteServiceAsync) submitVoteSvc).submitVote(input, query, choices, setupSubmitVoteCallback());
+				((SubmitVoteServiceAsync) submitVoteSvc).submitVote(input, query, choices, setupSubmitVoteCallback(sm));
 
 			}
 		});
