@@ -362,11 +362,10 @@ public class DataAnalyzer {
 				+ "	FROM parteigewinner p JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahrName + "') w ON p.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer) "
 				+ "SELECT  p.name AS parteiname,b.bundesland AS bundesland, COUNT(*) AS mandate " + "FROM blgewinner b JOIN partei p ON b.partei = p.parteinummer " + "GROUP BY b.bundesland, p.name);");
 
-		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangzweitstimmen2  AS ( " + "WITH ergebnisparteien AS ( " + "	SELECT z.parteiname, p.parteinummer "
-				+ "	FROM zweitstimmenergebnis z JOIN partei p " + "	ON z.parteiname = p.name), " + "iterators AS ( "
-				+ "	SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM zweitstimmenergebnis), 2) AS iterator ), " + "parteiiterators AS ( " + " 	SELECT * " + "	FROM ergebnisparteien e, iterators i "
-				+ "	WHERE i.iterator <= 2 * (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = e.parteiname)), " + "parteibluebersicht AS ( "
-				+ "	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl " + "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahrName
+		st.executeUpdate("CREATE OR REPLACE VIEW ueberhangzweitstimmen2  AS (  WITH ergebnisparteien AS ( " + "	SELECT z.parteiname, p.parteinummer " + "	FROM zweitstimmenergebnis z JOIN partei p "
+				+ "	ON z.parteiname = p.name), " + "iterators AS ( " + "	SELECT GENERATE_SERIES(1, 2*(SELECT MAX(sitze) FROM zweitstimmenergebnis), 2) AS iterator ), " + "parteiiterators AS ( "
+				+ " 	SELECT * " + "	FROM ergebnisparteien e, iterators i " + "	WHERE i.iterator <= 2 * (SELECT sitze FROM zweitstimmenergebnis WHERE parteiname = e.parteiname)), "
+				+ "parteibluebersicht AS ( " + "	SELECT b.name AS bundesland, z.partei AS partei, SUM(z.anzahl)::numeric AS anzahl " + "	FROM  (SELECT * FROM zweitstimmen WHERE jahr = '" + jahrName
 				+ "' AND partei IN (SELECT parteinummer FROM ergebnisparteien)) z JOIN (SELECT * FROM wahlkreis WHERE jahr = '" + jahrName + "') w  "
 				+ "	ON z.wahlkreis = w.wahlkreisnummer JOIN bundesland b ON w.bundesland = b.bundeslandnummer " + "	GROUP BY z.partei, b.name), " + "parteiiteratorbl AS ( "
 				+ "	SELECT p1.parteiname AS parteiname, p1.parteinummer AS parteinummer, p2.bundesland AS bundesland, (p2.anzahl::numeric / p1.iterator::numeric) + RANDOM() AS itrergebnis "
@@ -389,7 +388,7 @@ public class DataAnalyzer {
 
 		st.executeUpdate("CREATE OR REPLACE VIEW mitglieder AS("
 				+ "WITH zsdiff AS ( "
-				+ "SELECT zs.parteiname , zs.bundesland, CASE WHEN es.mandate IS NULL THEN zs.mandate ELSE zs.mandate - es.mandate END as mandate FROM ueberhangerststimmen2 zs LEFT JOIN ueberhangerststimmen2 es ON es.parteiname =  zs.parteiname AND es.bundesland =  zs.bundesland )"
+				+ "SELECT zs.parteiname , zs.bundesland, CASE WHEN es.mandate IS NULL THEN zs.mandate ELSE zs.mandate - es.mandate END as mandate FROM ueberhangzweitstimmen2 zs LEFT JOIN ueberhangerststimmen2 es ON es.parteiname =  zs.parteiname AND es.bundesland =  zs.bundesland )"
 				+ "(SELECT p.name as politikername, pa.name as parteiname FROM  listenkanidatohnedirektkandidaten lk, politiker p , partei pa , bundesland bl , zsdiff WHERE "
 				+ "zsdiff.bundesland = bl.name  AND bl.bundeslandnummer = lk.bundesland AND zsdiff.parteiname = pa.name  AND pa.parteinummer = lk.partei AND p.politikernummer = lk.politiker "
 				+ " AND lk.listenplatz <= zsdiff.mandate ) UNION (SELECT politikername , parteiname FROM erststimmengewinner ))");
