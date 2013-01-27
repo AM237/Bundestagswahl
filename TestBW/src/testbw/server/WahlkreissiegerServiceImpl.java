@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import testbw.analysis.DataAnalyzer;
+import testbw.benchmark.BenchmarkServlet;
 import testbw.client.WahlkreissiegerService;
 import testbw.util.DBManager;
 
@@ -28,7 +29,12 @@ public class WahlkreissiegerServiceImpl extends RemoteServiceServlet implements 
 
 		// Query
 		try {
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().setAutoCommit(false);
 			ArrayList<ArrayList<String>> result = analyzer.getWahlkreissieger(queryInput);
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().commit();
+
 			st.close();
 			manager.disconnect();
 			return result;

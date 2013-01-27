@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import testbw.analysis.DataAnalyzer;
+import testbw.benchmark.BenchmarkServlet;
 import testbw.client.GetMembersService;
 import testbw.util.DBManager;
 
@@ -27,7 +28,12 @@ public class GetMembersServiceImpl extends RemoteServiceServlet implements GetMe
 
 		// Query
 		try {
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().setAutoCommit(false);
 			ArrayList<ArrayList<String>> result = analyzer.getMembers(queryInput);
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().commit();
+
 			st.close();
 			manager.disconnect();
 

@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import testbw.analysis.DataAnalyzer;
+import testbw.benchmark.BenchmarkServlet;
 import testbw.client.GetKnappsterSiegerService;
 import testbw.util.DBManager;
 
@@ -27,7 +28,13 @@ public class GetKnappsterSiegerServiceImpl extends RemoteServiceServlet implemen
 
 		// Query
 		try {
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().setAutoCommit(false);
 			ArrayList<ArrayList<String>> result = analyzer.getKnappsterSieger(queryInput);
+
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().commit();
+
 			st.close();
 			manager.disconnect();
 

@@ -17,7 +17,11 @@ import testbw.server.WahlkreissiegerServiceImpl;
 
 public class BenchmarkServlet extends HttpServlet {
 
+	public static boolean isBenchmark = false;
+
 	public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		isBenchmark = true;
 
 		PrintWriter out = res.getWriter();
 
@@ -32,7 +36,6 @@ public class BenchmarkServlet extends HttpServlet {
 		case "1":
 			SeatDistributionServiceImpl querySeatDistribution = new SeatDistributionServiceImpl();
 			querySeatDistribution.getSeatDistribution(projectInput, queryInput);
-
 			break;
 		case "2":
 			GetMembersServiceImpl queryMembers = new GetMembersServiceImpl();

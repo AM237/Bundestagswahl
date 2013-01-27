@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import testbw.analysis.DataAnalyzer;
+import testbw.benchmark.BenchmarkServlet;
 import testbw.client.SeatDistributionService;
 import testbw.util.DBManager;
 
@@ -27,7 +28,13 @@ public class SeatDistributionServiceImpl extends RemoteServiceServlet implements
 
 		// Query
 		try {
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().setAutoCommit(false);
 			ArrayList<ArrayList<String>> result = analyzer.getSeatDistribution(queryInput);
+
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().commit();
+
 			st.close();
 			manager.disconnect();
 			return result;

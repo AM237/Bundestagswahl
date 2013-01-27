@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import testbw.analysis.DataAnalyzer;
+import testbw.benchmark.BenchmarkServlet;
 import testbw.client.GetMandateService;
 import testbw.util.DBManager;
 
@@ -27,7 +28,13 @@ public class GetMandateServiceImpl extends RemoteServiceServlet implements GetMa
 
 		// Query
 		try {
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().setAutoCommit(false);
 			ArrayList<ArrayList<String>> result = analyzer.getUeberhangsmandate(queryInput);
+
+			if (BenchmarkServlet.isBenchmark)
+				manager.getConnection().commit();
+
 			st.close();
 			manager.disconnect();
 
