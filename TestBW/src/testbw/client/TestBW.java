@@ -59,6 +59,7 @@ import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.LayoutPanel;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
@@ -155,6 +156,8 @@ public class TestBW implements EntryPoint {
 
 	// Submit vote panel ------------------------------------------------------
 	private VerticalPanel submitVotePanel = new VerticalPanel();
+	private LayoutPanel submitVotePanelContainer = new LayoutPanel();
+
 	private Button submitVoteButton = new Button("Stimme abgeben");
 	private TextBox tanBox = new TextBox();
 
@@ -389,7 +392,6 @@ public class TestBW implements EntryPoint {
 		wkOverviewHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
 		knappsterSiegerHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
 		wkOverviewErststimmenHPanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
-		submitVotePanel.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
 		db.setSize("" + RootLayoutPanel.get().getOffsetWidth() / 4 + "px", "" + RootLayoutPanel.get().getOffsetHeight() / 3 + "px");
 	}
 
@@ -528,8 +530,8 @@ public class TestBW implements EntryPoint {
 				wahlkreis = wk.getText();
 				year = dropList.get(yearInput.getSelectedIndex());
 
-				tabPanel.clear();
-				tabPanel.add(startPanel, "Start");
+				// tabPanel.clear();
+				// tabPanel.add(startPanel, "Start");
 
 				submitVotePanel.clear();
 				submitVotePanel.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
@@ -566,6 +568,7 @@ public class TestBW implements EntryPoint {
 
 				tabPanel.clear();
 				tabPanel.add(startPanel, "Start");
+				resizePanels();
 
 				// Check castability to prevent SQL injection
 				try {
@@ -579,7 +582,6 @@ public class TestBW implements EntryPoint {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
 					db.hide();
-					resizePanels();
 					adminMainVPanelContainer.clear();
 					adminMainVPanelContainer.add(adminMainVPanel);
 					tabPanel.add(adminMainVPanelContainer, "Admin");
@@ -1088,7 +1090,6 @@ public class TestBW implements EntryPoint {
 			public void onSuccess(ArrayList<ArrayList<String>> s) {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Voting form retrieved.");
 				setupVoteForms(s, "Stimmzettel", (CellPanel) submitVotePanel);
-				tabPanel.selectTab(tabPanel.getWidgetCount() - 1);
 			}
 		};
 
@@ -1096,19 +1097,30 @@ public class TestBW implements EntryPoint {
 	}
 
 	// Submit voting form
-	public AsyncCallback<Void> setupSubmitVoteCallback() {
+	public AsyncCallback<Boolean> setupSubmitVoteCallback() {
 
-		AsyncCallback<Void> callback = new AsyncCallback<Void>() {
+		AsyncCallback<Boolean> callback = new AsyncCallback<Boolean>() {
 
 			@SuppressWarnings("deprecation")
 			public void onFailure(Throwable caught) {
+
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Error while submitting voting form: " + caught.getMessage());
+				Window.alert(caught.getMessage());
+
 			}
 
 			@SuppressWarnings("deprecation")
-			public void onSuccess(Void v) {
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Voting form successfully submitted.");
-				Window.alert("Voting form successfully submitted");
+			public void onSuccess(Boolean b) {
+				if (b == true) {
+					ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Voting form successfully submitted.");
+					Window.alert("Sie haben erfolgreich gewählt.");
+
+				} else {
+					ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Entered TAN is invalid!");
+					Window.alert("Die eingegebene  TAN-Nummer ist nicht gültig.");
+				}
+				tanBox.setText("");
+
 			}
 		};
 
@@ -1117,6 +1129,8 @@ public class TestBW implements EntryPoint {
 
 	// Bind voting form to UI
 	public void setupVoteForms(ArrayList<ArrayList<String>> s, String tabName, CellPanel layoutPanel) {
+
+		layoutPanel.clear();
 
 		VerticalPanel finalForm = new VerticalPanel();
 		finalForm.setHorizontalAlignment(VerticalPanel.ALIGN_CENTER);
@@ -1203,7 +1217,7 @@ public class TestBW implements EntryPoint {
 				// Verify tan input
 				if (tan.equals("")) {
 					tanBox.setStyleName("loginbox-empty");
-					Window.alert("Bitte geben Sie Ihre TAN Nr. ein.");
+					Window.alert("Bitte geben Sie Ihre  TAN-Nummer ein.");
 					return;
 				}
 
@@ -1211,7 +1225,7 @@ public class TestBW implements EntryPoint {
 					Integer.parseInt(tan);
 				} catch (NumberFormatException e) {
 					tanBox.setStyleName("loginbox-empty");
-					Window.alert("TAN Nr. ist ungueltig.");
+					Window.alert("Die eingegebene TAN-Nummer ist nicht gültig.");
 					return;
 				}
 
@@ -1228,6 +1242,11 @@ public class TestBW implements EntryPoint {
 					temp.add(current.party);
 					temp.add(current.politicianID);
 					choices.add(temp);
+				}
+
+				if (choices.size() < 2) {
+					Window.alert("Bitte geben Sie ihre Auswahl an.");
+					return;
 				}
 
 				// Initialize the service proxy.
@@ -1266,8 +1285,14 @@ public class TestBW implements EntryPoint {
 		finalForm.add(hpanel);
 		spanel.add(finalForm);
 		layoutPanel.add(spanel);
+		submitVotePanelContainer.clear();
+		submitVotePanelContainer.add(layoutPanel);
+		submitVotePanelContainer.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
+		submitVotePanel.setSize("" + RootLayoutPanel.get().getOffsetWidth() + "px", "" + RootLayoutPanel.get().getOffsetHeight() + "px");
 
-		tabPanel.add(layoutPanel, tabName);
+		RootLayoutPanel.get().clear();
+		RootLayoutPanel.get().add(submitVotePanelContainer);
+
 	}
 
 	// Bind collection of output tables to UI

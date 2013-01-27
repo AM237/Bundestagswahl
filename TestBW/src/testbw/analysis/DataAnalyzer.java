@@ -711,7 +711,8 @@ public class DataAnalyzer {
 	/**
 	 * Submit vote forms (tables)
 	 */
-	public void submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections, Connection conn) throws SQLException {
+	public Boolean submitVote(String[] queryInput, ArrayList<ArrayList<String>> selections, Connection conn) throws SQLException {
+		conn.setAutoCommit(true);
 
 		String jahrName = Integer.toString((Integer.parseInt(queryInput[0]) + 781924902) ^ 781924902);
 
@@ -721,15 +722,12 @@ public class DataAnalyzer {
 		// tan
 		int tan = (Integer.parseInt(queryInput[2]) + 781924902) ^ 781924902;
 
-		System.out.println("\n\n " + jahrName + "   " + wahlkreis + "  " + tan);
-
 		PreparedStatement updateStatement = null;
 		long random = (long) (1 + (Long.MAX_VALUE - 1) * Math.random());
 		updateStatement = conn.prepareStatement("UPDATE wahltan SET voting = ?  WHERE tan = ?;");
 		updateStatement.setLong(1, random);
 		updateStatement.setInt(2, tan);
-		System.out.println("\n\n nnnnnnnnnnnnn");
-		System.out.println("\n + " + updateStatement.executeUpdate());
+		updateStatement.executeUpdate();
 
 		updateStatement = conn.prepareStatement("SELECT  valid FROM wahltan WHERE tan = ? AND voting = ?;");
 		updateStatement.setInt(1, tan);
@@ -746,13 +744,9 @@ public class DataAnalyzer {
 
 		if (validReturned.equals("t") || validReturned.equals("TRUE") || validReturned.equals("true") || validReturned.equals("1")) {
 
-			System.out.println("\n\n ----------------------------");
-
-			// 1 Selection per table, should be looped twice, once for the
-			// erststimme,
-			// and once for the zweitstimme
-
 			if (selections.size() == 2) {
+				System.out.println("++++");
+
 				ArrayList<String> currentSelection = selections.get(0);
 				String erststimmeName = currentSelection.get(0);
 				String erststimmeParteiName = currentSelection.get(1);
@@ -768,28 +762,28 @@ public class DataAnalyzer {
 				int zweitstimmeWahlkreis;
 				int zweitstimmePartei;
 
-				// Debug
 				System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreis + ", name: " + erststimmeName + ", party: " + erststimmeParteiName + ", politicianNr " + erststimmePolitiker);
 				System.out.println("Updating: year: " + jahrName + ", wkNr: " + wahlkreis + ", name: " + zweitstimmeName + ", party: " + zweitstimmeParteiName + ", politicianNr "
 						+ zweitstimmePolitiker);
 
-				/*
-				 * Insert update queries here
-				 */
-
 				updateStatement = conn
 						.prepareStatement("SELECT d.kandidatennummer FROM direktkandidat d, partei pa WHERE d.jahr = ? AND d.politiker = ? AND d.partei = pa.parteinummer AND pa.name = ? AND d.wahlkreis = ?;");
+
 				updateStatement.setInt(1, Integer.parseInt(jahrName));
 				updateStatement.setInt(2, Integer.parseInt(erststimmePolitiker));
 				updateStatement.setString(3, erststimmeParteiName);
 				updateStatement.setInt(4, Integer.parseInt(wahlkreis));
-				erststimmeWahlkreis = Integer.parseInt(wahlkreis);
+
+				System.out
+						.println("SELECT d.kandidatennummer FROM direktkandidat d, partei pa WHERE d.jahr = ? AND d.politiker = ? AND d.partei = pa.parteinummer AND pa.name = ? AND d.wahlkreis = ?;");
 
 				rs = updateStatement.executeQuery();
 				meta = rs.getMetaData();
 				anzFields = meta.getColumnCount();
 				if (anzFields == 1 && rs.next()) {
+					System.out.println("##########");
 					direktkandidatennummer = Integer.parseInt(rs.getString(1));
+					erststimmeWahlkreis = Integer.parseInt(wahlkreis);
 
 					updateStatement = conn.prepareStatement("SELECT w.bundesland, pa.parteinummer  FROM wahlkreis w, partei pa WHERE  w.jahr = ? AND  w.wahlkreisnummer = ? AND pa.name = ?;");
 					updateStatement.setInt(1, Integer.parseInt(jahrName));
@@ -801,6 +795,8 @@ public class DataAnalyzer {
 					System.out.println(anzFields);
 
 					if (anzFields == 2 && rs.next()) {
+						System.out.println("+++++++++++++");
+
 						zweitstimmeBundesland = Integer.parseInt(rs.getString(1));
 						zweitstimmePartei = Integer.parseInt(rs.getString(2));
 						zweitstimmeWahlkreis = Integer.parseInt(wahlkreis);
@@ -827,11 +823,21 @@ public class DataAnalyzer {
 						updateStatement.executeUpdate();
 
 						conn.commit();
+						conn.setAutoCommit(true);
+
+						return true;
+					} else {
+						throw new SQLException("Interner Fehler");
 					}
+				} else {
+					throw new SQLException("Interner Fehler");
 				}
+			} else {
+				throw new SQLException("Interner Fehler");
 			}
 
 		}
+		return false;
 	}
 
 	// Get data from ResultSet into required table format

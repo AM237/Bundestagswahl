@@ -15,8 +15,8 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class SubmitVoteServiceImpl extends RemoteServiceServlet implements SubmitVoteService {
 
 	// Get vote forms (tables)
-	public void submitVote(String[] projectInput, String[] queryInput, ArrayList<ArrayList<String>> selection) {
-
+	public Boolean submitVote(String[] projectInput, String[] queryInput, ArrayList<ArrayList<String>> selection) {
+		Boolean returnValue = false;
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
 		manager.connect();
@@ -28,12 +28,11 @@ public class SubmitVoteServiceImpl extends RemoteServiceServlet implements Submi
 
 		// Query
 		try {
-			analyzer.submitVote(queryInput, selection, manager.getConnection());
-
+			returnValue = analyzer.submitVote(queryInput, selection, manager.getConnection());
 			st.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
+		return returnValue;
 	}
 }
