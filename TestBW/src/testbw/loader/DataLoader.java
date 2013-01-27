@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
@@ -27,7 +28,7 @@ public class DataLoader {
 	private Connection conn = null;
 	private Statement st = null;
 
-	public DataLoader(Connection conn, Statement st){
+	public DataLoader(Connection conn, Statement st) {
 		this.conn = conn;
 		this.st = st;
 	}
@@ -81,31 +82,47 @@ public class DataLoader {
 				}
 
 				System.out.println(tableDestination + " " + actPfad);
-				InputStream in = new BufferedInputStream(
-						CopyProgressMonitor.getCopyProgressMonitor(
-								actPfad, progressString));
-				copyManager.copyIn("COPY " + tableDestination
-						+ " FROM STDIN WITH DELIMITER ';' CSV", in);
+				InputStream in = new BufferedInputStream(CopyProgressMonitor.getCopyProgressMonitor(actPfad, progressString));
+				copyManager.copyIn("COPY " + tableDestination + " FROM STDIN WITH DELIMITER ';' CSV", in);
 
 				System.out.println("\nCopying finished");
+
+				System.out.println("\nGenerating TANs");
+
+				st.executeUpdate("DROP TABLE IF EXISTS wahltan CASCADE;");
+				st.executeUpdate("CREATE TABLE wahltan(tan integer, valid boolean, voting bigint ,PRIMARY KEY (tan))WITH (OIDS=FALSE);");
+
+				int tan = 0;
+				ResultSet rs;
+				for (int i = 0; i < 1000; i++) {
+					boolean newTan = false;
+					while (!newTan) {
+						tan = (int) (100000000 + (Math.random() * (Integer.MAX_VALUE - 100000001)));
+						rs = st.executeQuery("SELECT * FROM wahltan WHERE tan = " + tan);
+						newTan = !rs.next();
+					}
+					st.executeUpdate("INSERT INTO wahltan VALUES (" + tan + ",true,0)");
+				}
+				System.out.println("\nGenerating TANs finished");
+
 			}
 		}
 	}
-	
+
 	/**
 	 * Aggregate votes on Wahlkreis level
 	 */
 	public void aggregateData() throws SQLException {
-		
+
 		System.out.print("Aggregating votes .... ");
-		
+
 		st.executeUpdate("DELETE FROM erststimmen;");
 		st.executeUpdate("DELETE FROM zweitstimmen;");
 		st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
 		st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
-		
+
 		System.out.println("finished.");
-		
+
 	}
 
 	/**

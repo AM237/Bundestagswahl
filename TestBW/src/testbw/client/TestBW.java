@@ -1112,26 +1112,25 @@ public class TestBW implements EntryPoint {
 			@SuppressWarnings("deprecation")
 			public void onSuccess(Boolean b) {
 				if (b == true) {
-					
-					for (int i = 0; i < sm.size(); i++){
+
+					for (int i = 0; i < sm.size(); i++) {
 						sm.get(i).setSelected(sm.get(i).getSelectedObject(), false);
 					}
-					
+
 					tanBox.setText("");
 					tanBox.setStyleName("loginbox-empty");
-					
+
 					ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Voting form successfully submitted.");
 					Window.alert("Sie haben erfolgreich gewählt.");
 
 				} else {
-					
+
 					tanBox.setText("");
 					tanBox.setStyleName("loginbox-empty");
-					
+
 					ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Entered TAN is invalid!");
 					Window.alert("Die eingegebene  TAN-Nummer ist nicht gültig.");
 				}
-				tanBox.setText("");
 			}
 		};
 
@@ -1157,7 +1156,7 @@ public class TestBW implements EntryPoint {
 
 		// selected objects repository
 		final HashMap<Integer, CandidateInfo> selectedRepo = new HashMap<Integer, CandidateInfo>();
-		
+
 		// selection models
 		final ArrayList<SingleSelectionModel<CandidateInfo>> sm = new ArrayList<SingleSelectionModel<CandidateInfo>>();
 
@@ -1227,23 +1226,6 @@ public class TestBW implements EntryPoint {
 			public void onClick(ClickEvent event) {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Submitting vote ...");
 
-				String tan = tanBox.getText();
-
-				// Verify tan input
-				if (tan.equals("")) {
-					tanBox.setStyleName("loginbox-empty");
-					Window.alert("Bitte geben Sie Ihre  TAN-Nummer ein.");
-					return;
-				}
-
-				try {
-					Integer.parseInt(tan);
-				} catch (NumberFormatException e) {
-					tanBox.setStyleName("loginbox-empty");
-					Window.alert("Die eingegebene TAN-Nummer ist nicht gültig.");
-					return;
-				}
-
 				// send current choices to server
 				ArrayList<ArrayList<String>> choices = new ArrayList<ArrayList<String>>();
 
@@ -1259,8 +1241,25 @@ public class TestBW implements EntryPoint {
 					choices.add(temp);
 				}
 
-				if (choices.size() < 1) {
+				if (choices.size() < 2) {
 					Window.alert("Bitte geben Sie ihre Auswahl an.");
+					return;
+				}
+
+				String tan = tanBox.getText();
+
+				// Verify tan input
+				if (tan.equals("")) {
+					tanBox.setStyleName("loginbox-empty");
+					Window.alert("Bitte geben Sie Ihre  TAN-Nummer ein.");
+					return;
+				}
+
+				try {
+					Integer.parseInt(tan);
+				} catch (NumberFormatException e) {
+					tanBox.setStyleName("loginbox-empty");
+					Window.alert("Die eingegebene TAN-Nummer ist nicht gültig.");
 					return;
 				}
 
