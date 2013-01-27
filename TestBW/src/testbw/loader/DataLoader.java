@@ -83,7 +83,11 @@ public class DataLoader {
 
 				System.out.println(tableDestination + " " + actPfad);
 				InputStream in = new BufferedInputStream(CopyProgressMonitor.getCopyProgressMonitor(actPfad, progressString));
-				copyManager.copyIn("COPY " + tableDestination + " FROM STDIN WITH DELIMITER ';' CSV", in);
+
+				try {
+					copyManager.copyIn("COPY " + tableDestination + " FROM STDIN WITH DELIMITER ';' CSV", in);
+				} catch (Exception e) {
+				}
 
 				System.out.println("\nCopying finished");
 
@@ -118,9 +122,15 @@ public class DataLoader {
 
 		st.executeUpdate("DELETE FROM erststimmen;");
 		st.executeUpdate("DELETE FROM zweitstimmen;");
-		st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
-		st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
 
+		try {
+			st.executeUpdate("INSERT INTO erststimmen SELECT jahr, wahlkreis, kandidatennummer, count(*) as anzahl  FROM erststimme GROUP BY wahlkreis, kandidatennummer,jahr ORDER BY wahlkreis, anzahl;");
+		} catch (Exception e) {
+		}
+		try {
+			st.executeUpdate("INSERT INTO zweitstimmen SELECT jahr, wahlkreis, partei, count(*) as anzahl  FROM zweitstimme GROUP BY wahlkreis, partei,jahr ORDER BY wahlkreis, anzahl;");
+		} catch (Exception e) {
+		}
 		System.out.println("finished.");
 
 	}

@@ -552,7 +552,7 @@ public class TestBW implements EntryPoint {
 				} catch (NumberFormatException e) {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
-					Window.alert("Bitte geben Sie eine gueltige Wahlkreisnummer (1 - 299) ein.");
+					Window.alert("Bitte geben Sie eine gültige Wahlkreisnummer (1 - 299) ein.");
 				}
 			}
 		});
@@ -590,7 +590,7 @@ public class TestBW implements EntryPoint {
 				} catch (NumberFormatException e) {
 					wk.setText("");
 					wk.setStyleName("loginbox-empty");
-					Window.alert("Bitte geben Sie eine g�ltige Wahlkreisnummer (1 - 299) ein.");
+					Window.alert("Bitte geben Sie eine gültige Wahlkreisnummer (1 - 299) ein.");
 				}
 			}
 		});
