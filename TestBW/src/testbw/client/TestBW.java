@@ -760,8 +760,29 @@ public class TestBW implements EntryPoint {
 		// All other services require this one to finish first, so delay their
 		// asynchronous calls to the callback for this service.
 		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Seat distribution analysis started.");
-
 		((SeatDistributionServiceAsync) seatDistSvc).getSeatDistribution(projectInput, queryInput, setupSeatDistCallback());
+
+		// Call all dependent services
+		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis started.");
+		((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
+
+		// Call dependent services
+		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Bundestag members analysis started.");
+		((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
+
+		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview analysis started.");
+		((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
+
+		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Knappster Sieger analysis started.");
+		((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
+
+		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview (Erststimmen) analysis started.");
+		((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
+
+		// Call dependent services
+		ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis started.");
+		((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
+
 	}
 
 	// Request a voting form and bind it to the UI
@@ -926,10 +947,6 @@ public class TestBW implements EntryPoint {
 
 				// tabPanel.selectTab(distPanel);
 
-				// Call all dependent services
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis started.");
-				((GetMandateServiceAsync) getMandateSvc).getMandate(projectInput, queryInput, setupMandateCallback());
-
 			}
 		};
 
@@ -950,19 +967,6 @@ public class TestBW implements EntryPoint {
 			public void onSuccess(ArrayList<ArrayList<String>> s) {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis complete.");
 				setupUITables(s, "Wahlkreissieger", (CellPanel) wkHPanel, wkHPanelContainer);
-
-				// Call dependent services
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Bundestag members analysis started.");
-				((GetMembersServiceAsync) getMembersSvc).getMembers(projectInput, queryInput, setupMembersCallback());
-
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview analysis started.");
-				((WahlkreisOverviewServiceAsync) wkOverviewSvc).getWKOverview(projectInput, queryInput, setupWKOverviewCallback());
-
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Knappster Sieger analysis started.");
-				((GetKnappsterSiegerServiceAsync) knappsterSiegerSvc).getKnappsterSieger(projectInput, queryInput, setupKnappsterSiegerCallback());
-
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreis overview (Erststimmen) analysis started.");
-				((WKOverviewErststimmenServiceAsync) wkOverviewErststimmenSvc).getOverview(projectInput, queryInput, setupWkOverviewErststimmenCallback());
 
 			}
 		};
@@ -1004,10 +1008,6 @@ public class TestBW implements EntryPoint {
 			public void onSuccess(ArrayList<ArrayList<String>> s) {
 				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Ueberhangsmandate analysis complete.");
 				setupUITables(s, "Überhangsmandate", (CellPanel) mandateHPanel, mandateHPanelContainer);
-
-				// Call dependent services
-				ta.setText(ta.getText() + "\n" + "-> " + DateTimeFormat.getFullTimeFormat().format(new Date()) + ": Wahlkreissieger analysis started.");
-				((WahlkreissiegerServiceAsync) wkSiegerSvc).getWahlkreissieger(projectInput, queryInput, setupWKSiegerCallback());
 
 			}
 		};

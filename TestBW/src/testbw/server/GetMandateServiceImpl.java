@@ -12,12 +12,10 @@ import testbw.util.DBManager;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 @SuppressWarnings("serial")
-public class GetMandateServiceImpl extends RemoteServiceServlet implements
-		GetMandateService {
+public class GetMandateServiceImpl extends RemoteServiceServlet implements GetMandateService {
 
 	// Get seat distribution
-	public ArrayList<ArrayList<String>> getMandate(String[] projectInput,
-			String[] queryInput) {
+	public ArrayList<ArrayList<String>> getMandate(String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
@@ -29,8 +27,7 @@ public class GetMandateServiceImpl extends RemoteServiceServlet implements
 
 		// Query
 		try {
-			ArrayList<ArrayList<String>> result = analyzer
-					.getUeberhangsmandate(queryInput);
+			ArrayList<ArrayList<String>> result = analyzer.getUeberhangsmandate(queryInput);
 			st.close();
 			manager.disconnect();
 

@@ -12,12 +12,10 @@ import testbw.util.DBManager;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 @SuppressWarnings("serial")
-public class WahlkreisOverviewServiceImpl extends RemoteServiceServlet
-		implements WahlkreisOverviewService {
+public class WahlkreisOverviewServiceImpl extends RemoteServiceServlet implements WahlkreisOverviewService {
 
 	// Get seat distribution
-	public ArrayList<ArrayList<String>> getWKOverview(String[] projectInput,
-			String[] queryInput) {
+	public ArrayList<ArrayList<String>> getWKOverview(String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
@@ -30,8 +28,7 @@ public class WahlkreisOverviewServiceImpl extends RemoteServiceServlet
 
 		// Query
 		try {
-			ArrayList<ArrayList<String>> result = analyzer
-					.getWahlkreisOverview(queryInput);
+			ArrayList<ArrayList<String>> result = analyzer.getWahlkreisOverview(queryInput);
 			st.close();
 			manager.disconnect();
 

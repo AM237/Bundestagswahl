@@ -12,12 +12,10 @@ import testbw.util.DBManager;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 @SuppressWarnings("serial")
-public class WKOverviewErststimmenServiceImpl extends RemoteServiceServlet
-		implements WKOverviewErststimmenService {
+public class WKOverviewErststimmenServiceImpl extends RemoteServiceServlet implements WKOverviewErststimmenService {
 
 	// Get seat distribution
-	public ArrayList<ArrayList<String>> getOverview(String[] projectInput,
-			String[] queryInput) {
+	public ArrayList<ArrayList<String>> getOverview(String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
@@ -29,8 +27,7 @@ public class WKOverviewErststimmenServiceImpl extends RemoteServiceServlet
 
 		// Query
 		try {
-			ArrayList<ArrayList<String>> result = analyzer
-					.getOverview(queryInput);
+			ArrayList<ArrayList<String>> result = analyzer.getOverview(queryInput);
 			st.close();
 			return result;
 		} catch (SQLException e) {

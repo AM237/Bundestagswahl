@@ -12,12 +12,10 @@ import testbw.util.DBManager;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 @SuppressWarnings("serial")
-public class GetKnappsterSiegerServiceImpl extends RemoteServiceServlet
-		implements GetKnappsterSiegerService {
+public class GetKnappsterSiegerServiceImpl extends RemoteServiceServlet implements GetKnappsterSiegerService {
 
 	// Get seat distribution
-	public ArrayList<ArrayList<String>> getKnappsterSieger(
-			String[] projectInput, String[] queryInput) {
+	public ArrayList<ArrayList<String>> getKnappsterSieger(String[] projectInput, String[] queryInput) {
 
 		// Datenbankverbindung
 		DBManager manager = new DBManager(projectInput);
@@ -29,8 +27,7 @@ public class GetKnappsterSiegerServiceImpl extends RemoteServiceServlet
 
 		// Query
 		try {
-			ArrayList<ArrayList<String>> result = analyzer
-					.getKnappsterSieger(queryInput);
+			ArrayList<ArrayList<String>> result = analyzer.getKnappsterSieger(queryInput);
 			st.close();
 			manager.disconnect();
 
